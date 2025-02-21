@@ -1,0 +1,16 @@
+FROM python:3.8-bullseye as base
+
+ENV PYTHONDONTWRITEBYTECODE 1
+ENV PYTHONUNBUFFERED 1
+ARG DEBIAN_FRONTEND=noninteractive
+
+RUN pip3 install --no-cache-dir picsellia
+COPY dataset/data_augmentations/requirements.txt .
+RUN pip3 install -r requirements.txt
+COPY dataset/data_augmentations/rotation /picsellia
+COPY dataset/data_augmentations/utils /picsellia/utils
+
+
+CMD ["/picsellia/launch_processing.py"]
+ENTRYPOINT ["python3"]
+RUN chown -R 42420 /picsellia

@@ -1,0 +1,17 @@
+FROM python:3.10-bookworm as base
+
+RUN apt-get update && apt-get install -y \
+    libgl1-mesa-glx \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY dataset/data_augmentations/imgaug_rotation/requirements.txt .
+RUN python3.10 -m pip install -r requirements.txt
+ARG REBUILD_ALL
+ARG REBUILD_PICSELLIA
+
+COPY dataset/data_augmentations/imgaug_rotation /picsellia
+COPY dataset/data_augmentations/imgaug_rotation/utils /picsellia/utils
+
+CMD ["/picsellia/launch_processing.py"]
+ENTRYPOINT ["python3.10"]
+RUN chown -R 42420:42420 /picsellia
