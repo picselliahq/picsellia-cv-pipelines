@@ -1,0 +1,15 @@
+FROM picsellia/cuda:11.8.0-cudnn8-ubuntu20.04-python3.10
+
+RUN apt-get update && apt-get install -y \
+    libgl1-mesa-glx \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN export UV_HTTP_TIMEOUT=900 && uv pip install --python=$(which python3.10) ultralytics==8.3.26 picsellia==6.19.1
+
+COPY ./dataset/torch /picsellia
+COPY ./utils /picsellia/utils
+COPY . .
+
+RUN chown -R 42420:42420 /picsellia
+
+ENTRYPOINT ["python3.10", "/picsellia/launch_processing.py"]
