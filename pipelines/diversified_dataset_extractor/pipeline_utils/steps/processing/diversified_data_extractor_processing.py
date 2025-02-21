@@ -1,0 +1,34 @@
+from src.picsellia_cv_engine import Pipeline, step
+from src.picsellia_cv_engine.models.contexts.processing.picsellia_processing_context import (
+    PicselliaProcessingContext,
+)
+
+from src.picsellia_cv_engine.models.dataset.base_dataset_context import (
+    TBaseDatasetContext,
+)
+from pipelines.diversified_dataset_extractor.pipeline_utils.parameters.processing_diversified_data_extractor_parameters import (
+    ProcessingDiversifiedDataExtractorParameters,
+)
+from pipelines.diversified_dataset_extractor.pipeline_utils.steps_utils.processing.diversified_data_extractor_processing import (
+    DiversifiedDataExtractorProcessing,
+)
+from pipelines.diversified_dataset_extractor.pipeline_utils.steps.model_loading.processing_diversified_data_extractor_model_loader import (
+    EmbeddingModel,
+)
+
+
+@step
+def process(dataset_context: TBaseDatasetContext, embedding_model: EmbeddingModel):
+    context: PicselliaProcessingContext[
+        ProcessingDiversifiedDataExtractorParameters
+    ] = Pipeline.get_active_context()
+
+    processor = DiversifiedDataExtractorProcessing(
+        client=context.client,
+        datalake=context.client.get_datalake(),
+        input_dataset_context=dataset_context,
+        output_dataset_version=context.output_dataset_version,
+        embedding_model=embedding_model,
+        distance_threshold=context.processing_parameters.distance_threshold,
+    )
+    processor.process()
