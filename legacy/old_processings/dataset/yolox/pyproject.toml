@@ -1,0 +1,18 @@
+[tool.poetry]
+name = "yolox-pre-annotator"
+version = "0.1.0"
+description = ""
+authors = ["picsalex <132259399+picsalex@users.noreply.github.com>"]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+picsellia = "^6.12.0"
+numpy = "^1.26.3"
+onnxruntime-gpu = "^1.16.3"
+onnx = "^1.15.0"
+opencv-python = "^4.9.0.80"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
