@@ -1,13 +1,15 @@
+import json
+import logging
 import os
 
 from picsellia.types.enums import InferenceType
-from picsellia_cv_engine.models.dataset.coco_dataset_context import (
-    CocoDatasetContext,
-)
-from picsellia_cv_engine.models.dataset.dataset_collection import (
-    DatasetCollection,
-)
-from PIL import Image
+from picsellia_cv_engine.models.dataset.dataset_collection import DatasetCollection
+from PIL import Image, ImageOps
+
+
+def open_image_with_exif_rotation(image_filepath: str) -> Image:
+    image = Image.open(image_filepath)
+    return ImageOps.exif_transpose(image)
 
 
 class BoundingBoxCropperProcessing:
@@ -24,7 +26,7 @@ class BoundingBoxCropperProcessing:
 
     def __init__(
         self,
-        dataset_collection: DatasetCollection[CocoDatasetContext],
+        dataset_collection: DatasetCollection,
         label_name_to_extract: str,
     ):
         self.dataset_collection = dataset_collection
@@ -50,86 +52,87 @@ class BoundingBoxCropperProcessing:
         """
         Processes the images in the input dataset version to extract the bounding boxes for the specified label.
         """
-        coco_data = self.dataset_collection["input"].coco_data
-        if not coco_data:
-            raise ValueError("No COCO data found in the dataset context.")
-        for image_filename in os.listdir(self.dataset_collection["input"].images_dir):
-            self._process_image(image_filename=image_filename, coco_data=coco_data)
+        input_json_coco_file = self.dataset_collection["input"].load_coco_file_data()
 
-    def _process_image(self, image_filename: str, coco_data: dict) -> None:
-        """
-        Processes an image to extract the bounding box for the specified label.
-        If the label is found in the image's annotations, the bounding box is extracted and saved to the processed dataset directory.
-        Args:
-            image_filename (str): The filename of the image to process.
-        """
-        if not self.dataset_collection["input"].images_dir:
-            raise ValueError("No images directory found in the dataset context.")
-        image_filepath = os.path.join(
-            self.dataset_collection["input"].images_dir, image_filename
+        category_id_to_name = {
+            cat["id"]: cat["name"] for cat in input_json_coco_file["categories"]
+        }
+
+        self.output_coco_data = {
+            "info": {},
+            "licenses": [],
+            "categories": [
+                {"id": 1, "name": self.label_name_to_extract, "supercategory": "none"}
+            ],
+            "images": [],
+            "annotations": [],
+        }
+
+        annotation_id = 0
+
+        self.dataset_collection["output"].coco_file_path = os.path.join(
+            self.dataset_collection["output"].annotations_dir, "extracted_images.json"
         )
-        image = Image.open(image_filepath)
-        image_id_coco_data = next(
-            (
-                image_data["id"]
-                for image_data in coco_data["images"]
-                if image_data["file_name"] == image_filename
-            ),
-            None,
-        )
-        if image_id_coco_data:
-            coco_file_annotations = [
-                annotation
-                for annotation in coco_data["annotations"]
-                if annotation["image_id"] == image_id_coco_data
-            ]
-            for coco_file_annotation in coco_file_annotations:
-                category_id = coco_file_annotation["category_id"]
-                label = next(
-                    (
-                        category["name"]
-                        for category in coco_data["categories"]
-                        if category["id"] == category_id
-                    ),
-                    None,
+
+        for input_annotation in input_json_coco_file["annotations"]:
+            if (
+                category_id_to_name[input_annotation["category_id"]]
+                == self.label_name_to_extract
+            ):
+                image_info = next(
+                    img
+                    for img in input_json_coco_file["images"]
+                    if img["id"] == input_annotation["image_id"]
                 )
-                if label == self.label_name_to_extract:
-                    self._extract(
-                        image=image,
-                        image_filename=image_filename,
-                        coco_file_annotation=coco_file_annotation,
-                    )
+                image_filename = image_info["file_name"]
+                image_path = os.path.join(
+                    self.dataset_collection["input"].images_dir, image_filename
+                )
 
-    def _extract(
-        self, image: Image, image_filename: str, coco_file_annotation: dict
-    ) -> None:
-        """
-        Extracts the bounding box from the image and saves it to the processed dataset directory.
+                if os.path.exists(image_path):
+                    with open_image_with_exif_rotation(image_path) as image:
+                        x, y, width, height = map(int, input_annotation["bbox"])
+                        cropped_image = image.crop((x, y, x + width, y + height))
 
-        Args:
-            image (Image): The image to extract the bounding box from.
-            image_filename (str): The filename of the image.
-            coco_file_annotation (Annotation): The annotation containing the bounding box.
-        """
-        if not self.dataset_collection["output"].images_dir:
-            raise ValueError("No images directory found in the dataset context.")
+                        image_asset_id, image_extension = os.path.splitext(
+                            image_filename
+                        )
+                        image_data_id = (
+                            self.dataset_collection["input"]
+                            .dataset_version.list_assets(ids=[image_asset_id])[0]
+                            .data_id
+                        )
+                        output_filename = f"{image_data_id}_{self.label_name_to_extract}_{x}_{y}_{width}_{height}{image_extension}"
 
-        x = int(coco_file_annotation["bbox"][0])
-        y = int(coco_file_annotation["bbox"][1])
-        width = int(coco_file_annotation["bbox"][2])
-        height = int(coco_file_annotation["bbox"][3])
+                        output_image_path = os.path.join(
+                            self.dataset_collection["output"].images_dir,
+                            output_filename,
+                        )
+                        cropped_image.save(output_image_path)
 
-        extracted_image = image.crop((x, y, x + width, y + height))
+                        self.output_coco_data["images"].append(
+                            {
+                                "id": annotation_id,
+                                "file_name": output_filename,
+                                "width": width,
+                                "height": height,
+                            }
+                        )
+                        self.output_coco_data["annotations"].append(
+                            {
+                                "id": annotation_id,
+                                "image_id": annotation_id,
+                                "category_id": 1,
+                            }
+                        )
+                        annotation_id += 1
+                else:
+                    logging.info(f"Image {image_path} not found")
 
-        label_folder = os.path.join(
-            self.dataset_collection["output"].images_dir, self.label_name_to_extract
-        )
-        os.makedirs(label_folder, exist_ok=True)
+        with open(self.dataset_collection["output"].coco_file_path, "w") as f:
+            json.dump(self.output_coco_data, f, indent=4)
 
-        processed_image_filename = f"{os.path.splitext(image_filename)[0]}_{self.label_name_to_extract}_{coco_file_annotation['id']}.{image_filename.split('.')[-1]}"
-        processed_image_filepath = os.path.join(label_folder, processed_image_filename)
-
-        extracted_image.save(processed_image_filepath)
+        logging.info("Extraction and COCO file generation completed.")
 
     def process(self) -> DatasetCollection:
         """
