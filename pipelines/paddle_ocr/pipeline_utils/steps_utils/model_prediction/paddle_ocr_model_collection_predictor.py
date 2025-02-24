@@ -163,7 +163,7 @@ class PaddleOCRModelCollectionPredictor(
         for image_path, prediction in zip(batch_paths, batch_prediction, strict=False):
             boxes, texts, confidences = self.get_annotations_from_result(prediction)
             asset_id = os.path.basename(image_path).split(".")[0]
-            asset = dataset_context.dataset_version.find_all_assets(ids=[asset_id])[0]
+            asset = dataset_context.dataset_version.list_assets(ids=[asset_id])[0]
             labels = [
                 PicselliaLabel(
                     dataset_context.dataset_version.get_or_create_label("text")

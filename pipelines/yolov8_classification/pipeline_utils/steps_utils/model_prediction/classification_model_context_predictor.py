@@ -162,7 +162,7 @@ class UltralyticsClassificationModelContextPredictor(
 
         for image_path, prediction in zip(image_paths, batch_prediction, strict=False):
             asset_id = os.path.basename(image_path).split(".")[0]
-            asset = dataset_context.dataset_version.find_all_assets(ids=[asset_id])[0]
+            asset = dataset_context.dataset_version.list_assets(ids=[asset_id])[0]
             predicted_label = self.get_picsellia_label(
                 prediction.names[int(prediction.probs.top1)], dataset_context
             )
