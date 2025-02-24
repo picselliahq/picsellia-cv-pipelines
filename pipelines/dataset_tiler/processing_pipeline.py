@@ -1,18 +1,19 @@
-from src.picsellia_cv_engine import pipeline
-from src.picsellia_cv_engine.models.contexts.processing.picsellia_processing_context import (
+from picsellia_cv_engine.decorators.pipeline_decorator import pipeline
+from picsellia_cv_engine.models.contexts.processing.picsellia_processing_context import (
     PicselliaProcessingContext,
 )
+from picsellia_cv_engine.steps.data_extraction.processing_data_extractor import (
+    get_processing_dataset_collection,
+)
+from picsellia_cv_engine.steps.data_upload.dataset_context_uploader import (
+    upload_dataset_context,
+)
+
 from pipelines.dataset_tiler.pipeline_utils.parameters.processing_tiler_parameters import (
     ProcessingTilerParameters,
 )
-from src.picsellia_cv_engine.steps.data_extraction.processing_data_extractor import (
-    get_processing_dataset_collection,
-)
 from pipelines.dataset_tiler.pipeline_utils.steps.data_validation.processing_tiler_data_validator import (
     validate_tiler_data,
-)
-from src.picsellia_cv_engine.steps.data_upload.dataset_context_uploader import (
-    upload_dataset_context,
 )
 from pipelines.dataset_tiler.pipeline_utils.steps.processing.tiler_processing import (
     process,

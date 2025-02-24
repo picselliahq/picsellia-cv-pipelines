@@ -1,13 +1,15 @@
-from src.picsellia_cv_engine import Pipeline, step
-from src.picsellia_cv_engine.models.contexts.processing.picsellia_processing_context import (
+from picsellia_cv_engine.decorators.pipeline_decorator import Pipeline
+from picsellia_cv_engine.decorators.step_decorator import step
+from picsellia_cv_engine.models.contexts.processing.picsellia_processing_context import (
     PicselliaProcessingContext,
 )
-from src.picsellia_cv_engine.models.dataset.coco_dataset_context import (
+from picsellia_cv_engine.models.dataset.coco_dataset_context import (
     CocoDatasetContext,
 )
-from src.picsellia_cv_engine.models.dataset.dataset_collection import (
+from picsellia_cv_engine.models.dataset.dataset_collection import (
     DatasetCollection,
 )
+
 from pipelines.dataset_tiler.pipeline_utils.parameters.processing_tiler_parameters import (
     ProcessingTilerParameters,
 )
