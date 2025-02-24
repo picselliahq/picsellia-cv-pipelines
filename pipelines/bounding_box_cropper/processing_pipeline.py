@@ -35,7 +35,7 @@ def get_context() -> PicselliaProcessingContext[ProcessingBoundingBoxCropperPara
 )
 def bounding_box_cropper_processing_pipeline() -> None:
     dataset_collection = get_processing_dataset_collection()
-    validate_bounding_box_cropper_data(dataset_context=dataset_collection.input)
+    validate_bounding_box_cropper_data(dataset_context=dataset_collection["input"])
     output_dataset_context = process(dataset_collection=dataset_collection)
     upload_classification_dataset_context(dataset_context=output_dataset_context)
 
