@@ -1,0 +1,40 @@
+[project]
+name = "picsellia-cv-pipelines"
+version = "0.1.0"
+description = ""
+authors = [
+    {name = "SoniaGrh",email = "sonia.garrouch@hotmail.fr"}
+]
+readme = "README.md"
+requires-python = ">=3.10, <4.0"
+
+
+[tool.poetry.dependencies]
+python = "^3.10"
+numpy = "<2.0"
+opencv-python = ">=4.11.0.86,<5.0.0.0"
+picsellia = ">=6.21.0,<7.0.0"
+picsellia-cv-engine = { path = "../picsellia-cv-engine/", develop = true }
+
+[tool.poetry]
+package-mode = false
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+
+[tool.ruff.lint]
+select = [
+    "E",  # pycodestyle errors
+    "W",  # pycodestyle warnings
+    "F",  # pyflakes
+    "I",  # isort
+    "C",  # flake8-comprehensions
+    "B",  # flake8-bugbear
+    "UP", # pyupgrade
+]
+ignore = [
+    "E501",  # line too long, handled by black
+]
