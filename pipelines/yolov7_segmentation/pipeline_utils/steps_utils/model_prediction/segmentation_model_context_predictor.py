@@ -1,22 +1,21 @@
 import os
 import shutil
 import subprocess
-from typing import Dict, List
 
 import cv2
-from src.picsellia_cv_engine.models.model.picsellia_prediction import (
+from picsellia_cv_engine.models.dataset.base_dataset_context import (
+    TBaseDatasetContext,
+)
+from picsellia_cv_engine.models.model.picsellia_prediction import (
     PicselliaConfidence,
     PicselliaLabel,
     PicselliaPolygon,
     PicselliaPolygonPrediction,
 )
+
 from pipelines.yolov7_segmentation.pipeline_utils.model.yolov7_model_context import (
     Yolov7ModelContext,
     find_latest_run_dir,
-)
-
-from src.picsellia_cv_engine.models.dataset.base_dataset_context import (
-    TBaseDatasetContext,
 )
 from pipelines.yolov7_segmentation.pipeline_utils.parameters.yolov7_hyper_parameters import (
     Yolov7HyperParameters,
@@ -35,7 +34,7 @@ class Yolov7SegmentationModelContextPredictor:
 
     def pre_process_dataset_context(
         self, dataset_context: TBaseDatasetContext
-    ) -> List[str]:
+    ) -> list[str]:
         """
         Prepares the dataset by extracting and returning a list of image file paths from the dataset context.
 
@@ -55,9 +54,9 @@ class Yolov7SegmentationModelContextPredictor:
 
     def run_inference(
         self,
-        image_paths: List[str],
+        image_paths: list[str],
         hyperparameters: Yolov7HyperParameters,
-    ) -> Dict[str, List[str]]:
+    ) -> dict[str, list[str]]:
         if not self.model_context.trained_weights_path or not os.path.exists(
             self.model_context.trained_weights_path
         ):
@@ -143,7 +142,7 @@ class Yolov7SegmentationModelContextPredictor:
             os.path.join(mask_dir, mask_name) for mask_name in os.listdir(mask_dir)
         ]
 
-        label_path_to_mask_paths: Dict[str, List[str]] = {
+        label_path_to_mask_paths: dict[str, list[str]] = {
             label_filepath: [] for label_filepath in labels_paths
         }
 
@@ -155,8 +154,8 @@ class Yolov7SegmentationModelContextPredictor:
         return label_path_to_mask_paths
 
     def _prepare_batches(
-        self, image_paths: List[str], batch_size: int
-    ) -> List[List[str]]:
+        self, image_paths: list[str], batch_size: int
+    ) -> list[list[str]]:
         """
         Divides the list of image paths into smaller batches of a specified size.
 
@@ -174,9 +173,9 @@ class Yolov7SegmentationModelContextPredictor:
 
     def post_process(
         self,
-        label_path_to_mask_paths: Dict[str, List[str]],
+        label_path_to_mask_paths: dict[str, list[str]],
         dataset_context: TBaseDatasetContext,
-    ) -> List[PicselliaPolygonPrediction]:
+    ) -> list[PicselliaPolygonPrediction]:
         """
         Post-processes the predictions for a segmentation model, mapping polygons and confidence scores
         to Picsellia assets and labels.
@@ -192,7 +191,7 @@ class Yolov7SegmentationModelContextPredictor:
 
         for label_path, mask_paths in label_path_to_mask_paths.items():
             asset_id = os.path.basename(label_path).split(".")[0]
-            asset = dataset_context.dataset_version.find_all_assets(ids=[asset_id])[0]
+            asset = dataset_context.dataset_version.list_assets(ids=[asset_id])[0]
 
             label_info = self._parse_label_file(label_path)
 
@@ -200,7 +199,7 @@ class Yolov7SegmentationModelContextPredictor:
             labels = []
             confidences = []
 
-            for mask_index, (class_id, x1, y1, x2, y2, confidence) in enumerate(
+            for mask_index, (class_id, _x1, _y1, _x2, _y2, confidence) in enumerate(
                 label_info
             ):
                 if mask_index >= len(mask_paths):
@@ -229,7 +228,7 @@ class Yolov7SegmentationModelContextPredictor:
 
         return predictions
 
-    def _parse_label_file(self, label_path: str) -> List[tuple]:
+    def _parse_label_file(self, label_path: str) -> list[tuple]:
         """
         Parse the label file to extract class id, coordinates, and confidence.
 
@@ -240,7 +239,7 @@ class Yolov7SegmentationModelContextPredictor:
             List[tuple]: List of tuples (class_id, x1, y1, x2, y2, confidence).
         """
         label_info = []
-        with open(label_path, "r") as file:
+        with open(label_path) as file:
             for line in file:
                 parts = line.strip().split()
                 class_id = int(parts[0])
@@ -251,7 +250,7 @@ class Yolov7SegmentationModelContextPredictor:
 
     def _extract_largest_contour(
         self, mask_path: str, epsilon: float = 3.0
-    ) -> List[List[int]]:
+    ) -> list[list[int]]:
         """
         Extract the largest contour from a binary mask image and simplify it if possible.
 

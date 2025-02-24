@@ -1,10 +1,11 @@
 import os
-from typing import Optional
 
-from src.picsellia_cv_engine import step, Pipeline
-from src.picsellia_cv_engine.models.contexts.training.picsellia_training_context import (
+from picsellia_cv_engine.decorators.pipeline_decorator import Pipeline
+from picsellia_cv_engine.decorators.step_decorator import step
+from picsellia_cv_engine.models.contexts.training.picsellia_training_context import (
     PicselliaTrainingContext,
 )
+
 from pipelines.yolov8_classification.pipeline_utils.model.ultralytics_model_context import (
     UltralyticsModelContext,
 )
@@ -12,10 +13,10 @@ from pipelines.yolov8_classification.pipeline_utils.model.ultralytics_model_cont
 
 @step
 def get_ultralytics_model_context(
-    pretrained_weights_name: Optional[str] = None,
-    trained_weights_name: Optional[str] = None,
-    config_name: Optional[str] = None,
-    exported_weights_name: Optional[str] = None,
+    pretrained_weights_name: str | None = None,
+    trained_weights_name: str | None = None,
+    config_name: str | None = None,
+    exported_weights_name: str | None = None,
 ) -> UltralyticsModelContext:
     """
     Extracts a model context from the active Picsellia training experiment.

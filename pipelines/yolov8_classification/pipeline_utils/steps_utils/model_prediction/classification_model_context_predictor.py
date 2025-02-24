@@ -1,19 +1,18 @@
 import os
-from typing import List
 
-from ultralytics.engine.results import Results
-
-from src.picsellia_cv_engine.models.dataset.base_dataset_context import (
+from picsellia_cv_engine.models.dataset.base_dataset_context import (
     TBaseDatasetContext,
 )
-from src.picsellia_cv_engine.models.model.picsellia_prediction import (
+from picsellia_cv_engine.models.model.picsellia_prediction import (
     PicselliaClassificationPrediction,
 )
+from picsellia_cv_engine.models.steps.model_prediction.model_context_predictor import (
+    ModelContextPredictor,
+)
+from ultralytics.engine.results import Results
+
 from pipelines.yolov8_classification.pipeline_utils.model.ultralytics_model_context import (
     UltralyticsModelContext,
-)
-from src.picsellia_cv_engine.models.steps.model_prediction.model_context_predictor import (
-    ModelContextPredictor,
 )
 
 
@@ -39,7 +38,7 @@ class UltralyticsClassificationModelContextPredictor(
 
     def pre_process_dataset_context(
         self, dataset_context: TBaseDatasetContext
-    ) -> List[str]:
+    ) -> list[str]:
         """
         Prepares the dataset by extracting and returning a list of image file paths from the dataset context.
 
@@ -63,8 +62,8 @@ class UltralyticsClassificationModelContextPredictor(
         return image_paths
 
     def prepare_batches(
-        self, image_paths: List[str], batch_size: int
-    ) -> List[List[str]]:
+        self, image_paths: list[str], batch_size: int
+    ) -> list[list[str]]:
         """
         Divides the list of image paths into smaller batches of a specified size.
 
@@ -80,7 +79,7 @@ class UltralyticsClassificationModelContextPredictor(
             for i in range(0, len(image_paths), batch_size)
         ]
 
-    def run_inference_on_batches(self, image_batches: List[List[str]]) -> List[Results]:
+    def run_inference_on_batches(self, image_batches: list[list[str]]) -> list[Results]:
         """
         Runs model inference on each batch of images and returns the prediction results for all batches.
 
@@ -97,7 +96,7 @@ class UltralyticsClassificationModelContextPredictor(
             all_batch_results.append(batch_results)
         return all_batch_results
 
-    def _run_inference(self, batch_paths: List[str]) -> Results:
+    def _run_inference(self, batch_paths: list[str]) -> Results:
         """
         Executes inference on a single batch of images using the loaded model.
 
@@ -111,10 +110,10 @@ class UltralyticsClassificationModelContextPredictor(
 
     def post_process_batches(
         self,
-        image_batches: List[List[str]],
-        batch_results: List[Results],
+        image_batches: list[list[str]],
+        batch_results: list[Results],
         dataset_context: TBaseDatasetContext,
-    ) -> List[PicselliaClassificationPrediction]:
+    ) -> list[PicselliaClassificationPrediction]:
         """
         Post-processes the inference results for each batch and returns a list of classification predictions.
 
@@ -128,7 +127,9 @@ class UltralyticsClassificationModelContextPredictor(
         """
         all_predictions = []
 
-        for batch_result, batch_paths in zip(batch_results, image_batches):
+        for batch_result, batch_paths in zip(
+            batch_results, image_batches, strict=False
+        ):
             all_predictions.extend(
                 self._post_process(
                     image_paths=batch_paths,
@@ -140,10 +141,10 @@ class UltralyticsClassificationModelContextPredictor(
 
     def _post_process(
         self,
-        image_paths: List[str],
+        image_paths: list[str],
         batch_prediction: Results,
         dataset_context: TBaseDatasetContext,
-    ) -> List[PicselliaClassificationPrediction]:
+    ) -> list[PicselliaClassificationPrediction]:
         """
         Post-processes the predictions for a single batch of images, mapping predicted classes and confidence scores
         to Picsellia labels.
@@ -159,7 +160,7 @@ class UltralyticsClassificationModelContextPredictor(
         """
         processed_predictions = []
 
-        for image_path, prediction in zip(image_paths, batch_prediction):
+        for image_path, prediction in zip(image_paths, batch_prediction, strict=False):
             asset_id = os.path.basename(image_path).split(".")[0]
             asset = dataset_context.dataset_version.find_all_assets(ids=[asset_id])[0]
             predicted_label = self.get_picsellia_label(

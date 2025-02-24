@@ -1,9 +1,11 @@
 import os.path
 
-from src.picsellia_cv_engine import step, Pipeline
-from src.picsellia_cv_engine.models.contexts.training.picsellia_training_context import (
+from picsellia_cv_engine.decorators.pipeline_decorator import Pipeline
+from picsellia_cv_engine.decorators.step_decorator import step
+from picsellia_cv_engine.models.contexts.training.picsellia_training_context import (
     PicselliaTrainingContext,
 )
+
 from pipelines.yolov7_segmentation.pipeline_utils.model.yolov7_model_context import (
     Yolov7ModelContext,
 )

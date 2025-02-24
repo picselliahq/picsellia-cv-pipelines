@@ -1,10 +1,9 @@
-from src.picsellia_cv_engine.models.model.model_context import ModelContext
-
 import os
-from typing import Optional, Dict, Any
-from picsellia import ModelVersion, Label
+from typing import Any
 
 import yaml
+from picsellia import Label, ModelVersion
+from picsellia_cv_engine.models.model.model_context import ModelContext
 
 
 def find_latest_run_dir(dir):
@@ -38,12 +37,12 @@ class Yolov7ModelContext(ModelContext):
         self,
         model_name: str,
         model_version: ModelVersion,
-        pretrained_weights_name: Optional[str] = None,
-        trained_weights_name: Optional[str] = None,
-        config_name: Optional[str] = None,
-        exported_weights_name: Optional[str] = None,
-        hyperparameters_name: Optional[str] = None,
-        labelmap: Optional[Dict[str, Label]] = None,
+        pretrained_weights_name: str | None = None,
+        trained_weights_name: str | None = None,
+        config_name: str | None = None,
+        exported_weights_name: str | None = None,
+        hyperparameters_name: str | None = None,
+        labelmap: dict[str, Label] | None = None,
     ):
         super().__init__(
             model_name=model_name,
@@ -55,7 +54,7 @@ class Yolov7ModelContext(ModelContext):
             labelmap=labelmap,
         )
         self.hyperparameters_name = hyperparameters_name
-        self.hyperparameters_path: Optional[str] = None
+        self.hyperparameters_path: str | None = None
 
     def set_hyperparameters_path(self, destination_path: str):
         """
@@ -74,7 +73,7 @@ class Yolov7ModelContext(ModelContext):
         )
 
     def update_hyperparameters(
-        self, hyperparameters: Dict[str, Any], hyperparameters_path: str
+        self, hyperparameters: dict[str, Any], hyperparameters_path: str
     ):
         """
         Updates the hyperparameters with the provided dictionary.

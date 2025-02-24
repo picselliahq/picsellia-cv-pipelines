@@ -1,3 +1,11 @@
+from picsellia_cv_engine.decorators.pipeline_decorator import pipeline
+from picsellia_cv_engine.models.contexts.processing.picsellia_processing_context import (
+    PicselliaProcessingContext,
+)
+from picsellia_cv_engine.steps.data_extraction.processing_data_extractor import (
+    get_processing_dataset_context,
+)
+
 from pipelines.diversified_dataset_extractor.pipeline_utils.parameters.processing_diversified_data_extractor_parameters import (
     ProcessingDiversifiedDataExtractorParameters,
 )
@@ -12,13 +20,6 @@ from pipelines.diversified_dataset_extractor.pipeline_utils.steps.processing.div
 )
 from pipelines.diversified_dataset_extractor.pipeline_utils.steps.weights_validation.processing_diversified_data_extractor_weights_validator import (
     validate_diversified_data_extractor_weights,
-)
-from src.picsellia_cv_engine import pipeline
-from src.picsellia_cv_engine.models.contexts.processing.picsellia_processing_context import (
-    PicselliaProcessingContext,
-)
-from src.picsellia_cv_engine.steps.data_extraction.processing_data_extractor import (
-    get_processing_dataset_context,
 )
 
 

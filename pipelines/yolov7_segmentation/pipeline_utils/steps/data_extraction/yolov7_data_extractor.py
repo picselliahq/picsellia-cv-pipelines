@@ -1,21 +1,22 @@
 import os
 
-from src.picsellia_cv_engine import step, Pipeline
-from src.picsellia_cv_engine.models.contexts.training.picsellia_training_context import (
+from picsellia_cv_engine.decorators.pipeline_decorator import Pipeline
+from picsellia_cv_engine.decorators.step_decorator import step
+from picsellia_cv_engine.models.contexts.training.picsellia_training_context import (
     PicselliaTrainingContext,
 )
-from src.picsellia_cv_engine.models.dataset.yolo_dataset_context import (
+from picsellia_cv_engine.models.dataset.yolo_dataset_context import (
     YoloDatasetContext,
 )
-from pipelines.yolov7_segmentation.pipeline_utils.dataset.yolov7_dataset_collection import (
-    Yolov7DatasetCollection,
-)
-from src.picsellia_cv_engine.models.steps.data_extraction.training_dataset_collection_extractor import (
+from picsellia_cv_engine.models.steps.data_extraction.training_dataset_collection_extractor import (
     TrainingDatasetCollectionExtractor,
 )
-
-from src.picsellia_cv_engine.models.utils.dataset_logging import (
+from picsellia_cv_engine.models.utils.dataset_logging import (
     log_labelmap,
+)
+
+from pipelines.yolov7_segmentation.pipeline_utils.dataset.yolov7_dataset_collection import (
+    Yolov7DatasetCollection,
 )
 
 

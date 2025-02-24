@@ -1,12 +1,11 @@
 import logging
 import os
 import subprocess
-from typing import Union, Any
+from typing import Any
 
 import yaml
-
-from src.picsellia_cv_engine.models.model.model_context import ModelContext
-from src.picsellia_cv_engine.models.steps.model_export.model_context_exporter import (
+from picsellia_cv_engine.models.model.model_context import ModelContext
+from picsellia_cv_engine.models.steps.model_export.model_context_exporter import (
     ModelContextExporter,
 )
 
@@ -50,7 +49,7 @@ class PaddleOCRModelContextExporter(ModelContextExporter):
         """
         if not self.model_context.config_path:
             raise ValueError("No configuration file path found in model context")
-        with open(self.model_context.config_path, "r") as file:
+        with open(self.model_context.config_path) as file:
             config = yaml.load(file, Loader=yaml.FullLoader)
         return config
 
@@ -66,7 +65,7 @@ class PaddleOCRModelContextExporter(ModelContextExporter):
         with open(self.model_context.config_path, "w") as file:
             yaml.dump(self.config, file)
 
-    def find_model_path(self, saved_model_path: str) -> Union[str, None]:
+    def find_model_path(self, saved_model_path: str) -> str | None:
         """
         Finds the best or latest trained model file in the provided directory.
 

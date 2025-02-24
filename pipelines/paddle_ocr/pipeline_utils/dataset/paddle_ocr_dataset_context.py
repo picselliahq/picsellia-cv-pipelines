@@ -1,9 +1,6 @@
-from typing import Optional, Dict
-
 from picsellia import DatasetVersion, Label
 from picsellia.sdk.asset import MultiAsset
-
-from src.picsellia_cv_engine.models.dataset.coco_dataset_context import (
+from picsellia_cv_engine.models.dataset.coco_dataset_context import (
     CocoDatasetContext,
 )
 
@@ -27,7 +24,7 @@ class PaddleOCRDatasetContext(CocoDatasetContext):
         dataset_name: str,
         dataset_version: DatasetVersion,
         assets: MultiAsset,
-        labelmap: Optional[Dict[str, Label]] = None,
+        labelmap: dict[str, Label] | None = None,
     ):
         """
         Initializes the PaddleOCRDatasetContext with the specified dataset name, version, assets, and labelmap.
@@ -44,6 +41,6 @@ class PaddleOCRDatasetContext(CocoDatasetContext):
             assets=assets,
             labelmap=labelmap,
         )
-        self.paddle_ocr_bbox_annotations_path: Optional[str] = None
-        self.paddle_ocr_text_annotations_path: Optional[str] = None
-        self.text_images_dir: Optional[str] = None
+        self.paddle_ocr_bbox_annotations_path: str | None = None
+        self.paddle_ocr_text_annotations_path: str | None = None
+        self.text_images_dir: str | None = None

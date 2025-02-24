@@ -1,13 +1,14 @@
 import os
-import yaml
 
-from src.picsellia_cv_engine.models.dataset.dataset_collection import (
+import yaml
+from picsellia_cv_engine.models.dataset.dataset_collection import (
     DatasetCollection,
 )
+from picsellia_cv_engine.models.model.model_context import ModelContext
+
 from pipelines.paddle_ocr.pipeline_utils.dataset.paddle_ocr_dataset_context import (
     PaddleOCRDatasetContext,
 )
-from src.picsellia_cv_engine.models.model.model_context import ModelContext
 from pipelines.paddle_ocr.pipeline_utils.model.paddle_ocr_model_collection import (
     PaddleOCRModelCollection,
 )
@@ -38,7 +39,7 @@ def generate_bbox_yaml_config(
     if model_context.config_path is None:
         raise ValueError("No config file path provided for the model context")
 
-    with open(model_context.config_path, "r") as file:
+    with open(model_context.config_path) as file:
         config = yaml.load(file, Loader=yaml.FullLoader)
 
     config["Global"]["use_gpu"] = (
@@ -97,7 +98,7 @@ def generate_text_yaml_config(
     if not model_context.weights_dir:
         raise ValueError("No weights directory provided for the model context")
 
-    with open(model_context.config_path, "r") as file:
+    with open(model_context.config_path) as file:
         config = yaml.load(file, Loader=yaml.FullLoader)
 
     config["Global"]["use_gpu"] = (

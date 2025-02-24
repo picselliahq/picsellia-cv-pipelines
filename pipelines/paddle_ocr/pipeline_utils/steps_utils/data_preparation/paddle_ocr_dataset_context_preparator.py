@@ -1,14 +1,13 @@
 import json
 import os
-from typing import Union, Dict, List
 
 import cv2
 import numpy as np
 from imutils import perspective
-
-from src.picsellia_cv_engine.models.dataset.coco_dataset_context import (
+from picsellia_cv_engine.models.dataset.coco_dataset_context import (
     CocoDatasetContext,
 )
+
 from pipelines.paddle_ocr.pipeline_utils.dataset.paddle_ocr_dataset_context import (
     PaddleOCRDatasetContext,
 )
@@ -28,7 +27,7 @@ def write_annotations_file(data, output_path):
             file.write(line + "\n")
 
 
-def find_category_id(categories: List[Dict], category_name: str) -> Union[str, None]:
+def find_category_id(categories: list[dict], category_name: str) -> str | None:
     """
     Finds the ID of a category by its name from a list of categories.
 
@@ -45,7 +44,7 @@ def find_category_id(categories: List[Dict], category_name: str) -> Union[str, N
     return None
 
 
-def find_category_name(categories: List[Dict], category_id: str) -> Union[str, None]:
+def find_category_name(categories: list[dict], category_id: str) -> str | None:
     """
     Finds the name of a category by its ID from a list of categories.
 
@@ -62,7 +61,7 @@ def find_category_name(categories: List[Dict], category_id: str) -> Union[str, N
     return None
 
 
-def find_image_id(images: List[Dict], image_filename: str) -> Union[str, None]:
+def find_image_id(images: list[dict], image_filename: str) -> str | None:
     """
     Finds the ID of an image by its filename from a list of images.
 
@@ -79,7 +78,7 @@ def find_image_id(images: List[Dict], image_filename: str) -> Union[str, None]:
     return None
 
 
-def get_points_from_bbox(bbox: List[int]) -> List[List[int]]:
+def get_points_from_bbox(bbox: list[int]) -> list[list[int]]:
     """
     Converts a bounding box into a list of points representing its corners.
 
@@ -93,7 +92,7 @@ def get_points_from_bbox(bbox: List[int]) -> List[List[int]]:
     return [[x, y], [x + w, y], [x + w, y + h], [x, y + h]]
 
 
-def get_bbox_annotations(coco: Dict, image_directory: str):
+def get_bbox_annotations(coco: dict, image_directory: str):
     """
     Retrieves and formats bounding box annotations from the COCO data.
 
@@ -104,8 +103,8 @@ def get_bbox_annotations(coco: Dict, image_directory: str):
     Returns:
         List[str]: A list of formatted bounding box annotations for PaddleOCR.
     """
-    processed_data: List[str] = []
-    paddle_ocr_annotations: List[Dict] = []
+    processed_data: list[str] = []
+    paddle_ocr_annotations: list[dict] = []
     group_image_id = None
 
     def append_annotations():
@@ -140,7 +139,7 @@ def get_bbox_annotations(coco: Dict, image_directory: str):
     return processed_data
 
 
-def get_text_annotations(coco: Dict, image_directory: str, new_image_directory: str):
+def get_text_annotations(coco: dict, image_directory: str, new_image_directory: str):
     """
     Extracts and processes text annotations from the COCO data by cropping images and saving them.
 
@@ -153,7 +152,7 @@ def get_text_annotations(coco: Dict, image_directory: str, new_image_directory: 
         List[str]: A list of formatted text annotations for PaddleOCR.
     """
     os.makedirs(new_image_directory, exist_ok=True)
-    processed_data: List[str] = []
+    processed_data: list[str] = []
     img_counter = 0
 
     for annotation in coco["annotations"]:

@@ -1,7 +1,7 @@
-from src.picsellia_cv_engine.models.parameters.augmentation_parameters import (
+from picsellia.types.schemas import LogDataType
+from picsellia_cv_engine.models.parameters.augmentation_parameters import (
     AugmentationParameters,
 )
-from picsellia.types.schemas import LogDataType
 
 
 class PaddleOCRAugmentationParameters(AugmentationParameters):

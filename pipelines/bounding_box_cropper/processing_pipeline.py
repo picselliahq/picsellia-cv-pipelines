@@ -1,23 +1,24 @@
 # type: ignore
 
-from pipeline_utils.parameters.processing_bounding_box_cropper_parameters import (
-    ProcessingBoundingBoxCropperParameters,
-)
-from pipeline_utils.steps.data_validation.processing_bounding_box_cropper_data_validator import (
-    validate_bounding_box_cropper_data,
-)
-from pipeline_utils.steps.processing.bounding_box_cropper_processing import (
-    process,
-)
-from src.picsellia_cv_engine import pipeline
-from src.picsellia_cv_engine.models.contexts.processing.picsellia_processing_context import (
+from picsellia_cv_engine.decorators.pipeline_decorator import pipeline
+from picsellia_cv_engine.models.contexts.processing.picsellia_processing_context import (
     PicselliaProcessingContext,
 )
-from src.picsellia_cv_engine.steps.data_extraction.processing_data_extractor import (
+from picsellia_cv_engine.steps.data_extraction.processing_data_extractor import (
     get_processing_dataset_collection,
 )
-from src.picsellia_cv_engine.steps.data_upload.classification_dataset_context_uploader import (
+from picsellia_cv_engine.steps.data_upload.classification_dataset_context_uploader import (
     upload_classification_dataset_context,
+)
+
+from pipelines.bounding_box_cropper.pipeline_utils.parameters.processing_bounding_box_cropper_parameters import (
+    ProcessingBoundingBoxCropperParameters,
+)
+from pipelines.bounding_box_cropper.pipeline_utils.steps.data_validation.processing_bounding_box_cropper_data_validator import (
+    validate_bounding_box_cropper_data,
+)
+from pipelines.bounding_box_cropper.pipeline_utils.steps.processing.bounding_box_cropper_processing import (
+    process,
 )
 
 

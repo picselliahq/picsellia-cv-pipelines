@@ -1,15 +1,13 @@
 import os
-from typing import Dict
 
-from PIL import Image
 from picsellia.types.enums import InferenceType
-
-from src.picsellia_cv_engine.models.dataset.coco_dataset_context import (
+from picsellia_cv_engine.models.dataset.coco_dataset_context import (
     CocoDatasetContext,
 )
-from src.picsellia_cv_engine.models.dataset.dataset_collection import (
+from picsellia_cv_engine.models.dataset.dataset_collection import (
     DatasetCollection,
 )
+from PIL import Image
 
 
 class BoundingBoxCropperProcessing:
@@ -58,7 +56,7 @@ class BoundingBoxCropperProcessing:
         for image_filename in os.listdir(self.dataset_collection["input"].images_dir):
             self._process_image(image_filename=image_filename, coco_data=coco_data)
 
-    def _process_image(self, image_filename: str, coco_data: Dict) -> None:
+    def _process_image(self, image_filename: str, coco_data: dict) -> None:
         """
         Processes an image to extract the bounding box for the specified label.
         If the label is found in the image's annotations, the bounding box is extracted and saved to the processed dataset directory.
@@ -103,7 +101,7 @@ class BoundingBoxCropperProcessing:
                     )
 
     def _extract(
-        self, image: Image, image_filename: str, coco_file_annotation: Dict
+        self, image: Image, image_filename: str, coco_file_annotation: dict
     ) -> None:
         """
         Extracts the bounding box from the image and saves it to the processed dataset directory.

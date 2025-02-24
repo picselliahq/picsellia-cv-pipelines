@@ -1,13 +1,12 @@
 from pathlib import Path
-from typing import List
+
+from picsellia import Experiment
 from ultralytics.models.yolo.classify import (
     ClassificationTrainer,
     ClassificationValidator,
 )
 
-from picsellia import Experiment
-
-from pipelines.yolov8_classification.pipeline_utils.steps_utils.model_training.ultralytics_classification_logger import (
+from pipelines.yolov8_classification.pipeline_utils.steps_utils.model_logging.ultralytics_classification_logger import (
     UltralyticsClassificationLogger,
 )
 
@@ -107,7 +106,7 @@ class UltralyticsCallbacks:
             "confusion_matrix_normalized.png",
             *(f"{metric}_curve.png" for metric in ("F1", "PR", "P", "R")),
         ]
-        existing_files: List[Path] = [
+        existing_files: list[Path] = [
             model_output_directory / file_name
             for file_name in visualization_files
             if (model_output_directory / file_name).exists()

@@ -1,24 +1,26 @@
-from src.picsellia_cv_engine import step, Pipeline
-from src.picsellia_cv_engine.models.contexts.training.picsellia_training_context import (
+from picsellia_cv_engine.decorators.pipeline_decorator import Pipeline
+from picsellia_cv_engine.decorators.step_decorator import step
+from picsellia_cv_engine.models.contexts.training.picsellia_training_context import (
     PicselliaTrainingContext,
 )
-from src.picsellia_cv_engine.models.dataset.base_dataset_context import (
+from picsellia_cv_engine.models.dataset.base_dataset_context import (
     TBaseDatasetContext,
 )
+from picsellia_cv_engine.models.parameters.export_parameters import (
+    ExportParameters,
+)
+from picsellia_cv_engine.models.steps.model_evaluation.model_evaluator import (
+    ModelEvaluator,
+)
+
 from pipelines.yolov8_classification.pipeline_utils.model.ultralytics_model_context import (
     UltralyticsModelContext,
-)
-from src.picsellia_cv_engine.models.parameters.export_parameters import (
-    ExportParameters,
 )
 from pipelines.yolov8_classification.pipeline_utils.parameters.ultralytics_augmentation_parameters import (
     UltralyticsAugmentationParameters,
 )
 from pipelines.yolov8_classification.pipeline_utils.parameters.ultralytics_hyper_parameters import (
     UltralyticsHyperParameters,
-)
-from src.picsellia_cv_engine.models.steps.model_evaluation.model_evaluator import (
-    ModelEvaluator,
 )
 from pipelines.yolov8_classification.pipeline_utils.steps_utils.model_prediction.classification_model_context_predictor import (
     UltralyticsClassificationModelContextPredictor,

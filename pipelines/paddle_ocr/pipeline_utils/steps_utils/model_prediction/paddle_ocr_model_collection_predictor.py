@@ -1,21 +1,21 @@
 import os
-from typing import List, Tuple
 
-from src.picsellia_cv_engine.models.dataset.base_dataset_context import (
+from picsellia_cv_engine.models.dataset.base_dataset_context import (
     TBaseDatasetContext,
 )
-from pipelines.paddle_ocr.pipeline_utils.model.paddle_ocr_model_collection import (
-    PaddleOCRModelCollection,
-)
-from src.picsellia_cv_engine.models.model.picsellia_prediction import (
-    PicselliaRectangle,
-    PicselliaOCRPrediction,
-    PicselliaText,
+from picsellia_cv_engine.models.model.picsellia_prediction import (
     PicselliaConfidence,
     PicselliaLabel,
+    PicselliaOCRPrediction,
+    PicselliaRectangle,
+    PicselliaText,
 )
-from src.picsellia_cv_engine.models.steps.model_prediction.model_collection_predictor import (
+from picsellia_cv_engine.models.steps.model_prediction.model_collection_predictor import (
     ModelCollectionPredictor,
+)
+
+from pipelines.paddle_ocr.pipeline_utils.model.paddle_ocr_model_collection import (
+    PaddleOCRModelCollection,
 )
 
 
@@ -41,7 +41,7 @@ class PaddleOCRModelCollectionPredictor(
 
     def pre_process_dataset_context(
         self, dataset_context: TBaseDatasetContext
-    ) -> List[str]:
+    ) -> list[str]:
         """
         Prepares the dataset by extracting and returning a list of image file paths from the dataset context.
 
@@ -60,8 +60,8 @@ class PaddleOCRModelCollectionPredictor(
         return image_paths
 
     def prepare_batches(
-        self, image_paths: List[str], batch_size: int
-    ) -> List[List[str]]:
+        self, image_paths: list[str], batch_size: int
+    ) -> list[list[str]]:
         """
         Divides the list of image paths into smaller batches of a specified size.
 
@@ -77,7 +77,7 @@ class PaddleOCRModelCollectionPredictor(
             for i in range(0, len(image_paths), batch_size)
         ]
 
-    def run_inference_on_batches(self, image_batches: List[List[str]]) -> List[List]:
+    def run_inference_on_batches(self, image_batches: list[list[str]]) -> list[list]:
         """
         Runs model inference on each batch of images and returns the prediction results for all batches.
 
@@ -93,7 +93,7 @@ class PaddleOCRModelCollectionPredictor(
             all_batch_results.append(batch_results)
         return all_batch_results
 
-    def _run_inference(self, batch_paths: List[str]) -> List:
+    def _run_inference(self, batch_paths: list[str]) -> list:
         """
         Executes inference on a single batch of images using the loaded PaddleOCR model.
 
@@ -111,10 +111,10 @@ class PaddleOCRModelCollectionPredictor(
 
     def post_process_batches(
         self,
-        image_batches: List[List[str]],
-        batch_results: List[List],
+        image_batches: list[list[str]],
+        batch_results: list[list],
         dataset_context: TBaseDatasetContext,
-    ) -> List[PicselliaOCRPrediction]:
+    ) -> list[PicselliaOCRPrediction]:
         """
         Post-processes the inference results for each batch and returns a list of OCR predictions.
 
@@ -127,7 +127,9 @@ class PaddleOCRModelCollectionPredictor(
             List[PicselliaOCRPrediction]: A list of processed OCR predictions for each image.
         """
         all_predictions = []
-        for batch_result, batch_paths in zip(batch_results, image_batches):
+        for batch_result, batch_paths in zip(
+            batch_results, image_batches, strict=False
+        ):
             all_predictions.extend(
                 self._post_process(
                     batch_paths=batch_paths,
@@ -139,10 +141,10 @@ class PaddleOCRModelCollectionPredictor(
 
     def _post_process(
         self,
-        batch_paths: List[str],
-        batch_prediction: List,
+        batch_paths: list[str],
+        batch_prediction: list,
         dataset_context: TBaseDatasetContext,
-    ) -> List[PicselliaOCRPrediction]:
+    ) -> list[PicselliaOCRPrediction]:
         """
         Post-processes the predictions for a single batch of images, mapping predicted bounding boxes, texts,
         and confidence scores to PicselliaOCRPrediction objects.
@@ -158,7 +160,7 @@ class PaddleOCRModelCollectionPredictor(
         """
         processed_predictions = []
 
-        for image_path, prediction in zip(batch_paths, batch_prediction):
+        for image_path, prediction in zip(batch_paths, batch_prediction, strict=False):
             boxes, texts, confidences = self.get_annotations_from_result(prediction)
             asset_id = os.path.basename(image_path).split(".")[0]
             asset = dataset_context.dataset_version.find_all_assets(ids=[asset_id])[0]
@@ -183,8 +185,8 @@ class PaddleOCRModelCollectionPredictor(
 
     def get_annotations_from_result(
         self, result
-    ) -> Tuple[
-        List[PicselliaRectangle], List[PicselliaText], List[PicselliaConfidence]
+    ) -> tuple[
+        list[PicselliaRectangle], list[PicselliaText], list[PicselliaConfidence]
     ]:
         """
         Extracts boxes, texts, and confidence scores from a PaddleOCR result.
@@ -203,7 +205,7 @@ class PaddleOCRModelCollectionPredictor(
         confidences = [self.get_picsellia_confidence(line[1][1]) for line in result]
         return boxes, texts, confidences
 
-    def get_picsellia_rectangle(self, points: List[List[int]]) -> PicselliaRectangle:
+    def get_picsellia_rectangle(self, points: list[list[int]]) -> PicselliaRectangle:
         """
         Converts a list of points into a PicselliaRectangle.
 

@@ -1,26 +1,27 @@
 # type: ignore
-
-from src.picsellia_cv_engine import step, Pipeline
-from src.picsellia_cv_engine.models.contexts.training.picsellia_training_context import (
+from picsellia_cv_engine.decorators.pipeline_decorator import Pipeline
+from picsellia_cv_engine.decorators.step_decorator import step
+from picsellia_cv_engine.models.contexts.training.picsellia_training_context import (
     PicselliaTrainingContext,
 )
-from src.picsellia_cv_engine.models.dataset.base_dataset_context import (
+from picsellia_cv_engine.models.dataset.base_dataset_context import (
     TBaseDatasetContext,
 )
+from picsellia_cv_engine.models.parameters.export_parameters import (
+    ExportParameters,
+)
+from picsellia_cv_engine.models.steps.model_evaluation.model_evaluator import (
+    ModelEvaluator,
+)
+
 from pipelines.paddle_ocr.pipeline_utils.model.paddle_ocr_model_collection import (
     PaddleOCRModelCollection,
-)
-from src.picsellia_cv_engine.models.parameters.export_parameters import (
-    ExportParameters,
 )
 from pipelines.paddle_ocr.pipeline_utils.parameters.paddle_ocr_augmentation_parameters import (
     PaddleOCRAugmentationParameters,
 )
 from pipelines.paddle_ocr.pipeline_utils.parameters.paddle_ocr_hyper_parameters import (
     PaddleOCRHyperParameters,
-)
-from src.picsellia_cv_engine.models.steps.model_evaluation.model_evaluator import (
-    ModelEvaluator,
 )
 from pipelines.paddle_ocr.pipeline_utils.steps_utils.model_prediction.paddle_ocr_model_collection_predictor import (
     PaddleOCRModelCollectionPredictor,

@@ -2,6 +2,10 @@ import logging
 import os
 import shutil
 
+from picsellia_cv_engine.models.steps.model_export.model_context_exporter import (
+    ModelContextExporter,
+)
+from ultralytics import YOLO
 
 from pipelines.yolov8_classification.pipeline_utils.model.ultralytics_model_context import (
     UltralyticsModelContext,
@@ -9,11 +13,6 @@ from pipelines.yolov8_classification.pipeline_utils.model.ultralytics_model_cont
 from pipelines.yolov8_classification.pipeline_utils.parameters.ultralytics_hyper_parameters import (
     UltralyticsHyperParameters,
 )
-from src.picsellia_cv_engine.models.steps.model_export.model_context_exporter import (
-    ModelContextExporter,
-)
-
-from ultralytics import YOLO
 
 logger = logging.getLogger(__name__)
 

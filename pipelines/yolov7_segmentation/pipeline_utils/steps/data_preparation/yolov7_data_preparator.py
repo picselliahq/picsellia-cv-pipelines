@@ -1,6 +1,6 @@
 import os
 
-from src.picsellia_cv_engine import step
+from picsellia_cv_engine.decorators.step_decorator import step
 
 from pipelines.yolov7_segmentation.pipeline_utils.dataset.yolov7_dataset_collection import (
     Yolov7DatasetCollection,
