@@ -37,6 +37,7 @@ def load_ultralytics_model_context(
     Args:
         model_context (ModelContext): The model context containing the path to the pretrained weights and
                                       other model-related configurations.
+        weights_path_to_load (str): The path to the pretrained weights file to load the model from.
 
     Returns:
         ModelContext: The updated model context with the loaded model.

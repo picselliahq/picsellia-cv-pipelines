@@ -64,7 +64,7 @@ def get_paddle_ocr_model_collection() -> PaddleOCRModelCollection:
         bbox_model=bbox_model, text_model=text_model
     )
     model_collection.download_weights(
-        destination_path=os.path.join(os.getcwd(), context.experiment.name, "model")
+        destination_dir=os.path.join(os.getcwd(), context.experiment.name, "model")
     )
 
     return model_collection
