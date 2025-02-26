@@ -18,7 +18,7 @@ class ProcessingYOLOV8PreannotationParameters(Parameters):
             keys=["image_size"], expected_type=int, default=640
         )
         self.label_matching_strategy = self.extract_parameter(
-            keys=["label_matching_strategy"], expected_type=str, default="exact"
+            keys=["label_matching_strategy"], expected_type=str, default="add"
         )
         self.device = self.extract_parameter(
             keys=["device"], expected_type=str, default="cuda"
