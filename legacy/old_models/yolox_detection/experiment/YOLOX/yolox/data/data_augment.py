@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding:utf-8 -*-
 # Copyright (c) Megvii, Inc. and its affiliates.
 """
 Data augmentation functionality. Passed as callable transformations to
@@ -41,8 +40,8 @@ def get_aug_params(value, center=0):
         return random.uniform(value[0], value[1])
     else:
         raise ValueError(
-            "Affine params should be either a sequence containing two values\
-             or single float values. Got {}".format(value)
+            f"Affine params should be either a sequence containing two values\
+             or single float values. Got {value}"
         )
 
 

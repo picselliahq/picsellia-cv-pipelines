@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding:utf-8 -*-
 
 import torch
 from torch import nn
@@ -34,8 +33,8 @@ def create_yolox_model(
     pretrained: bool = True,
     num_classes: int = 80,
     device=None,
-    exp_path: str = None,
-    ckpt_path: str = None,
+    exp_path: str | None = None,
+    ckpt_path: str | None = None,
 ) -> nn.Module:
     """creates and loads a YOLOX model
 

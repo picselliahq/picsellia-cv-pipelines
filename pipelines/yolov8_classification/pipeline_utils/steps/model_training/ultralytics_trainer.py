@@ -1,20 +1,20 @@
 import os.path
 
-from src.picsellia_cv_engine import step, Pipeline
-from src.picsellia_cv_engine.models.contexts.training.picsellia_training_context import (
+from picsellia_cv_engine.decorators.pipeline_decorator import Pipeline
+from picsellia_cv_engine.decorators.step_decorator import step
+from picsellia_cv_engine.models.contexts.training.picsellia_training_context import (
     PicselliaTrainingContext,
 )
-from src.picsellia_cv_engine.models.dataset.base_dataset_context import (
+from picsellia_cv_engine.models.data.dataset.dataset_collection import (
+    DatasetCollection,
     TBaseDatasetContext,
 )
-from src.picsellia_cv_engine.models.dataset.dataset_collection import (
-    DatasetCollection,
+from picsellia_cv_engine.models.parameters.export_parameters import (
+    ExportParameters,
 )
+
 from pipelines.yolov8_classification.pipeline_utils.model.ultralytics_model_context import (
     UltralyticsModelContext,
-)
-from src.picsellia_cv_engine.models.parameters.export_parameters import (
-    ExportParameters,
 )
 from pipelines.yolov8_classification.pipeline_utils.parameters.ultralytics_augmentation_parameters import (
     UltralyticsAugmentationParameters,

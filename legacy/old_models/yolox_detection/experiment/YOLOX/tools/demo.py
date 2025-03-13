@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding:utf-8 -*-
 # Copyright (c) Megvii, Inc. and its affiliates.
 
 import argparse
@@ -95,7 +94,7 @@ def get_image_list(path):
     return image_names
 
 
-class Predictor(object):
+class Predictor:
     def __init__(
         self,
         model,
@@ -164,7 +163,7 @@ class Predictor(object):
                 self.nmsthre,
                 class_agnostic=True,
             )
-            logger.info("Infer time: {:.4f}s".format(time.time() - t0))
+            logger.info(f"Infer time: {time.time() - t0:.4f}s")
         return outputs, img_info
 
     def visual(self, output, img_info, cls_conf=0.35):
@@ -201,7 +200,7 @@ def image_demo(predictor, vis_folder, path, current_time, save_result):
             )
             os.makedirs(save_folder, exist_ok=True)
             save_file_name = os.path.join(save_folder, os.path.basename(image_name))
-            logger.info("Saving detection result in {}".format(save_file_name))
+            logger.info(f"Saving detection result in {save_file_name}")
             cv2.imwrite(save_file_name, result_image)
         ch = cv2.waitKey(0)
         if ch == 27 or ch == ord("q") or ch == ord("Q"):
@@ -258,7 +257,7 @@ def main(exp, args):
     if args.trt:
         args.device = "gpu"
 
-    logger.info("Args: {}".format(args))
+    logger.info(f"Args: {args}")
 
     if args.conf is not None:
         exp.test_conf = args.conf
@@ -268,7 +267,7 @@ def main(exp, args):
         exp.test_size = (args.tsize, args.tsize)
 
     model = exp.get_model()
-    logger.info("Model Summary: {}".format(get_model_info(model, exp.test_size)))
+    logger.info(f"Model Summary: {get_model_info(model, exp.test_size)}")
 
     if args.device == "gpu":
         model.cuda()

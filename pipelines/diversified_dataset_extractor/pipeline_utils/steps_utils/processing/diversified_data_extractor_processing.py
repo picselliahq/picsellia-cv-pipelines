@@ -1,24 +1,23 @@
 import logging
 import math
-from typing import List, Optional
 
-import PIL
 import numpy as np
 import picsellia
+import PIL
 import requests
-from PIL import Image, ImageOps
 from picsellia import Client, Data, Datalake, DatasetVersion
 from picsellia.sdk.asset import MultiAsset
+from picsellia_cv_engine.models.data.dataset.base_dataset_context import (
+    TBaseDatasetContext,
+)
+from picsellia_cv_engine.models.logging.colors import Colors
+from picsellia_cv_engine.models.steps.processing.dataset_version_creation_processing import (
+    DatasetVersionCreationProcessing,
+)
+from PIL import Image, ImageOps
 from scipy.spatial import KDTree
 from tqdm import tqdm
 
-from src.picsellia_cv_engine import Colors
-from src.picsellia_cv_engine.models.dataset.base_dataset_context import (
-    TBaseDatasetContext,
-)
-from src.picsellia_cv_engine.models.steps.processing.dataset_version_creation_processing import (
-    DatasetVersionCreationProcessing,
-)
 from pipelines.diversified_dataset_extractor.pipeline_utils.steps.model_loading.processing_diversified_data_extractor_model_loader import (
     EmbeddingModel,
 )
@@ -89,7 +88,7 @@ class DiversifiedDataExtractorProcessing(DatasetVersionCreationProcessing):
         preprocessed_image = self.embedding_model.apply_preprocessing(image)
         return self.embedding_model.encode_image(image=preprocessed_image)
 
-    def fetch_and_prepare_image(self, image_url: str) -> Optional[PIL.Image.Image]:
+    def fetch_and_prepare_image(self, image_url: str) -> PIL.Image.Image | None:
         """
         Fetches an image from a URL and prepares it for processing.
 
@@ -215,7 +214,7 @@ class DiversifiedDataExtractorProcessing(DatasetVersionCreationProcessing):
         return nearest_neighbour_distance > distance_threshold
 
     def _process_batch(
-        self, assets_batch: MultiAsset, kd_tree: Optional[KDTree], pbar: tqdm
+        self, assets_batch: MultiAsset, kd_tree: KDTree | None, pbar: tqdm
     ) -> None:
         """
         Processes a batch of assets to filter out similar images and uploads them to the output dataset version.
@@ -223,7 +222,7 @@ class DiversifiedDataExtractorProcessing(DatasetVersionCreationProcessing):
         Args:
             assets_batch: The batch of assets to process.
         """
-        batch_to_upload: List[Data] = []
+        batch_to_upload: list[Data] = []
 
         for asset in assets_batch:
             success = False
@@ -287,7 +286,7 @@ class DiversifiedDataExtractorProcessing(DatasetVersionCreationProcessing):
         Processes the images in the dataset version to filter out similar images and uploads them to
         the output dataset version.
         """
-        kd_tree: Optional[KDTree] = None
+        kd_tree: KDTree | None = None
 
         input_dataset_version_size = self.input_dataset_version_size
 

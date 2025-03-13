@@ -11,7 +11,6 @@ from pathlib import Path
 import pkg_resources as pkg
 import torch
 from torch.utils.tensorboard import SummaryWriter
-
 from utils.general import colorstr, cv2
 from utils.loggers.clearml.clearml_utils import ClearmlLogger
 from utils.loggers.wandb.wandb_utils import WandbLogger
@@ -226,7 +225,7 @@ class Loggers:
 
     def on_fit_epoch_end(self, vals, epoch, best_fitness, fi):
         # Callback runs at the end of each fit (train+val) epoch
-        x = dict(zip(self.keys, vals))
+        x = dict(zip(self.keys, vals, strict=False))
         if self.csv:
             file = self.save_dir / "results.csv"
             n = len(x) + 1  # number of cols
@@ -332,7 +331,7 @@ class Loggers:
                 )
 
         if self.wandb:
-            self.wandb.log(dict(zip(self.keys[3:10], results)))
+            self.wandb.log(dict(zip(self.keys[3:10], results, strict=False)))
             self.wandb.log(
                 {"Results": [wandb.Image(str(f), caption=f.name) for f in files]}
             )

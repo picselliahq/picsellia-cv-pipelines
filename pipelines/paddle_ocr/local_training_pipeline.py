@@ -1,21 +1,20 @@
 # type: ignore
 from argparse import ArgumentParser
 
-from src.picsellia_cv_engine import pipeline
-from src.picsellia_cv_engine.models.contexts.training.local_picsellia_training_context import (
+from picsellia_cv_engine.decorators.pipeline_decorator import pipeline
+from picsellia_cv_engine.models.contexts.training.local_picsellia_training_context import (
     LocalPicselliaTrainingContext,
 )
-from src.picsellia_cv_engine.models.parameters.export_parameters import (
+from picsellia_cv_engine.models.parameters.export_parameters import (
     ExportParameters,
 )
-from pipelines.paddle_ocr.pipeline_utils.parameters.paddle_ocr_hyper_parameters import (
-    PaddleOCRHyperParameters,
-)
+from picsellia_cv_engine.steps.dataset.loader import load_coco_datasets
+
 from pipelines.paddle_ocr.pipeline_utils.parameters.paddle_ocr_augmentation_parameters import (
     PaddleOCRAugmentationParameters,
 )
-from src.picsellia_cv_engine.steps.data_extraction.coco_data_extractor import (
-    get_coco_dataset_collection,
+from pipelines.paddle_ocr.pipeline_utils.parameters.paddle_ocr_hyper_parameters import (
+    PaddleOCRHyperParameters,
 )
 from pipelines.paddle_ocr.pipeline_utils.steps.data_preparation.paddle_ocr_data_preparator import (
     prepare_paddle_ocr_dataset_collection,
@@ -64,7 +63,7 @@ def get_context() -> LocalPicselliaTrainingContext:
     remove_logs_on_completion=False,
 )
 def paddle_ocr_training_pipeline():
-    dataset_collection = get_coco_dataset_collection()
+    dataset_collection = load_coco_datasets()
     dataset_collection = prepare_paddle_ocr_dataset_collection(
         dataset_collection=dataset_collection
     )

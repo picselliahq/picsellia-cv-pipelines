@@ -1,11 +1,9 @@
-from src.picsellia_cv_engine.models.steps.model_logging.base_logger import (
-    Metric,
-    BaseLogger,
-)
-
 from picsellia import Experiment
-
-from src.picsellia_cv_engine.models.steps.model_logging.classification_logger import (
+from picsellia_cv_engine.models.steps.model_logging.base_logger import (
+    BaseLogger,
+    Metric,
+)
+from picsellia_cv_engine.models.steps.model_logging.classification_logger import (
     ClassificationMetricMapping,
 )
 

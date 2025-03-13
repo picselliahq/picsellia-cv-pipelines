@@ -1,14 +1,12 @@
 import os
 import subprocess
-from typing import Dict, Union
 
 from picsellia import Experiment
 from picsellia.sdk.log import LogType
+from picsellia_cv_engine.models.model.model_context import ModelContext
 
-from src.picsellia_cv_engine.models.model.model_context import ModelContext
 
-
-def extract_and_log_metrics(log_line: str) -> Dict[str, Union[str, int, float]]:
+def extract_and_log_metrics(log_line: str) -> dict[str, str | int | float]:
     """
     Extracts metrics from a log line by parsing key-value pairs.
 
@@ -24,7 +22,7 @@ def extract_and_log_metrics(log_line: str) -> Dict[str, Union[str, int, float]]:
         metric names and the values are either integers, floats, or strings depending on the type of the metric.
     """
     log_line = log_line.split("ppocr INFO:")[-1].strip()
-    metrics: Dict[str, Union[str, int, float]] = {}
+    metrics: dict[str, str | int | float] = {}
     key_value_pairs = log_line.split(",")
 
     for pair in key_value_pairs:
@@ -79,7 +77,7 @@ class PaddleOCRModelContextTrainer:
         """
         self.model_context = model_context
         self.experiment = experiment
-        self.last_logged_epoch: Union[int, None] = None  # Last epoch that was logged
+        self.last_logged_epoch: int | None = None  # Last epoch that was logged
 
     def train_model_context(self):
         """
@@ -153,7 +151,7 @@ class PaddleOCRModelContextTrainer:
                             if k not in ["epoch", "global_step"]
                         }
                         for key, value in metrics.items():
-                            if isinstance(value, (int, float)):
+                            if isinstance(value, int | float):
                                 self.experiment.log(
                                     name=f"{model_context.model_name}/{key}",
                                     data=value,

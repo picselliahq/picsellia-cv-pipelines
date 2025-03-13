@@ -48,6 +48,7 @@ ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 import val as validate  # for end-of-epoch mAP
 from models.experimental import attempt_load
 from models.yolo import Model
+from picsellia.types.enums import LogType
 from utils.autoanchor import check_anchors
 from utils.autobatch import check_train_batch_size
 from utils.callbacks import Callbacks
@@ -90,8 +91,6 @@ from utils.torch_utils import (
     smart_resume,
     torch_distributed_zero_first,
 )
-
-from picsellia.types.enums import LogType
 
 LOCAL_RANK = int(
     os.getenv("LOCAL_RANK", -1)
@@ -591,7 +590,7 @@ def train(hyp, opt, device, callbacks, pxl=None, send_run_to_picsellia=None):
                 "x/lr2",
             ]  # params
 
-            for x, key in zip(list(mloss) + list(results) + lr, keys):
+            for x, key in zip(list(mloss) + list(results) + lr, keys, strict=False):
                 try:
                     name = str(key).replace("/", "_")
                     pxl.log(name=name, type=LogType.LINE, data=float(x))
@@ -1133,7 +1132,7 @@ def main(opt, callbacks=Callbacks()):
             # Evaluate the fitness of each individual in the population
             fitness_scores = []
             for individual in population:
-                for key, value in zip(hyp_GA.keys(), individual):
+                for key, value in zip(hyp_GA.keys(), individual, strict=False):
                     hyp_GA[key] = value
                 hyp.update(hyp_GA)
                 results = train(hyp.copy(), opt, device, callbacks)

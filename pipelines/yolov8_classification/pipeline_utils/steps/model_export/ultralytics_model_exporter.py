@@ -1,12 +1,16 @@
-from src.picsellia_cv_engine import step, Pipeline
-from src.picsellia_cv_engine.models.contexts.training.picsellia_training_context import (
+import logging
+
+from picsellia_cv_engine.decorators.pipeline_decorator import Pipeline
+from picsellia_cv_engine.decorators.step_decorator import step
+from picsellia_cv_engine.models.contexts.training.picsellia_training_context import (
     PicselliaTrainingContext,
 )
+from picsellia_cv_engine.models.parameters.export_parameters import (
+    ExportParameters,
+)
+
 from pipelines.yolov8_classification.pipeline_utils.model.ultralytics_model_context import (
     UltralyticsModelContext,
-)
-from src.picsellia_cv_engine.models.parameters.export_parameters import (
-    ExportParameters,
 )
 from pipelines.yolov8_classification.pipeline_utils.parameters.ultralytics_augmentation_parameters import (
     UltralyticsAugmentationParameters,
@@ -17,7 +21,6 @@ from pipelines.yolov8_classification.pipeline_utils.parameters.ultralytics_hyper
 from pipelines.yolov8_classification.pipeline_utils.steps_utils.model_export.ultralytics_model_context_exporter import (
     UltralyticsModelContextExporter,
 )
-import logging
 
 logger = logging.getLogger(__name__)
 

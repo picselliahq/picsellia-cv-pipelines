@@ -1,10 +1,11 @@
 import os
-from typing import Optional
 
-from src.picsellia_cv_engine import step, Pipeline
-from src.picsellia_cv_engine.models.contexts.training.picsellia_training_context import (
+from picsellia_cv_engine.decorators.pipeline_decorator import Pipeline
+from picsellia_cv_engine.decorators.step_decorator import step
+from picsellia_cv_engine.models.contexts.training.picsellia_training_context import (
     PicselliaTrainingContext,
 )
+
 from pipelines.yolov7_segmentation.pipeline_utils.model.yolov7_model_context import (
     Yolov7ModelContext,
 )
@@ -12,11 +13,11 @@ from pipelines.yolov7_segmentation.pipeline_utils.model.yolov7_model_context imp
 
 @step
 def yolov7_model_context_extractor(
-    pretrained_weights_name: Optional[str] = None,
-    trained_weights_name: Optional[str] = None,
-    config_name: Optional[str] = None,
-    hyperparameters_name: Optional[str] = None,
-    exported_weights_name: Optional[str] = None,
+    pretrained_weights_name: str | None = None,
+    trained_weights_name: str | None = None,
+    config_name: str | None = None,
+    hyperparameters_name: str | None = None,
+    exported_weights_name: str | None = None,
 ) -> Yolov7ModelContext:
     """
     Extracts a model context from the active Picsellia training experiment.
@@ -42,7 +43,7 @@ def yolov7_model_context_extractor(
         exported_weights_name=exported_weights_name,
     )
     model_context.download_weights(
-        destination_path=os.path.join(os.getcwd(), context.experiment.name, "model")
+        destination_dir=os.path.join(os.getcwd(), context.experiment.name, "model")
     )
     model_context.set_hyperparameters_path(
         destination_path=os.path.join(

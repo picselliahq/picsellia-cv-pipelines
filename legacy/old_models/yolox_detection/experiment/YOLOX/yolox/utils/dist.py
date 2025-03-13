@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding:utf-8 -*-
 # This file mainly comes from
 # https://github.com/facebookresearch/detectron2/blob/master/detectron2/utils/comm.py
 # Copyright (c) Facebook, Inc. and its affiliates.
@@ -132,7 +131,7 @@ def is_main_process() -> bool:
     return get_rank() == 0
 
 
-@functools.lru_cache()
+@functools.lru_cache
 def _get_global_gloo_group():
     """
     Return a process group based on gloo backend, containing all the ranks
@@ -152,9 +151,7 @@ def _serialize_to_tensor(data, group):
     buffer = pickle.dumps(data)
     if len(buffer) > 1024**3:
         logger.warning(
-            "Rank {} trying to all-gather {:.2f} GB of data on device {}".format(
-                get_rank(), len(buffer) / (1024**3), device
-            )
+            f"Rank {get_rank()} trying to all-gather {len(buffer) / (1024**3):.2f} GB of data on device {device}"
         )
     storage = torch.ByteStorage.from_buffer(buffer)
     tensor = torch.ByteTensor(storage).to(device=device)
@@ -222,7 +219,7 @@ def all_gather(data, group=None):
     dist.all_gather(tensor_list, tensor, group=group)
 
     data_list = []
-    for size, tensor in zip(size_list, tensor_list):
+    for size, tensor in zip(size_list, tensor_list, strict=False):
         buffer = tensor.cpu().numpy().tobytes()[:size]
         data_list.append(pickle.loads(buffer))
 
@@ -264,7 +261,7 @@ def gather(data, dst=0, group=None):
         dist.gather(tensor, tensor_list, dst=dst, group=group)
 
         data_list = []
-        for size, tensor in zip(size_list, tensor_list):
+        for size, tensor in zip(size_list, tensor_list, strict=False):
             buffer = tensor.cpu().numpy().tobytes()[:size]
             data_list.append(pickle.loads(buffer))
         return data_list

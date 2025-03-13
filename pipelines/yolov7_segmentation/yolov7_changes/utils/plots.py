@@ -19,7 +19,6 @@ import pandas as pd
 import seaborn as sn
 import torch
 from PIL import Image, ImageDraw, ImageFont
-
 from utils import TryExcept, threaded
 from utils.general import (
     CONFIG_DIR,
@@ -111,7 +110,9 @@ class Annotator:
         pil=False,
         example="abc",
     ):
-        assert im.data.contiguous, "Image not contiguous. Apply np.ascontiguousarray(im) to Annotator() input images."
+        assert im.data.contiguous, (
+            "Image not contiguous. Apply np.ascontiguousarray(im) to Annotator() input images."
+        )
         non_ascii = not is_ascii(
             example
         )  # non-latin labels, i.e. asian, arabic, cyrillic
@@ -576,9 +577,9 @@ def plot_results(file="path/to/results.csv", dir=""):
     fig, ax = plt.subplots(2, 5, figsize=(12, 6), tight_layout=True)
     ax = ax.ravel()
     files = list(save_dir.glob("results*.csv"))
-    assert len(
-        files
-    ), f"No results.csv files found in {save_dir.resolve()}, nothing to plot."
+    assert len(files), (
+        f"No results.csv files found in {save_dir.resolve()}, nothing to plot."
+    )
     for f in files:
         try:
             data = pd.read_csv(f)

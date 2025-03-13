@@ -1,7 +1,8 @@
-from src.picsellia_cv_engine import step
-from src.picsellia_cv_engine.models.dataset.base_dataset_context import (
+from picsellia_cv_engine.decorators.step_decorator import step
+from picsellia_cv_engine.models.data.dataset.base_dataset_context import (
     TBaseDatasetContext,
 )
+
 from pipelines.diversified_dataset_extractor.pipeline_utils.steps_utils.data_validation.processing_diversified_data_extractor_data_validator import (
     ProcessingDiversifiedDataExtractorDataValidator,
 )

@@ -1,6 +1,5 @@
-from typing import Union
+from picsellia_cv_engine.models.parameters.base_parameters import Parameters
 
-from src.picsellia_cv_engine.models.parameters.parameters import Parameters
 from pipelines.dataset_tiler.pipeline_utils.steps_utils.processing.base_tiler_processing import (
     TileMode,
 )
@@ -34,19 +33,19 @@ class ProcessingTilerParameters(Parameters):
         )
         self.min_annotation_area_ratio = self.extract_parameter(
             keys=["min_annotation_area_ratio", "min_area_ratio"],
-            expected_type=Union[float, None],
+            expected_type=float | None,
             default=None,
             range_value=(0, 0.99),
         )
         self.min_annotation_width = self.extract_parameter(
             keys=["min_annotation_width"],
-            expected_type=Union[int, None],
+            expected_type=int | None,
             default=None,
             range_value=(0, float("inf")),
         )
         self.min_annotation_height = self.extract_parameter(
             keys=["min_annotation_height"],
-            expected_type=Union[int, None],
+            expected_type=int | None,
             default=None,
             range_value=(0, float("inf")),
         )

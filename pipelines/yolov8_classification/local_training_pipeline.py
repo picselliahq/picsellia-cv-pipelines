@@ -1,26 +1,23 @@
 from argparse import ArgumentParser
 
-from src.picsellia_cv_engine import pipeline
-from src.picsellia_cv_engine.models.contexts.training.local_picsellia_training_context import (
+from picsellia_cv_engine.decorators.pipeline_decorator import pipeline
+from picsellia_cv_engine.models.contexts.training.local_picsellia_training_context import (
     LocalPicselliaTrainingContext,
 )
-from src.picsellia_cv_engine.models.parameters.export_parameters import (
+from picsellia_cv_engine.models.parameters.export_parameters import (
     ExportParameters,
 )
+from picsellia_cv_engine.steps.dataset.loader import load_coco_datasets
+from picsellia_cv_engine.steps.dataset.validator import validate_dataset
+
 from pipelines.yolov8_classification.pipeline_utils.parameters.ultralytics_augmentation_parameters import (
     UltralyticsAugmentationParameters,
 )
 from pipelines.yolov8_classification.pipeline_utils.parameters.ultralytics_hyper_parameters import (
     UltralyticsHyperParameters,
 )
-from src.picsellia_cv_engine.steps.data_extraction.coco_data_extractor import (
-    get_coco_dataset_collection,
-)
 from pipelines.yolov8_classification.pipeline_utils.steps.data_preparation.ultralytics_classification_data_preparator import (
     prepare_ultralytics_classification_dataset_collection,
-)
-from src.picsellia_cv_engine.steps.data_validation.coco_classification_dataset_collection_validator import (
-    validate_coco_classification_dataset_collection,
 )
 from pipelines.yolov8_classification.pipeline_utils.steps.model_evaluation.ultralytics_model_evaluator import (
     evaluate_ultralytics_model_context,
@@ -34,7 +31,6 @@ from pipelines.yolov8_classification.pipeline_utils.steps.model_loading.ultralyt
 from pipelines.yolov8_classification.pipeline_utils.steps.model_training.ultralytics_trainer import (
     train_ultralytics_model_context,
 )
-
 from pipelines.yolov8_classification.pipeline_utils.steps.weights_extraction.ultralytics_weights_extractor import (
     get_ultralytics_model_context,
 )
@@ -64,13 +60,11 @@ def get_context() -> LocalPicselliaTrainingContext:
     remove_logs_on_completion=False,
 )
 def yolov8_classification_training_pipeline():
-    dataset_collection = get_coco_dataset_collection()
+    dataset_collection = load_coco_datasets()
     prepare_ultralytics_classification_dataset_collection(
         dataset_collection=dataset_collection
     )
-    validate_coco_classification_dataset_collection(
-        dataset_collection=dataset_collection
-    )
+    validate_dataset(dataset_collection=dataset_collection)
 
     model_context = get_ultralytics_model_context(
         pretrained_weights_name="pretrained-weights"
@@ -90,8 +84,9 @@ def yolov8_classification_training_pipeline():
 
 
 if __name__ == "__main__":
-    import torch
     import gc
+
+    import torch
 
     gc.collect()
     torch.cuda.empty_cache()

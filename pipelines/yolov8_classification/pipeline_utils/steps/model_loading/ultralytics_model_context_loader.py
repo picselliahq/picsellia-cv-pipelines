@@ -1,14 +1,16 @@
 import os.path
 
-from src.picsellia_cv_engine import step, Pipeline
-from src.picsellia_cv_engine.models.contexts.training.picsellia_training_context import (
+from picsellia_cv_engine.decorators.pipeline_decorator import Pipeline
+from picsellia_cv_engine.decorators.step_decorator import step
+from picsellia_cv_engine.models.contexts.training.picsellia_training_context import (
     PicselliaTrainingContext,
 )
+from picsellia_cv_engine.models.parameters.export_parameters import (
+    ExportParameters,
+)
+
 from pipelines.yolov8_classification.pipeline_utils.model.ultralytics_model_context import (
     UltralyticsModelContext,
-)
-from src.picsellia_cv_engine.models.parameters.export_parameters import (
-    ExportParameters,
 )
 from pipelines.yolov8_classification.pipeline_utils.parameters.ultralytics_augmentation_parameters import (
     UltralyticsAugmentationParameters,
@@ -35,6 +37,7 @@ def load_ultralytics_model_context(
     Args:
         model_context (ModelContext): The model context containing the path to the pretrained weights and
                                       other model-related configurations.
+        weights_path_to_load (str): The path to the pretrained weights file to load the model from.
 
     Returns:
         ModelContext: The updated model context with the loaded model.

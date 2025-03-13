@@ -1,13 +1,14 @@
 from argparse import ArgumentParser
 
-from src.picsellia_cv_engine import pipeline
-
-from src.picsellia_cv_engine.models.contexts.training.local_picsellia_training_context import (
+from picsellia_cv_engine.decorators.pipeline_decorator import pipeline
+from picsellia_cv_engine.models.contexts.training.local_picsellia_training_context import (
     LocalPicselliaTrainingContext,
 )
-from src.picsellia_cv_engine.models.parameters.export_parameters import (
+from picsellia_cv_engine.models.parameters.export_parameters import (
     ExportParameters,
 )
+from picsellia_cv_engine.steps.dataset.validator import validate_dataset
+
 from pipelines.yolov7_segmentation.pipeline_utils.parameters.yolov7_augmentation_parameters import (
     Yolov7AugmentationParameters,
 )
@@ -19,9 +20,6 @@ from pipelines.yolov7_segmentation.pipeline_utils.steps.data_extraction.yolov7_d
 )
 from pipelines.yolov7_segmentation.pipeline_utils.steps.data_preparation.yolov7_data_preparator import (
     yolov7_dataset_collection_preparator,
-)
-from src.picsellia_cv_engine.steps.data_validation.yolo_segmentation_dataset_collection_validator import (
-    yolo_segmentation_dataset_collection_validator,
 )
 from pipelines.yolov7_segmentation.pipeline_utils.steps.model_evaluation.yolov7_model_evaluator import (
     yolov7_model_context_evaluator,
@@ -65,9 +63,7 @@ def yolov7_segmentation_training_pipeline():
     dataset_collection = yolov7_dataset_collection_preparator(
         dataset_collection=dataset_collection
     )
-    yolo_segmentation_dataset_collection_validator(
-        dataset_collection=dataset_collection, fix_annotation=True
-    )
+    validate_dataset(dataset_collection=dataset_collection, fix_annotation=True)
 
     model_context = yolov7_model_context_extractor(
         pretrained_weights_name="pretrained-weights",
@@ -85,8 +81,9 @@ def yolov7_segmentation_training_pipeline():
 
 
 if __name__ == "__main__":
-    import torch
     import gc
+
+    import torch
 
     gc.collect()
     torch.cuda.empty_cache()

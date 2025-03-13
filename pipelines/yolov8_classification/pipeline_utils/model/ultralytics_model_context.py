@@ -1,8 +1,7 @@
-from src.picsellia_cv_engine.models.model.model_context import ModelContext
-
 import os
-from typing import Optional, Dict
-from picsellia import ModelVersion, Label
+
+from picsellia import Label, ModelVersion
+from picsellia_cv_engine.models.model.model_context import ModelContext
 
 
 def find_latest_run_dir(dir: str, model_name: str):
@@ -28,11 +27,11 @@ class UltralyticsModelContext(ModelContext):
         self,
         model_name: str,
         model_version: ModelVersion,
-        pretrained_weights_name: Optional[str] = None,
-        trained_weights_name: Optional[str] = None,
-        config_name: Optional[str] = None,
-        exported_weights_name: Optional[str] = None,
-        labelmap: Optional[Dict[str, Label]] = None,
+        pretrained_weights_name: str | None = None,
+        trained_weights_name: str | None = None,
+        config_name: str | None = None,
+        exported_weights_name: str | None = None,
+        labelmap: dict[str, Label] | None = None,
     ):
         super().__init__(
             model_name=model_name,
@@ -43,7 +42,7 @@ class UltralyticsModelContext(ModelContext):
             exported_weights_name=exported_weights_name,
             labelmap=labelmap,
         )
-        self.latest_run_dir: Optional[str] = None
+        self.latest_run_dir: str | None = None
 
     def set_latest_run_dir(self):
         """

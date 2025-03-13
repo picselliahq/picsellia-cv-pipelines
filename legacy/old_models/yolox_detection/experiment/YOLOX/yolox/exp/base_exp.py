@@ -4,7 +4,6 @@
 import ast
 import pprint
 from abc import ABCMeta, abstractmethod
-from typing import Dict, List, Tuple
 
 import torch
 from tabulate import tabulate
@@ -33,7 +32,7 @@ class BaseExp(metaclass=ABCMeta):
     @abstractmethod
     def get_data_loader(
         self, batch_size: int, is_distributed: bool
-    ) -> Dict[str, torch.utils.data.DataLoader]:
+    ) -> dict[str, torch.utils.data.DataLoader]:
         pass
 
     @abstractmethod
@@ -67,14 +66,14 @@ class BaseExp(metaclass=ABCMeta):
         assert len(cfg_list) % 2 == 0, (
             f"length must be even, check value here: {cfg_list}"
         )
-        for k, v in zip(cfg_list[0::2], cfg_list[1::2]):
+        for k, v in zip(cfg_list[0::2], cfg_list[1::2], strict=False):
             # only update value with same key
             if hasattr(self, k):
                 src_value = getattr(self, k)
                 src_type = type(src_value)
 
                 # pre-process input if source type is list or tuple
-                if isinstance(src_value, (List, Tuple)):
+                if isinstance(src_value, (list, tuple)):
                     v = v.strip("[]()")
                     v = [t.strip() for t in v.split(",")]
 

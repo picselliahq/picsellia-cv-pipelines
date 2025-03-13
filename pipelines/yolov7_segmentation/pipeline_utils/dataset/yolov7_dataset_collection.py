@@ -1,20 +1,18 @@
-from typing import Optional, List
+import os
 
-from src.picsellia_cv_engine.models.dataset.base_dataset_context import (
+import yaml
+from picsellia_cv_engine.models.data.dataset.base_dataset_context import (
     TBaseDatasetContext,
 )
-from src.picsellia_cv_engine.models.dataset.dataset_collection import (
+from picsellia_cv_engine.models.data.dataset.dataset_collection import (
     DatasetCollection,
 )
 
-import os
-import yaml
-
 
 class Yolov7DatasetCollection(DatasetCollection[TBaseDatasetContext]):
-    def __init__(self, datasets: List[TBaseDatasetContext]):
+    def __init__(self, datasets: list[TBaseDatasetContext]):
         super().__init__(datasets=datasets)
-        self.config_path: Optional[str] = None
+        self.config_path: str | None = None
 
     def write_config(self, config_path: str) -> None:
         """

@@ -5,20 +5,18 @@ import os
 from abc import ABC, abstractmethod
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from enum import Enum
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 import numpy as np
 from picsellia import DatasetVersion
 from picsellia.types.enums import InferenceType
-from PIL import Image
-
-from src.picsellia_cv_engine.models.dataset.coco_dataset_context import (
+from picsellia_cv_engine.models.data.dataset.coco_dataset_context import (
     CocoDatasetContext,
 )
-from src.picsellia_cv_engine.models.dataset.dataset_collection import (
+from picsellia_cv_engine.models.data.dataset.dataset_collection import (
     DatasetCollection,
 )
-
+from PIL import Image
 
 logger = logging.getLogger("picsellia-engine")
 
@@ -40,9 +38,9 @@ class BaseTilerProcessing(ABC):
         tile_width: int,
         overlap_height_ratio: float,
         overlap_width_ratio: float,
-        min_annotation_area_ratio: Optional[float],
-        min_annotation_width: Optional[int],
-        min_annotation_height: Optional[int],
+        min_annotation_area_ratio: float | None,
+        min_annotation_width: int | None,
+        min_annotation_height: int | None,
         tiling_mode: TileMode = TileMode.CONSTANT,
         padding_color_value: int = 114,
     ):
@@ -75,7 +73,7 @@ class BaseTilerProcessing(ABC):
             else int(self.tile_height * (1 - self.overlap_height_ratio))
         )
 
-    def get_tile_coordinates_from_filename(self, tile_filename: str) -> Tuple[int, int]:
+    def get_tile_coordinates_from_filename(self, tile_filename: str) -> tuple[int, int]:
         """
         Extract tile coordinates from the filename.
 
@@ -235,6 +233,8 @@ class BaseTilerProcessing(ABC):
             image_filename = image_info["file_name"]
             image_path = os.path.join(dataset_context.images_dir, image_filename)
             image = Image.open(image_path)
+            if image.mode != "RGB" or image.mode != "RGBA":
+                image = image.convert("RGB")
 
             tiles_batch = self.tile_image(image=image)
 
@@ -272,10 +272,10 @@ class BaseTilerProcessing(ABC):
 
     def _tile_annotation(
         self,
-        coco_data: Dict[str, Any],
-        coco_image_info: Dict[str, Any],
-        output_coco_data: Dict[str, Any],
-        tiles_batch_info: List[Dict[str, Any]],
+        coco_data: dict[str, Any],
+        coco_image_info: dict[str, Any],
+        output_coco_data: dict[str, Any],
+        tiles_batch_info: list[dict[str, Any]],
     ) -> None:
         annotations = [
             annotation
@@ -302,7 +302,7 @@ class BaseTilerProcessing(ABC):
                     output_coco_data["annotations"].append(new_annotation)
 
     def _save_coco_data(
-        self, output_coco_path: str, output_coco_data: Dict[str, Any]
+        self, output_coco_path: str, output_coco_data: dict[str, Any]
     ) -> None:
         """Save COCO data to a JSON file."""
         with open(output_coco_path, "w") as f:
@@ -311,14 +311,14 @@ class BaseTilerProcessing(ABC):
     def _save_tiles(
         self,
         tiles_batch: np.ndarray,
-        original_image_size: Tuple[int, int],
+        original_image_size: tuple[int, int],
         original_filename: str,
         current_tile_id: int,
         output_dir: str,
         stride_x: int,
         stride_y: int,
         constant_value: int,
-    ) -> Tuple[List[Dict[str, Any]], int, int]:
+    ) -> tuple[list[dict[str, Any]], int, int]:
         """
         Save tiled images to the specified output directory using concurrent processing.
 
@@ -335,7 +335,7 @@ class BaseTilerProcessing(ABC):
         Returns:
             Tuple[List[Dict[str, Any]], int, int]: List of tile information, current tile id, and number of ignored tiles.
         """
-        tile_infos: List[Dict[str, Any]] = []
+        tile_infos: list[dict[str, Any]] = []
         tiles_per_row = math.ceil(original_image_size[0] / stride_x)
         ignored_tiles_count = 0
 
@@ -352,7 +352,7 @@ class BaseTilerProcessing(ABC):
                 tile_y = (idx // tiles_per_row) * stride_y
                 tile_x = (idx % tiles_per_row) * stride_x
 
-                tile_filename = f"{os.path.splitext(original_filename)[0]}_tile_{tile_x}_{tile_y}.png"
+                tile_filename = f"{os.path.splitext(original_filename)[0]}_tile_{tile_x}_{tile_y}.{original_filename.split('.')[-1]}"
                 tile_path = os.path.join(output_dir, tile_filename)
 
                 future = executor.submit(BaseTilerProcessing.save_tile, tile, tile_path)
@@ -411,17 +411,19 @@ class BaseTilerProcessing(ABC):
             tile_path (str): The path where the tile should be saved.
         """
         tile_image = Image.fromarray(tile)
+        if tile_image.mode == "RGBA" and not tile_path.endswith(".png"):
+            tile_image = tile_image.convert("RGB")
         tile_image.save(tile_path)
 
     @abstractmethod
     def _adjust_coco_annotation(
         self,
-        annotation: Dict[str, Any],
+        annotation: dict[str, Any],
         tile_x: int,
         tile_y: int,
-        tile_info: Dict[str, Any],
-        output_coco_data: Dict[str, Any],
-    ) -> Optional[Dict[str, Any]]:
+        tile_info: dict[str, Any],
+        output_coco_data: dict[str, Any],
+    ) -> dict[str, Any] | None:
         """
         Adjust annotation for a specific tile.
 

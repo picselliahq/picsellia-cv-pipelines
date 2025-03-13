@@ -113,7 +113,7 @@ def setup_logger(save_dir, distributed_rank=0, filename="log.txt", mode="a"):
     redirect_sys_output("INFO")
 
 
-class WandbLogger(object):
+class WandbLogger:
     """
     Log training runs, datasets, models, and predictions to Weights & Biases.
     This logger sends information to W&B at wandb.ai.
@@ -279,7 +279,7 @@ class WandbLogger(object):
             act_cls = []
 
             if bboxes is not None:
-                for box, classes, score in zip(bboxes, cls, scores):
+                for box, classes, score in zip(bboxes, cls, scores, strict=False):
                     if box is None or score is None or classes is None:
                         continue
                     act_box.append(box)
@@ -434,7 +434,7 @@ class WandbLogger(object):
     def initialize_wandb_logger(cls, args, exp, val_dataset):
         wandb_params = dict()
         prefix = "wandb-"
-        for k, v in zip(args.opts[0::2], args.opts[1::2]):
+        for k, v in zip(args.opts[0::2], args.opts[1::2], strict=False):
             if k.startswith("wandb-"):
                 try:
                     wandb_params.update({k[len(prefix) :]: int(v)})

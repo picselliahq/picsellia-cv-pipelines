@@ -1,19 +1,20 @@
-from src.picsellia_cv_engine import Pipeline, step
-from src.picsellia_cv_engine.models.contexts.processing.picsellia_processing_context import (
+from picsellia_cv_engine.decorators.pipeline_decorator import Pipeline
+from picsellia_cv_engine.decorators.step_decorator import step
+from picsellia_cv_engine.models.contexts.processing.dataset.picsellia_processing_context import (
     PicselliaProcessingContext,
 )
-
-from src.picsellia_cv_engine.models.dataset.base_dataset_context import (
+from picsellia_cv_engine.models.data.dataset.base_dataset_context import (
     TBaseDatasetContext,
 )
+
 from pipelines.diversified_dataset_extractor.pipeline_utils.parameters.processing_diversified_data_extractor_parameters import (
     ProcessingDiversifiedDataExtractorParameters,
 )
-from pipelines.diversified_dataset_extractor.pipeline_utils.steps_utils.processing.diversified_data_extractor_processing import (
-    DiversifiedDataExtractorProcessing,
-)
 from pipelines.diversified_dataset_extractor.pipeline_utils.steps.model_loading.processing_diversified_data_extractor_model_loader import (
     EmbeddingModel,
+)
+from pipelines.diversified_dataset_extractor.pipeline_utils.steps_utils.processing.diversified_data_extractor_processing import (
+    DiversifiedDataExtractorProcessing,
 )
 
 

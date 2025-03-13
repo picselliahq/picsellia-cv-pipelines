@@ -111,7 +111,7 @@ class Exp(BaseExp):
         self.nmsthre = 0.65
 
     def get_model(self):
-        from YOLOX.yolox.models import YOLOX, YOLOPAFPN, YOLOXHead
+        from YOLOX.yolox.models import YOLOPAFPN, YOLOX, YOLOXHead
 
         def init_yolo(M):
             for m in M.modules():
@@ -169,12 +169,12 @@ class Exp(BaseExp):
                 None: Do not use cache, in this case cache_data is also None.
         """
         from YOLOX.yolox.data import (
-            YoloBatchSampler,
+            COCODataset,
             DataLoader,
             InfiniteSampler,
-            COCODataset,
-            worker_init_reset_seed,
             TrainTransformV3,
+            YoloBatchSampler,
+            worker_init_reset_seed,
         )
         from YOLOX.yolox.utils import wait_for_the_master
 

@@ -1,8 +1,7 @@
-from src.picsellia_cv_engine.models.parameters.hyper_parameters import (
+from picsellia.types.schemas import LogDataType
+from picsellia_cv_engine.models.parameters.hyper_parameters import (
     HyperParameters,
 )
-
-from picsellia.types.schemas import LogDataType
 
 
 class Yolov7HyperParameters(HyperParameters):
