@@ -1,4 +1,3 @@
-# type: ignore
 from argparse import ArgumentParser
 
 from picsellia.types.enums import ProcessingType
@@ -6,12 +5,8 @@ from picsellia_cv_engine.decorators.pipeline_decorator import pipeline
 from picsellia_cv_engine.models.utils.local_context import (
     create_local_processing_context,
 )
-from picsellia_cv_engine.steps.data_extraction.processing_data_extractor import (
-    get_processing_dataset_context,
-)
-from picsellia_cv_engine.steps.data_upload.annotations_uploader import (
-    upload_annotations,
-)
+from picsellia_cv_engine.steps.dataset.loader import load_coco_datasets
+from picsellia_cv_engine.steps.dataset.uploader import upload_dataset_annotations
 
 from pipelines.yolov8_preannotation.pipeline_utils.steps.model_loading.processing_ultralytics_model_loader import (
     load_processing_ultralytics_model_context,
@@ -62,7 +57,7 @@ local_context = create_local_processing_context(
     remove_logs_on_completion=False,
 )
 def yolov8_preannotation_processing_pipeline() -> None:
-    dataset_context = get_processing_dataset_context()
+    dataset_context = load_coco_datasets()
     model_context = get_processing_ultralytics_model_context()
     load_processing_ultralytics_model_context(
         model_context=model_context,
@@ -71,7 +66,7 @@ def yolov8_preannotation_processing_pipeline() -> None:
     output_dataset_context = process(
         model_context=model_context, dataset_context=dataset_context
     )
-    upload_annotations(dataset_context=output_dataset_context)
+    upload_dataset_annotations(dataset_context=output_dataset_context)
 
 
 if __name__ == "__main__":

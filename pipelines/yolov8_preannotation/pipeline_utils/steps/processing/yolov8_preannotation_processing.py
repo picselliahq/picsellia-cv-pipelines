@@ -2,10 +2,10 @@ import json
 
 from picsellia_cv_engine.decorators.pipeline_decorator import Pipeline
 from picsellia_cv_engine.decorators.step_decorator import step
-from picsellia_cv_engine.models.contexts.processing.picsellia_processing_context import (
+from picsellia_cv_engine.models.contexts.processing.dataset.picsellia_processing_context import (
     PicselliaProcessingContext,
 )
-from picsellia_cv_engine.models.dataset.coco_dataset_context import (
+from picsellia_cv_engine.models.data.dataset.coco_dataset_context import (
     CocoDatasetContext,
 )
 
