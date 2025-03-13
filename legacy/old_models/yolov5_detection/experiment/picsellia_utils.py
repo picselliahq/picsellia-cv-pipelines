@@ -1,22 +1,20 @@
 import os
-from typing import Dict, List
-
-import tqdm
-import shutil
-import yaml
-from pathlib import Path
-import re
-import torch
-import numpy as np
 import random
+import re
+import shutil
 from collections import OrderedDict
+from pathlib import Path
 
-from picsellia.types.enums import LogType
+import numpy as np
+import torch
+import tqdm
+import yaml
 from picsellia import Client
+from picsellia.exceptions import NoDataError
 from picsellia.sdk.asset import Asset, MultiAsset
 from picsellia.sdk.dataset import Dataset
+from picsellia.types.enums import LogType
 from yolov5.utils.general import check_file, check_yaml, increment_path
-from picsellia.exceptions import NoDataError
 
 
 def find_image_id(annotations, fname):
@@ -82,7 +80,7 @@ def to_yolo(
             )
 
         if success:
-            label_name = "{}.txt".format(os.path.splitext(asset.filename)[0])
+            label_name = f"{os.path.splitext(asset.filename)[0]}.txt"
             with open(os.path.join(targetdir, "labels", step, label_name), "w") as f:
                 for a in objs:
                     x1, y1, w, h = a["bbox"]
@@ -106,7 +104,7 @@ def generate_yaml(yamlname, datatargetdir, imgdir, labelmap):
         "names": list(labelmap.values()),
     }
 
-    opath = "{}/data/{}.yaml".format(datatargetdir, yamlname)
+    opath = f"{datatargetdir}/data/{yamlname}.yaml"
     with open(opath, "w") as file:
         yaml.dump(dict_file, file)
     return opath
@@ -138,7 +136,7 @@ def edit_model_yaml(label_map, experiment_name, config_path=None):
         if path.endswith("yaml"):
             ymlpath = os.path.join(config_path, path)
     path = Path(ymlpath)
-    with open(ymlpath, "r") as f:
+    with open(ymlpath) as f:
         data = f.readlines()
 
     temp = re.findall(r"\d+", data[3])
@@ -238,7 +236,7 @@ def picsellia_train_test_split(
     dataset_length: int = 0,
 ):
     nb_pages = int(dataset_length / 100) + 1
-    extended_assets: Dict[str, List] = {"items": []}
+    extended_assets: dict[str, list] = {"items": []}
     for page in range(1, nb_pages + 1):
         params = {"limit": 100, "offset": (page - 1) * 100}
         try:
@@ -275,8 +273,8 @@ def picsellia_train_test_split(
     train_assets = []
     eval_assets = []
 
-    train_label_count: Dict[str, int] = {}
-    eval_label_count: Dict[str, int] = {}
+    train_label_count: dict[str, int] = {}
+    eval_label_count: dict[str, int] = {}
     for item in items:
         annotations = item["annotations"]
 

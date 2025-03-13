@@ -2,7 +2,6 @@ import logging
 import math
 import os
 from abc import ABC, abstractmethod
-from typing import List, Type, Union, Optional
 
 import numpy as np
 import tqdm
@@ -31,16 +30,16 @@ def _labels_coherence_check(experiment_labelmap, dataset_labels) -> bool:
 
 
 class AbstractEvaluator(ABC):
-    type_formatter: Type[TypeFormatter]
-    framework_formatter: Type[FrameworkFormatter]
+    type_formatter: type[TypeFormatter]
+    framework_formatter: type[FrameworkFormatter]
 
     def __init__(
         self,
         experiment: Experiment,
         dataset: DatasetVersion,
-        asset_list: Optional[List[Asset]] = None,
+        asset_list: list[Asset] | None = None,
         confidence_threshold: float = 0.1,
-        weights_path: Optional[str] = None,
+        weights_path: str | None = None,
     ) -> None:
         self._experiment = experiment
         self._dataset = dataset
@@ -160,7 +159,7 @@ class AbstractEvaluator(ABC):
                 inference_type=self._dataset.type
             )
 
-    def _evaluate_asset_list(self, asset_list: List[Asset]) -> None:
+    def _evaluate_asset_list(self, asset_list: list[Asset]) -> None:
         if not self._loaded_model:
             raise ValueError("Model not loaded.")
         inputs = self._preprocess_images(asset_list)
@@ -172,7 +171,7 @@ class AbstractEvaluator(ABC):
             self._send_evaluations_to_platform(asset=asset, evaluations=evaluations)
 
     @abstractmethod
-    def _preprocess_images(self, assets: List[Asset]) -> List[np.ndarray]:
+    def _preprocess_images(self, assets: list[Asset]) -> list[np.ndarray]:
         pass
 
     #
@@ -181,8 +180,8 @@ class AbstractEvaluator(ABC):
     #     pass
 
     def _format_prediction_to_evaluations(
-        self, asset: Asset, prediction: Union[List, dict]
-    ) -> List:
+        self, asset: Asset, prediction: list | dict
+    ) -> list:
         picsellia_predictions = self._type_formatter.format_prediction(
             asset=asset, prediction=prediction
         )
@@ -202,7 +201,7 @@ class AbstractEvaluator(ABC):
                 evaluations.append(evaluation)
         return evaluations
 
-    def _send_evaluations_to_platform(self, asset: Asset, evaluations: List) -> None:
+    def _send_evaluations_to_platform(self, asset: Asset, evaluations: list) -> None:
         shapes = {self._type_formatter.get_shape_type(): evaluations}
         try:
             self._experiment.add_evaluation(asset=asset, **shapes)

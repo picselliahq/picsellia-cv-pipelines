@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding:utf-8 -*-
 # Code are based on
 # https://github.com/facebookresearch/detectron2/blob/master/detectron2/engine/launch.py
 # Copyright (c) Facebook, Inc. and its affiliates.
@@ -111,7 +110,7 @@ def _distributed_worker(
         "cuda is not available. Please check your installation."
     )
     global_rank = machine_rank * num_gpus_per_machine + local_rank
-    logger.info("Rank {} initialization finished.".format(global_rank))
+    logger.info(f"Rank {global_rank} initialization finished.")
     try:
         dist.init_process_group(
             backend=backend,
@@ -121,7 +120,7 @@ def _distributed_worker(
             timeout=timeout,
         )
     except Exception:
-        logger.error("Process group URL: {}".format(dist_url))
+        logger.error(f"Process group URL: {dist_url}")
         raise
 
     # Setup the local process group (which contains ranks within the same machine)

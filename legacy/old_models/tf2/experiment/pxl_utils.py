@@ -2,7 +2,6 @@ import io
 import logging
 import os
 import random
-from typing import Dict, List
 
 import cv2
 import numpy as np
@@ -24,10 +23,9 @@ from models.research.object_detection.utils import (
 )
 from models.research.object_detection.utils import ops as utils_ops
 from models.research.object_detection.utils import visualization_utils as vis_util
+from picsellia.sdk.dataset_version import MultiAsset
 from PIL import Image
 from tensorflow.python.summary.summary_iterator import summary_iterator
-
-from picsellia.sdk.dataset_version import MultiAsset
 
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
 tf.get_logger().setLevel("ERROR")
@@ -64,7 +62,7 @@ def sort_split(split_dict, label_names):
     return sorted_split_dict
 
 
-def find_category(annotations: Dict, category_id: int):
+def find_category(annotations: dict, category_id: int):
     for category in annotations["categories"]:
         if category["id"] == category_id:
             return category
@@ -73,7 +71,7 @@ def find_category(annotations: Dict, category_id: int):
 
 def format_coco_file(
     imgdir: str,
-    annotations: Dict,
+    annotations: dict,
     train_assets: MultiAsset,
     eval_assets: MultiAsset,
     test_assets: MultiAsset,
@@ -81,10 +79,10 @@ def format_coco_file(
     train_assets_fname = [e.filename for e in train_assets]
     eval_assets_fname = [e.filename for e in eval_assets]
     test_assets_fname = [e.filename for e in test_assets]
-    formatted_file_train: Dict[str, List] = {"images": []}
-    formatted_file_eval: Dict[str, List] = {"images": []}
-    formatted_file_test: Dict[str, List] = {"images": []}
-    formatted_annotations: Dict[str, List] = {}
+    formatted_file_train: dict[str, list] = {"images": []}
+    formatted_file_eval: dict[str, list] = {"images": []}
+    formatted_file_test: dict[str, list] = {"images": []}
+    formatted_annotations: dict[str, list] = {}
     for shape in annotations["annotations"]:
         if shape["image_id"] in formatted_annotations.keys():
             shape["label"] = find_category(annotations, shape["category_id"])
@@ -123,7 +121,7 @@ def format_segmentation(shape):
     polygon = []
     xs = shape[0][::2]
     ys = shape[0][1::2]
-    for x, y in list(zip(xs, ys)):
+    for x, y in list(zip(xs, ys, strict=False)):
         polygon.append([x, y])
     return polygon
 
@@ -259,7 +257,7 @@ def create_record_files(
 
             writer.write(tf_example.SerializeToString())
         writer.close()
-        logger.info("Successfully created the TFRecords: {}".format(output_path))
+        logger.info(f"Successfully created the TFRecords: {output_path}")
 
 
 def update_num_classes(config_dict, label_map):
@@ -292,7 +290,7 @@ def check_batch_size(config_dict):
     elif meta_architecture == "ssd":
         image_resizer = model_config.ssd.image_resizer
     else:
-        raise ValueError("Unknown model type: {}".format(meta_architecture))
+        raise ValueError(f"Unknown model type: {meta_architecture}")
 
     if image_resizer.HasField("keep_aspect_ratio_resizer") and batch_size > 1:
         logger.warn(
@@ -387,7 +385,7 @@ def configure_learning_rate(configs, learning_rate=None, parameters={}):
                 if "lr_" + str(step) in parameters.keys():
                     steps.append(parameters[k])
                     lrs.append(parameters["lr_" + str(step)])
-        zipped = zip(steps, lrs)
+        zipped = zip(steps, lrs, strict=False)
         schedules = sorted(zipped, key=lambda x: x[0])
         for i, schedule in enumerate(schedules):
             sched = optimizer_config.learning_rate.manual_step_learning_rate.schedule
@@ -433,7 +431,7 @@ def set_image_resizer(config_dict, shape):
     elif meta_architecture == "ssd":
         image_resizer = model_config.ssd.image_resizer
     else:
-        raise ValueError("Unknown model type: {}".format(meta_architecture))
+        raise ValueError(f"Unknown model type: {meta_architecture}")
 
     if image_resizer.HasField("keep_aspect_ratio_resizer"):
         image_resizer.keep_aspect_ratio_resizer.max_dimension = shape[1]
@@ -575,7 +573,7 @@ def edit_config(
             if "-" in p:
                 ckpt_ids.append(int(p.split("-")[1].split(".")[0]))
     if len(ckpt_ids) > 0:
-        ckpt_path = os.path.join(model_selected, "ckpt-{}".format(str(max(ckpt_ids))))
+        ckpt_path = os.path.join(model_selected, f"ckpt-{str(max(ckpt_ids))}")
 
     else:
         ckpt_path = os.path.join(model_selected, "ckpt")
@@ -630,7 +628,7 @@ def train(
 ):
     if config_dir.endswith(".config"):
         if not os.path.isfile(config_dir):
-            raise FileNotFoundError("No config file found at {}".format(config_dir))
+            raise FileNotFoundError(f"No config file found at {config_dir}")
         else:
             config = config_dir
     else:
@@ -643,9 +641,7 @@ def train(
                         config = os.path.join(config_dir, f)
                         file_found = True
     if not file_found:
-        raise FileNotFoundError(
-            "No config file found in this directory {}".format(config_dir)
-        )
+        raise FileNotFoundError(f"No config file found in this directory {config_dir}")
 
     tf.config.set_soft_device_placement(True)
     strategy = tf.compat.v2.distribute.MirroredStrategy()
@@ -682,7 +678,7 @@ def evaluate(metrics_dir="", config="", ckpt_dir="", train_steps=None):
     """
     if config.endswith(".config"):
         if not os.path.isfile(config):
-            raise FileNotFoundError("No config file found at {}".format(config))
+            raise FileNotFoundError(f"No config file found at {config}")
     else:
         if os.path.isdir(config):
             files = os.listdir(config)
@@ -693,9 +689,7 @@ def evaluate(metrics_dir="", config="", ckpt_dir="", train_steps=None):
                         config = os.path.join(config, f)
                         file_found = True
     if not file_found:
-        raise FileNotFoundError(
-            "No config file found in this directory {}".format(config)
-        )
+        raise FileNotFoundError(f"No config file found in this directory {config}")
 
     tf.config.set_soft_device_placement(True)
     model_lib_v2.eval_continuously(
@@ -723,7 +717,7 @@ def tf_events_to_dict(dir_path, type=""):
     log_dict = {}
     if dir_path.startswith("events.out"):
         if not os.path.isfile(dir_path):
-            raise FileNotFoundError("No tfEvent file found at {}".format(dir_path))
+            raise FileNotFoundError(f"No tfEvent file found at {dir_path}")
     else:
         if os.path.isdir(dir_path):
             files = os.listdir(dir_path)
@@ -737,9 +731,7 @@ def tf_events_to_dict(dir_path, type=""):
                         file_path = os.path.join(dir_path, f)
                         file_found = True
     if not file_found:
-        raise FileNotFoundError(
-            "No tfEvent file found in this directory {}".format(dir_path)
-        )
+        raise FileNotFoundError(f"No tfEvent file found in this directory {dir_path}")
     for summary in summary_iterator(file_path):
         for v in summary.summary.value:
             if "image" not in v.tag:

@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding:utf-8 -*-
 # Copyright (c) Megvii Inc. All rights reserved.
 
 import importlib
@@ -13,7 +12,7 @@ def get_exp_by_file(exp_file, args):
         current_exp = importlib.import_module(os.path.basename(exp_file).split(".")[0])
         exp = current_exp.Exp(args)
     except Exception:
-        raise ImportError("{} doesn't contains class named 'Exp'".format(exp_file))
+        raise ImportError(f"{exp_file} doesn't contains class named 'Exp'")
     return exp
 
 
