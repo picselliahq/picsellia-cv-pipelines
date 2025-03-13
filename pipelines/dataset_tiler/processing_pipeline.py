@@ -1,13 +1,9 @@
 from picsellia_cv_engine.decorators.pipeline_decorator import pipeline
-from picsellia_cv_engine.models.contexts.processing.picsellia_processing_context import (
+from picsellia_cv_engine.models.contexts.processing.dataset.picsellia_processing_context import (
     PicselliaProcessingContext,
 )
-from picsellia_cv_engine.steps.data_extraction.processing_data_extractor import (
-    get_processing_dataset_collection,
-)
-from picsellia_cv_engine.steps.data_upload.dataset_context_uploader import (
-    upload_dataset_context,
-)
+from picsellia_cv_engine.steps.dataset.loader import load_coco_datasets
+from picsellia_cv_engine.steps.dataset.uploader import upload_full_dataset
 
 from pipelines.dataset_tiler.pipeline_utils.parameters.processing_tiler_parameters import (
     ProcessingTilerParameters,
@@ -32,12 +28,12 @@ def get_context() -> PicselliaProcessingContext[ProcessingTilerParameters]:
     remove_logs_on_completion=False,
 )
 def tiler_processing_pipeline() -> None:
-    dataset_collection = get_processing_dataset_collection()
+    dataset_collection = load_coco_datasets()
     dataset_collection["input"] = validate_tiler_data(
         dataset_context=dataset_collection["input"]
     )
     output_dataset_context = process(dataset_collection=dataset_collection)
-    upload_dataset_context(
+    upload_full_dataset(
         dataset_context=output_dataset_context,
         use_id=False,
         fail_on_asset_not_found=False,

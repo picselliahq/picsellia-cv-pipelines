@@ -2,13 +2,11 @@ import os
 
 from picsellia_cv_engine.decorators.pipeline_decorator import Pipeline
 from picsellia_cv_engine.decorators.step_decorator import step
-from picsellia_cv_engine.models.dataset.coco_dataset_context import (
+from picsellia_cv_engine.models.data.dataset.coco_dataset_context import (
     CocoDatasetContext,
 )
-from picsellia_cv_engine.models.dataset.dataset_collection import (
-    DatasetCollection,
-)
-from picsellia_cv_engine.models.steps.data_preparation.classification_dataset_context_preparator import (
+from picsellia_cv_engine.models.data.dataset.dataset_collection import DatasetCollection
+from picsellia_cv_engine.models.steps.data.dataset.preprocessing.classification_dataset_context_preparator import (
     ClassificationBaseDatasetContextPreparator,
 )
 
@@ -32,7 +30,7 @@ def prepare_ultralytics_classification_dataset_collection(
     """
     context = Pipeline.get_active_context()
     for dataset_context in dataset_collection:
-        destination_path = str(
+        destination_dir = str(
             os.path.join(
                 os.getcwd(),
                 context.experiment.name,
@@ -42,7 +40,7 @@ def prepare_ultralytics_classification_dataset_collection(
         )
         preparator = ClassificationBaseDatasetContextPreparator(
             dataset_context=dataset_context,
-            destination_path=destination_path,
+            destination_dir=destination_dir,
         )
         prepared_dataset_context = preparator.organize()
 

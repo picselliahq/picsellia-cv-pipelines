@@ -5,12 +5,8 @@ from picsellia_cv_engine.decorators.pipeline_decorator import pipeline
 from picsellia_cv_engine.models.utils.local_context import (
     create_local_processing_context,
 )
-from picsellia_cv_engine.steps.data_extraction.processing_data_extractor import (
-    get_processing_dataset_collection,
-)
-from picsellia_cv_engine.steps.data_upload.dataset_context_uploader import (
-    upload_dataset_context,
-)
+from picsellia_cv_engine.steps.dataset.loader import load_coco_datasets
+from picsellia_cv_engine.steps.dataset.uploader import upload_full_dataset
 
 from pipelines.dataset_tiler.pipeline_utils.steps.data_validation.processing_tiler_data_validator import (
     validate_tiler_data,
@@ -73,12 +69,12 @@ local_context.processing_parameters.tiling_mode = TileMode.CONSTANT
     remove_logs_on_completion=False,
 )
 def tiler_processing_pipeline() -> None:
-    dataset_collection = get_processing_dataset_collection()
+    dataset_collection = load_coco_datasets()
     dataset_collection["input"] = validate_tiler_data(
         dataset_context=dataset_collection["input"]
     )
     output_dataset_context = process(dataset_collection=dataset_collection)
-    upload_dataset_context(
+    upload_full_dataset(
         dataset_context=output_dataset_context,
         use_id=False,
         fail_on_asset_not_found=False,

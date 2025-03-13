@@ -7,9 +7,7 @@ from picsellia_cv_engine.models.contexts.training.local_picsellia_training_conte
 from picsellia_cv_engine.models.parameters.export_parameters import (
     ExportParameters,
 )
-from picsellia_cv_engine.steps.data_validation.yolo_segmentation_dataset_collection_validator import (
-    yolo_segmentation_dataset_collection_validator,
-)
+from picsellia_cv_engine.steps.dataset.validator import validate_dataset
 
 from pipelines.yolov7_segmentation.pipeline_utils.parameters.yolov7_augmentation_parameters import (
     Yolov7AugmentationParameters,
@@ -65,9 +63,7 @@ def yolov7_segmentation_training_pipeline():
     dataset_collection = yolov7_dataset_collection_preparator(
         dataset_collection=dataset_collection
     )
-    yolo_segmentation_dataset_collection_validator(
-        dataset_collection=dataset_collection, fix_annotation=True
-    )
+    validate_dataset(dataset_collection=dataset_collection, fix_annotation=True)
 
     model_context = yolov7_model_context_extractor(
         pretrained_weights_name="pretrained-weights",

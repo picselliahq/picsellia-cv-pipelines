@@ -6,12 +6,8 @@ from picsellia_cv_engine.decorators.pipeline_decorator import pipeline
 from picsellia_cv_engine.models.utils.local_context import (
     create_local_processing_context,
 )
-from picsellia_cv_engine.steps.data_extraction.processing_data_extractor import (
-    get_processing_dataset_collection,
-)
-from picsellia_cv_engine.steps.data_upload.classification_dataset_context_uploader import (
-    upload_classification_dataset_context,
-)
+from picsellia_cv_engine.steps.dataset.loader import load_coco_datasets
+from picsellia_cv_engine.steps.dataset.uploader import upload_full_dataset
 
 from pipelines.bounding_box_cropper.pipeline_utils.steps.data_validation.processing_bounding_box_cropper_data_validator import (
     validate_bounding_box_cropper_data,
@@ -55,10 +51,10 @@ local_context = create_local_processing_context(
     remove_logs_on_completion=False,
 )
 def bounding_box_cropper_processing_pipeline() -> None:
-    dataset_collection = get_processing_dataset_collection()
+    dataset_collection = load_coco_datasets()
     validate_bounding_box_cropper_data(dataset_context=dataset_collection["input"])
     output_dataset_context = process(dataset_collection=dataset_collection)
-    upload_classification_dataset_context(dataset_context=output_dataset_context)
+    upload_full_dataset(dataset_context=output_dataset_context)
 
 
 if __name__ == "__main__":

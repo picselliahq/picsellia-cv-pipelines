@@ -1,10 +1,10 @@
 import os
 
 import yaml
-from picsellia_cv_engine.models.dataset.base_dataset_context import (
+from picsellia_cv_engine.models.data.dataset.base_dataset_context import (
     TBaseDatasetContext,
 )
-from picsellia_cv_engine.models.dataset.dataset_collection import (
+from picsellia_cv_engine.models.data.dataset.dataset_collection import (
     DatasetCollection,
 )
 

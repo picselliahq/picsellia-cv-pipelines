@@ -5,10 +5,10 @@ from picsellia_cv_engine.decorators.step_decorator import step
 from picsellia_cv_engine.models.contexts.training.picsellia_training_context import (
     PicselliaTrainingContext,
 )
-from picsellia_cv_engine.models.dataset.yolo_dataset_context import (
+from picsellia_cv_engine.models.data.dataset.yolo_dataset_context import (
     YoloDatasetContext,
 )
-from picsellia_cv_engine.models.steps.data_extraction.training_dataset_collection_extractor import (
+from picsellia_cv_engine.models.steps.data.dataset.loader.training_dataset_collection_extractor import (
     TrainingDatasetCollectionExtractor,
 )
 from picsellia_cv_engine.models.utils.dataset_logging import (

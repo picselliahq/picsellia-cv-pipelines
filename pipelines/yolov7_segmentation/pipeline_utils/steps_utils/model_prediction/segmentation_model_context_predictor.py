@@ -3,7 +3,7 @@ import shutil
 import subprocess
 
 import cv2
-from picsellia_cv_engine.models.dataset.base_dataset_context import (
+from picsellia_cv_engine.models.data.dataset.base_dataset_context import (
     TBaseDatasetContext,
 )
 from picsellia_cv_engine.models.model.picsellia_prediction import (

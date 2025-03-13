@@ -7,7 +7,7 @@ import PIL
 import requests
 from picsellia import Client, Data, Datalake, DatasetVersion
 from picsellia.sdk.asset import MultiAsset
-from picsellia_cv_engine.models.dataset.base_dataset_context import (
+from picsellia_cv_engine.models.data.dataset.base_dataset_context import (
     TBaseDatasetContext,
 )
 from picsellia_cv_engine.models.logging.colors import Colors

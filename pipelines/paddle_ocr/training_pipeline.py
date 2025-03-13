@@ -7,9 +7,7 @@ from picsellia_cv_engine.models.contexts.training.picsellia_training_context imp
 from picsellia_cv_engine.models.parameters.export_parameters import (
     ExportParameters,
 )
-from picsellia_cv_engine.steps.data_extraction.coco_data_extractor import (
-    get_coco_dataset_collection,
-)
+from picsellia_cv_engine.steps.dataset.loader import load_coco_datasets
 
 from pipelines.paddle_ocr.pipeline_utils.parameters.paddle_ocr_augmentation_parameters import (
     PaddleOCRAugmentationParameters,
@@ -56,7 +54,7 @@ def get_context() -> PicselliaTrainingContext[
     remove_logs_on_completion=False,
 )
 def paddle_ocr_training_pipeline():
-    dataset_collection = get_coco_dataset_collection()
+    dataset_collection = load_coco_datasets()
     dataset_collection = prepare_paddle_ocr_dataset_collection(
         dataset_collection=dataset_collection
     )

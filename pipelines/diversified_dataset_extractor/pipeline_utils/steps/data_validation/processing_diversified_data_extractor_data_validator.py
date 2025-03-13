@@ -1,5 +1,5 @@
 from picsellia_cv_engine.decorators.step_decorator import step
-from picsellia_cv_engine.models.dataset.base_dataset_context import (
+from picsellia_cv_engine.models.data.dataset.base_dataset_context import (
     TBaseDatasetContext,
 )
 

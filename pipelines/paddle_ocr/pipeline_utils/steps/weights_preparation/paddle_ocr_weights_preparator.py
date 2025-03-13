@@ -4,7 +4,7 @@ from picsellia_cv_engine.decorators.step_decorator import step
 from picsellia_cv_engine.models.contexts.training.picsellia_training_context import (
     PicselliaTrainingContext,
 )
-from picsellia_cv_engine.models.dataset.dataset_collection import (
+from picsellia_cv_engine.models.data.dataset.dataset_collection import (
     DatasetCollection,
 )
 from picsellia_cv_engine.models.parameters.export_parameters import (

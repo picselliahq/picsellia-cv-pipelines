@@ -5,12 +5,8 @@ from picsellia_cv_engine.models.contexts.training.picsellia_training_context imp
 from picsellia_cv_engine.models.parameters.export_parameters import (
     ExportParameters,
 )
-from picsellia_cv_engine.steps.data_extraction.coco_data_extractor import (
-    get_coco_dataset_collection,
-)
-from picsellia_cv_engine.steps.data_validation.coco_classification_dataset_collection_validator import (
-    validate_coco_classification_dataset_collection,
-)
+from picsellia_cv_engine.steps.dataset.loader import load_coco_datasets
+from picsellia_cv_engine.steps.dataset.validator import validate_dataset
 
 from pipelines.yolov8_classification.pipeline_utils.parameters.ultralytics_augmentation_parameters import (
     UltralyticsAugmentationParameters,
@@ -54,13 +50,11 @@ def get_context() -> PicselliaTrainingContext[
     remove_logs_on_completion=False,
 )
 def yolov8_classification_training_pipeline():
-    dataset_collection = get_coco_dataset_collection()
+    dataset_collection = load_coco_datasets()
     prepare_ultralytics_classification_dataset_collection(
         dataset_collection=dataset_collection
     )
-    validate_coco_classification_dataset_collection(
-        dataset_collection=dataset_collection
-    )
+    validate_dataset(dataset_collection=dataset_collection)
 
     model_context = get_ultralytics_model_context(
         pretrained_weights_name="pretrained-weights"

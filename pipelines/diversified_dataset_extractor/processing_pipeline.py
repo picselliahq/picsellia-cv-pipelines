@@ -1,10 +1,8 @@
 from picsellia_cv_engine.decorators.pipeline_decorator import pipeline
-from picsellia_cv_engine.models.contexts.processing.picsellia_processing_context import (
+from picsellia_cv_engine.models.contexts.processing.dataset.picsellia_processing_context import (
     PicselliaProcessingContext,
 )
-from picsellia_cv_engine.steps.data_extraction.processing_data_extractor import (
-    get_processing_dataset_context,
-)
+from picsellia_cv_engine.steps.dataset.loader import load_coco_datasets
 
 from pipelines.diversified_dataset_extractor.pipeline_utils.parameters.processing_diversified_data_extractor_parameters import (
     ProcessingDiversifiedDataExtractorParameters,
@@ -37,7 +35,7 @@ def get_context() -> PicselliaProcessingContext[
     remove_logs_on_completion=False,
 )
 def diversified_data_extractor_pipeline() -> None:
-    dataset_context = get_processing_dataset_context(skip_asset_listing=True)
+    dataset_context = load_coco_datasets(skip_asset_listing=True)
 
     validate_diversified_data_extractor_data(dataset_context=dataset_context)
     pretrained_weights = validate_diversified_data_extractor_weights()

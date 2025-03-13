@@ -5,7 +5,7 @@ from typing import Any
 
 import yaml
 from picsellia_cv_engine.models.model.model_context import ModelContext
-from picsellia_cv_engine.models.steps.model_export.model_context_exporter import (
+from picsellia_cv_engine.models.steps.model.export.model_context_exporter import (
     ModelContextExporter,
 )
 

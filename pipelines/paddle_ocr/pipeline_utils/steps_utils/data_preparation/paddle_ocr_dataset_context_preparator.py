@@ -4,7 +4,7 @@ import os
 import cv2
 import numpy as np
 from imutils import perspective
-from picsellia_cv_engine.models.dataset.coco_dataset_context import (
+from picsellia_cv_engine.models.data.dataset.coco_dataset_context import (
     CocoDatasetContext,
 )
 

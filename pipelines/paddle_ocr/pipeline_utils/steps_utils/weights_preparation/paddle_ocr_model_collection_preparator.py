@@ -1,7 +1,7 @@
 import os
 
 import yaml
-from picsellia_cv_engine.models.dataset.dataset_collection import (
+from picsellia_cv_engine.models.data.dataset.dataset_collection import (
     DatasetCollection,
 )
 from picsellia_cv_engine.models.model.model_context import ModelContext

@@ -8,7 +8,7 @@ import torch
 from open_clip.model import CLIP
 from picsellia_cv_engine.decorators.pipeline_decorator import Pipeline
 from picsellia_cv_engine.decorators.step_decorator import step
-from picsellia_cv_engine.models.contexts.processing.picsellia_processing_context import (
+from picsellia_cv_engine.models.contexts.processing.dataset.picsellia_processing_context import (
     PicselliaProcessingContext,
 )
 from PIL import Image
