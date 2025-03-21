@@ -9,6 +9,7 @@ def find_latest_run_dir(dir: str, model_name: str):
     Finds the latest run directory in the given directory.
     """
     run_dirs = os.listdir(dir)
+    run_dirs = [f for f in run_dirs if f.startswith(model_name)]
     if not run_dirs:
         raise ValueError("No results folder found")
     elif len(run_dirs) == 1:
@@ -16,9 +17,7 @@ def find_latest_run_dir(dir: str, model_name: str):
 
     return os.path.join(
         dir,
-        sorted([f for f in run_dirs if f.startswith(model_name) and f[-1].isdigit()])[
-            -1
-        ],
+        sorted([f for f in run_dirs if f[-1].isdigit()])[-1],
     )
 
 
@@ -62,5 +61,3 @@ class UltralyticsModelContext(ModelContext):
             raise ValueError("The latest run directory is not set.")
         trained_weights_dir = os.path.join(self.latest_run_dir, "weights")
         self.trained_weights_path = os.path.join(trained_weights_dir, "best.pt")
-
-        print(f"trained_weights_path: {self.trained_weights_path}")
