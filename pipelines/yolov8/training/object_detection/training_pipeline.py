@@ -8,29 +8,29 @@ from picsellia_cv_engine.models.parameters.export_parameters import (
 from picsellia_cv_engine.steps.dataset.loader import load_yolo_datasets
 from picsellia_cv_engine.steps.dataset.validator import validate_dataset
 
-from pipelines.yolov8.training.classification.pipeline_utils.parameters.ultralytics_augmentation_parameters import (
+from pipelines.yolov8.training.pipeline_utils.parameters.ultralytics_augmentation_parameters import (
     UltralyticsAugmentationParameters,
 )
-from pipelines.yolov8.training.classification.pipeline_utils.parameters.ultralytics_hyper_parameters import (
+from pipelines.yolov8.training.pipeline_utils.parameters.ultralytics_hyper_parameters import (
     UltralyticsHyperParameters,
 )
-from pipelines.yolov8.training.classification.pipeline_utils.steps.model_evaluation.ultralytics_model_evaluator import (
+from pipelines.yolov8.training.pipeline_utils.steps.data_preparation.ultralytics_data_preparator import (
+    prepare_ultralytics_dataset_collection,
+)
+from pipelines.yolov8.training.pipeline_utils.steps.model_evaluation.ultralytics_model_evaluator import (
     evaluate_ultralytics_model_context,
 )
-from pipelines.yolov8.training.classification.pipeline_utils.steps.model_export.ultralytics_model_exporter import (
+from pipelines.yolov8.training.pipeline_utils.steps.model_export.ultralytics_model_exporter import (
     export_ultralytics_model_context,
 )
-from pipelines.yolov8.training.classification.pipeline_utils.steps.model_loading.ultralytics_model_context_loader import (
+from pipelines.yolov8.training.pipeline_utils.steps.model_loading.ultralytics_model_context_loader import (
     load_ultralytics_model_context,
 )
-from pipelines.yolov8.training.classification.pipeline_utils.steps.model_training.ultralytics_trainer import (
+from pipelines.yolov8.training.pipeline_utils.steps.model_training.ultralytics_trainer import (
     train_ultralytics_model_context,
 )
-from pipelines.yolov8.training.classification.pipeline_utils.steps.weights_extraction.ultralytics_weights_extractor import (
+from pipelines.yolov8.training.pipeline_utils.steps.weights_extraction.ultralytics_weights_extractor import (
     get_ultralytics_model_context,
-)
-from pipelines.yolov8.training.object_detection.pipeline_utils.steps.data_preparation.ultralytics_data_preparator import (
-    prepare_ultralytics_dataset_collection,
 )
 
 

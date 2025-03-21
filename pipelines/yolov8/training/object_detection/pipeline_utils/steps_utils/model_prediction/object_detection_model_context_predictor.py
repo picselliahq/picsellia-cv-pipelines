@@ -14,7 +14,7 @@ from picsellia_cv_engine.models.steps.model.predictor.model_context_predictor im
 )
 from ultralytics.engine.results import Results
 
-from pipelines.yolov8.training.classification.pipeline_utils.model.ultralytics_model_context import (
+from pipelines.yolov8.training.pipeline_utils.model.ultralytics_model_context import (
     UltralyticsModelContext,
 )
 
