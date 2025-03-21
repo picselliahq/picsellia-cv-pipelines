@@ -1,3 +1,5 @@
+import os
+
 from picsellia_cv_engine.decorators.pipeline_decorator import Pipeline
 from picsellia_cv_engine.decorators.step_decorator import step
 from picsellia_cv_engine.models.contexts.training.picsellia_training_context import (
@@ -88,3 +90,9 @@ def evaluate_ultralytics_model_context(
         experiment=context.experiment, inference_type=model_context.model_version.type
     )
     model_evaluator.evaluate(picsellia_predictions=picsellia_predictions)
+
+    model_evaluator.compute_coco_metrics(
+        experiment=context.experiment,
+        assets=dataset_context.assets,
+        output_dir=os.path.join(model_context.results_dir, "evaluation"),
+    )
