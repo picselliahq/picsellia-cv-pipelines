@@ -112,9 +112,27 @@ class UltralyticsModelContextExporter(ModelContextExporter):
         """
         Moves the ONNX file from its current location to the specified destination path.
 
+        If a file already exists at the destination, it will be overwritten.
+
         Args:
             onnx_file_path (str): The full path to the ONNX file.
             exported_model_destination_path (str): The destination path to move the ONNX file.
         """
         logger.info(f"Moving ONNX file to {exported_model_destination_path}...")
+
+        if os.path.exists(
+            os.path.join(
+                exported_model_destination_path, os.path.basename(onnx_file_path)
+            )
+        ):
+            logger.warning(
+                f"File already exists at destination. Removing: {os.path.join(exported_model_destination_path, os.path.basename(onnx_file_path))}"
+            )
+            os.remove(
+                os.path.join(
+                    exported_model_destination_path, os.path.basename(onnx_file_path)
+                )
+            )
+
         shutil.move(onnx_file_path, exported_model_destination_path)
+        logger.info("Move completed successfully.")
