@@ -12,8 +12,7 @@ RUN uv pip install --python=$(which python3.10) -e /picsellia-cv-engine
 WORKDIR /experiment
 
 ARG REBUILD_ALL
-COPY ./pipelines/yolov8/training/pipeline_utils ./pipelines/yolov8/training/pipeline_utils
-COPY ./pipelines/yolov8/training/segmentation ./pipelines/yolov8/training/segmentation
+COPY ./pipelines/yolov8/training ./pipelines/yolov8/training
 ARG REBUILD_PICSELLIA
 
 RUN export UV_HTTP_TIMEOUT=900 && uv pip install --python=$(which python3.10) --no-cache -r ./pipelines/yolov8/training/segmentation/requirements.txt

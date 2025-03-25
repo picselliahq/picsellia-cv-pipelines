@@ -7,13 +7,12 @@ RUN apt-get update && apt-get install -y \
 
 RUN git clone -b feat/add-yolo-dataset-loader https://github.com/picselliahq/picsellia-cv-engine.git
 RUN git clone https://github.com/picselliahq/picsellia-pipelines-cli.git
-RUN pip install -e /picsellia-cv-engine
+RUN uv pip install --python=$(which python3.10) -e /picsellia-cv-engine
 
 WORKDIR /experiment
 
 ARG REBUILD_ALL
-COPY ./pipelines/yolov8/training/pipeline_utils ./pipelines/yolov8/training/pipeline_utils
-COPY ./pipelines/yolov8/training/classification ./pipelines/yolov8/training/classification
+COPY ./pipelines/yolov8/training ./pipelines/yolov8/training
 ARG REBUILD_PICSELLIA
 
 RUN export UV_HTTP_TIMEOUT=900 && uv pip install --python=$(which python3.10) --no-cache -r ./pipelines/yolov8/training/classification/requirements.txt
