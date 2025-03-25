@@ -35,15 +35,15 @@ def get_context() -> PicselliaProcessingContext[
     remove_logs_on_completion=False,
 )
 def diversified_data_extractor_pipeline() -> None:
-    dataset_context = load_coco_datasets(skip_asset_listing=True)
+    dataset = load_coco_datasets(skip_asset_listing=True)
 
-    validate_diversified_data_extractor_data(dataset_context=dataset_context)
+    validate_diversified_data_extractor_data(dataset=dataset)
     pretrained_weights = validate_diversified_data_extractor_weights()
     embedding_model = load_diversified_data_extractor_model(
         pretrained_weights=pretrained_weights
     )
 
-    process(dataset_context=dataset_context, embedding_model=embedding_model)
+    process(dataset=dataset, embedding_model=embedding_model)
 
 
 if __name__ == "__main__":
