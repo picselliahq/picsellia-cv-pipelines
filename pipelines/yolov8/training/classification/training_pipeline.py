@@ -50,7 +50,7 @@ def yolov8_classification_training_pipeline():
     prepare_ultralytics_classification_dataset_collection(
         dataset_collection=dataset_collection
     )
-    validate_dataset(dataset_collection=dataset_collection)
+    validate_dataset(dataset=dataset_collection, fix_annotation=True)
 
     model = get_ultralytics_model(pretrained_weights_name="pretrained-weights")
     load_ultralytics_model(
