@@ -7,7 +7,7 @@ RUN apt-get update && apt-get install -y \
 
 RUN git clone -b feat/add-yolo-dataset-loader https://github.com/picselliahq/picsellia-cv-engine.git
 RUN git clone https://github.com/picselliahq/picsellia-pipelines-cli.git
-RUN pip install -e /picsellia-cv-engine
+RUN uv pip install --python=$(which python3.10) -e /picsellia-cv-engine
 
 WORKDIR /experiment
 
