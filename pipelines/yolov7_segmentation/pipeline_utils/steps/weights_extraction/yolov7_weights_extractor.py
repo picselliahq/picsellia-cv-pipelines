@@ -6,35 +6,35 @@ from picsellia_cv_engine.models.contexts.training.picsellia_training_context imp
     PicselliaTrainingContext,
 )
 
-from pipelines.yolov7_segmentation.pipeline_utils.model.yolov7_model_context import (
-    Yolov7ModelContext,
+from pipelines.yolov7_segmentation.pipeline_utils.model.yolov7_model import (
+    Yolov7Model,
 )
 
 
 @step
-def yolov7_model_context_extractor(
+def yolov7_model_extractor(
     pretrained_weights_name: str | None = None,
     trained_weights_name: str | None = None,
     config_name: str | None = None,
     hyperparameters_name: str | None = None,
     exported_weights_name: str | None = None,
-) -> Yolov7ModelContext:
+) -> Yolov7Model:
     """
-    Extracts a model context from the active Picsellia training experiment.
+    Extracts a model from the active Picsellia training experiment.
 
     This function retrieves the active training context from the pipeline and extracts the base model version
-    from the experiment. It then creates a `ModelContext` object for the model, specifying the name and pretrained
+    from the experiment. It then creates a `Model` object for the model, specifying the name and pretrained
     weights. The function downloads the necessary model weights to a specified directory and returns the
-    initialized `ModelContext`.
+    initialized `Model`.
 
     Returns:
-        ModelContext: The extracted and initialized model context with the downloaded weights.
+        Model: The extracted and initialized model with the downloaded weights.
     """
     context: PicselliaTrainingContext = Pipeline.get_active_context()
 
     model_version = context.experiment.get_base_model_version()
-    model_context = Yolov7ModelContext(
-        model_name=model_version.name,
+    model = Yolov7Model(
+        name=model_version.name,
         model_version=model_version,
         pretrained_weights_name=pretrained_weights_name,
         trained_weights_name=trained_weights_name,
@@ -42,12 +42,12 @@ def yolov7_model_context_extractor(
         hyperparameters_name=hyperparameters_name,
         exported_weights_name=exported_weights_name,
     )
-    model_context.download_weights(
+    model.download_weights(
         destination_dir=os.path.join(os.getcwd(), context.experiment.name, "model")
     )
-    model_context.set_hyperparameters_path(
+    model.set_hyperparameters_path(
         destination_path=os.path.join(
             os.getcwd(), context.experiment.name, "model", "weights"
         )
     )
-    return model_context
+    return model

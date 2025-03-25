@@ -2,7 +2,7 @@ from argparse import ArgumentParser
 
 from picsellia_cv_engine.decorators.pipeline_decorator import pipeline
 from picsellia_cv_engine.models.contexts.training.local_picsellia_training_context import (
-    LocalPicselliaTrainingContext,
+    LocalTrainingContext,
 )
 from picsellia_cv_engine.models.parameters.export_parameters import (
     ExportParameters,
@@ -22,16 +22,16 @@ from pipelines.yolov7_segmentation.pipeline_utils.steps.data_preparation.yolov7_
     yolov7_dataset_collection_preparator,
 )
 from pipelines.yolov7_segmentation.pipeline_utils.steps.model_evaluation.yolov7_model_evaluator import (
-    yolov7_model_context_evaluator,
+    yolov7_model_evaluator,
 )
 from pipelines.yolov7_segmentation.pipeline_utils.steps.model_training.yolov7_trainer import (
-    yolov7_model_context_trainer,
+    yolov7_model_trainer,
 )
 from pipelines.yolov7_segmentation.pipeline_utils.steps.weights_extraction.yolov7_weights_extractor import (
-    yolov7_model_context_extractor,
+    yolov7_model_extractor,
 )
 from pipelines.yolov7_segmentation.pipeline_utils.steps.weights_preparation.yolov7_weights_preparator import (
-    yolov7_model_context_preparator,
+    yolov7_model_preparator,
 )
 
 parser = ArgumentParser()
@@ -42,8 +42,8 @@ parser.add_argument("--experiment_id", type=str)
 args = parser.parse_args()
 
 
-def get_context() -> LocalPicselliaTrainingContext:
-    return LocalPicselliaTrainingContext(
+def get_context() -> LocalTrainingContext:
+    return LocalTrainingContext(
         api_token=args.api_token,
         organization_id=args.organization_id,
         experiment_id=args.experiment_id,
@@ -65,19 +65,15 @@ def yolov7_segmentation_training_pipeline():
     )
     validate_dataset(dataset_collection=dataset_collection, fix_annotation=True)
 
-    model_context = yolov7_model_context_extractor(
+    model = yolov7_model_extractor(
         pretrained_weights_name="pretrained-weights",
         config_name="config",
         hyperparameters_name="hyperparameters",
     )
-    # model_context = yolov7_model_context_loader()
-    model_context = yolov7_model_context_preparator(model_context=model_context)
-    model_context = yolov7_model_context_trainer(
-        model_context=model_context, dataset_collection=dataset_collection
-    )
-    yolov7_model_context_evaluator(
-        model_context=model_context, dataset_context=dataset_collection["test"]
-    )
+    # model = yolov7_model_loader()
+    model = yolov7_model_preparator(model=model)
+    model = yolov7_model_trainer(model=model, dataset_collection=dataset_collection)
+    yolov7_model_evaluator(model=model, dataset=dataset_collection["test"])
 
 
 if __name__ == "__main__":

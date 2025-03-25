@@ -3,8 +3,8 @@ import shutil
 import subprocess
 
 import cv2
-from picsellia_cv_engine.models.data.dataset.base_dataset_context import (
-    TBaseDatasetContext,
+from picsellia_cv_engine.models.data.dataset.base_dataset import (
+    TBaseDataset,
 )
 from picsellia_cv_engine.models.model.picsellia_prediction import (
     PicselliaConfidence,
@@ -13,8 +13,8 @@ from picsellia_cv_engine.models.model.picsellia_prediction import (
     PicselliaPolygonPrediction,
 )
 
-from pipelines.yolov7_segmentation.pipeline_utils.model.yolov7_model_context import (
-    Yolov7ModelContext,
+from pipelines.yolov7_segmentation.pipeline_utils.model.yolov7_model import (
+    Yolov7Model,
     find_latest_run_dir,
 )
 from pipelines.yolov7_segmentation.pipeline_utils.parameters.yolov7_hyper_parameters import (
@@ -22,33 +22,31 @@ from pipelines.yolov7_segmentation.pipeline_utils.parameters.yolov7_hyper_parame
 )
 
 
-class Yolov7SegmentationModelContextPredictor:
-    def __init__(self, model_context: Yolov7ModelContext):
+class Yolov7SegmentationModelPredictor:
+    def __init__(self, model: Yolov7Model):
         """
-        Initialize the inference runner with model context and experiment.
+        Initialize the inference runner with model and experiment.
 
         Args:
-            model_context (ModelContext): Context of the model including configuration and weights.
+            model (Model): Context of the model including configuration and weights.
         """
-        self.model_context = model_context
+        self.model = model
 
-    def pre_process_dataset_context(
-        self, dataset_context: TBaseDatasetContext
-    ) -> list[str]:
+    def pre_process_dataset(self, dataset: TBaseDataset) -> list[str]:
         """
-        Prepares the dataset by extracting and returning a list of image file paths from the dataset context.
+        Prepares the dataset by extracting and returning a list of image file paths from the dataset.
 
         Args:
-            dataset_context (TDatasetContext): The context containing the dataset information.
+            dataset (TDataset): The context containing the dataset information.
 
         Returns:
             List[str]: A list of image file paths from the dataset.
         """
-        if not dataset_context.images_dir:
-            raise ValueError("No images directory found in the dataset context.")
+        if not dataset.images_dir:
+            raise ValueError("No images directory found in the dataset.")
         image_paths = [
-            os.path.join(dataset_context.images_dir, image_name)
-            for image_name in os.listdir(dataset_context.images_dir)
+            os.path.join(dataset.images_dir, image_name)
+            for image_name in os.listdir(dataset.images_dir)
         ]
         return image_paths
 
@@ -57,14 +55,12 @@ class Yolov7SegmentationModelContextPredictor:
         image_paths: list[str],
         hyperparameters: Yolov7HyperParameters,
     ) -> dict[str, list[str]]:
-        if not self.model_context.trained_weights_path or not os.path.exists(
-            self.model_context.trained_weights_path
+        if not self.model.trained_weights_path or not os.path.exists(
+            self.model.trained_weights_path
         ):
             raise ValueError("Trained weights path is not set.")
 
-        if not self.model_context.results_dir or not os.path.exists(
-            self.model_context.results_dir
-        ):
+        if not self.model.results_dir or not os.path.exists(self.model.results_dir):
             raise ValueError("Results directory is not set.")
 
         image_batches = self._prepare_batches(image_paths, hyperparameters.batch_size)
@@ -76,22 +72,20 @@ class Yolov7SegmentationModelContextPredictor:
             for image_path in batch:
                 shutil.copy(image_path, tmp_dir)
 
-            project_dir = os.path.join(self.model_context.results_dir, "inference")
+            project_dir = os.path.join(self.model.results_dir, "inference")
             os.makedirs(project_dir, exist_ok=True)
 
             detect_file_path = os.path.abspath(
                 "src/pipelines/yolov7_segmentation/yolov7/seg/segment/predict.py"
             )
 
-            print(
-                f"Running inference with weights: {self.model_context.trained_weights_path}"
-            )
+            print(f"Running inference with weights: {self.model.trained_weights_path}")
 
             command = [
                 "python3.10",
                 detect_file_path,
                 "--weights",
-                self.model_context.trained_weights_path,
+                self.model.trained_weights_path,
                 "--source",
                 tmp_dir,
                 "--img-size",
@@ -107,7 +101,7 @@ class Yolov7SegmentationModelContextPredictor:
                 "--project",
                 project_dir,
                 "--name",
-                self.model_context.model_name,
+                self.model.name,
                 "--exist-ok",
             ]
 
@@ -124,14 +118,14 @@ class Yolov7SegmentationModelContextPredictor:
             shutil.rmtree(tmp_dir)
 
         latest_run = find_latest_run_dir(
-            os.path.join(self.model_context.results_dir, "inference")
+            os.path.join(self.model.results_dir, "inference")
         )
 
         labels_dir = os.path.join(
-            self.model_context.results_dir, "inference", latest_run, "labels"
+            self.model.results_dir, "inference", latest_run, "labels"
         )
         mask_dir = os.path.join(
-            self.model_context.results_dir, "inference", latest_run, "masks"
+            self.model.results_dir, "inference", latest_run, "masks"
         )
 
         labels_paths = [
@@ -174,7 +168,7 @@ class Yolov7SegmentationModelContextPredictor:
     def post_process(
         self,
         label_path_to_mask_paths: dict[str, list[str]],
-        dataset_context: TBaseDatasetContext,
+        dataset: TBaseDataset,
     ) -> list[PicselliaPolygonPrediction]:
         """
         Post-processes the predictions for a segmentation model, mapping polygons and confidence scores
@@ -182,7 +176,7 @@ class Yolov7SegmentationModelContextPredictor:
 
         Args:
             label_path_to_mask_paths (Dict[str, List[str]]): Mapping of label files to associated mask paths.
-            dataset_context (TDatasetContext): The dataset context for label and asset mapping.
+            dataset (TDataset): The dataset for label and asset mapping.
 
         Returns:
             List[PicselliaPolygonPrediction]: A list of processed polygon predictions for each asset.
@@ -191,7 +185,7 @@ class Yolov7SegmentationModelContextPredictor:
 
         for label_path, mask_paths in label_path_to_mask_paths.items():
             asset_id = os.path.basename(label_path).split(".")[0]
-            asset = dataset_context.dataset_version.list_assets(ids=[asset_id])[0]
+            asset = dataset.dataset_version.list_assets(ids=[asset_id])[0]
 
             label_info = self._parse_label_file(label_path)
 
@@ -213,9 +207,7 @@ class Yolov7SegmentationModelContextPredictor:
                     picsellia_polygon = PicselliaPolygon(points=polygon)
                     polygons.append(picsellia_polygon)
 
-                    picsellia_label = self.get_picsellia_label(
-                        class_id, dataset_context
-                    )
+                    picsellia_label = self.get_picsellia_label(class_id, dataset)
                     picsellia_confidence = self.get_picsellia_confidence(confidence)
 
                     labels.append(picsellia_label)
@@ -293,19 +285,19 @@ class Yolov7SegmentationModelContextPredictor:
             return []
 
     def get_picsellia_label(
-        self, class_id: int, dataset_context: TBaseDatasetContext
+        self, class_id: int, dataset: TBaseDataset
     ) -> PicselliaLabel:
         """
-        Map the class ID to a PicselliaLabel object using the dataset context.
+        Map the class ID to a PicselliaLabel object using the dataset.
 
         Args:
             class_id (int): The class ID.
-            dataset_context (TDatasetContext): The dataset context with label mapping.
+            dataset (TDataset): The dataset with label mapping.
 
         Returns:
             PicselliaLabel: The corresponding Picsellia label.
         """
-        labels_list = list(dataset_context.labelmap.values())
+        labels_list = list(dataset.labelmap.values())
         return PicselliaLabel(labels_list[class_id])
 
     def get_picsellia_confidence(self, confidence: float) -> PicselliaConfidence:

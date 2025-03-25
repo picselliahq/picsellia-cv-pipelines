@@ -10,8 +10,8 @@ from picsellia_cv_engine.models.parameters.export_parameters import (
 from pipelines.yolov7_segmentation.pipeline_utils.dataset.yolov7_dataset_collection import (
     Yolov7DatasetCollection,
 )
-from pipelines.yolov7_segmentation.pipeline_utils.model.yolov7_model_context import (
-    Yolov7ModelContext,
+from pipelines.yolov7_segmentation.pipeline_utils.model.yolov7_model import (
+    Yolov7Model,
 )
 from pipelines.yolov7_segmentation.pipeline_utils.parameters.yolov7_augmentation_parameters import (
     Yolov7AugmentationParameters,
@@ -19,22 +19,20 @@ from pipelines.yolov7_segmentation.pipeline_utils.parameters.yolov7_augmentation
 from pipelines.yolov7_segmentation.pipeline_utils.parameters.yolov7_hyper_parameters import (
     Yolov7HyperParameters,
 )
-from pipelines.yolov7_segmentation.pipeline_utils.steps_utils.model_training.yolov7_model_context_trainer import (
-    Yolov7ModelContextTrainer,
+from pipelines.yolov7_segmentation.pipeline_utils.steps_utils.model_training.yolov7_model_trainer import (
+    Yolov7ModelTrainer,
 )
 
 
 @step
-def yolov7_model_context_trainer(
-    model_context: Yolov7ModelContext, dataset_collection: Yolov7DatasetCollection
-) -> Yolov7ModelContext:
+def yolov7_model_trainer(
+    model: Yolov7Model, dataset_collection: Yolov7DatasetCollection
+) -> Yolov7Model:
     context: PicselliaTrainingContext[
         Yolov7HyperParameters, Yolov7AugmentationParameters, ExportParameters
     ] = Pipeline.get_active_context()
 
-    model_trainer = Yolov7ModelContextTrainer(
-        model_context=model_context, experiment=context.experiment
-    )
+    model_trainer = Yolov7ModelTrainer(model=model, experiment=context.experiment)
 
     if (
         not context.api_token
@@ -46,7 +44,7 @@ def yolov7_model_context_trainer(
             "API token, organization ID, experiment ID, and host must be set"
         )
 
-    model_trainer.train_model_context(
+    model_trainer.train_model(
         dataset_collection=dataset_collection,
         hyperparameters=context.hyperparameters,
         api_token=context.api_token,
@@ -55,6 +53,6 @@ def yolov7_model_context_trainer(
         experiment_id=context.experiment_id,
     )
 
-    model_context.set_trained_weights_path()
+    model.set_trained_weights_path()
 
-    return model_context
+    return model

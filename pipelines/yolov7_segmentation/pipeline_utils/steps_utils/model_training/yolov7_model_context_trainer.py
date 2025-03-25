@@ -6,8 +6,8 @@ from picsellia import Experiment
 from pipelines.yolov7_segmentation.pipeline_utils.dataset.yolov7_dataset_collection import (
     Yolov7DatasetCollection,
 )
-from pipelines.yolov7_segmentation.pipeline_utils.model.yolov7_model_context import (
-    Yolov7ModelContext,
+from pipelines.yolov7_segmentation.pipeline_utils.model.yolov7_model import (
+    Yolov7Model,
 )
 from pipelines.yolov7_segmentation.pipeline_utils.parameters.yolov7_hyper_parameters import (
     Yolov7HyperParameters,
@@ -27,19 +27,19 @@ def handle_training_failure(process: subprocess.Popen):
         print(errors)
 
 
-class Yolov7ModelContextTrainer:
-    def __init__(self, model_context: Yolov7ModelContext, experiment: Experiment):
+class Yolov7ModelTrainer:
+    def __init__(self, model: Yolov7Model, experiment: Experiment):
         """
-        Initializes the trainer with a model context and experiment.
+        Initializes the trainer with a model and experiment.
 
         Args:
-            model_context (ModelContext): The context for the PaddleOCR model being trained.
+            model (Model): The context for the PaddleOCR model being trained.
             experiment (Experiment): The Picsellia experiment to log training metrics.
         """
-        self.model_context = model_context
+        self.model = model
         self.experiment = experiment
 
-    def train_model_context(
+    def train_model(
         self,
         dataset_collection: Yolov7DatasetCollection,
         hyperparameters: Yolov7HyperParameters,
@@ -48,18 +48,16 @@ class Yolov7ModelContextTrainer:
         host: str,
         experiment_id: str,
     ):
-        if not self.model_context.pretrained_weights_path or not os.path.exists(
-            self.model_context.pretrained_weights_path
+        if not self.model.pretrained_weights_path or not os.path.exists(
+            self.model.pretrained_weights_path
         ):
             raise ValueError("Pretrained weights file not found.")
 
-        if not self.model_context.config_path or not os.path.exists(
-            self.model_context.config_path
-        ):
+        if not self.model.config_path or not os.path.exists(self.model.config_path):
             raise ValueError("Configuration file not found.")
 
-        if not self.model_context.hyperparameters_path or not os.path.exists(
-            self.model_context.hyperparameters_path
+        if not self.model.hyperparameters_path or not os.path.exists(
+            self.model.hyperparameters_path
         ):
             raise ValueError("Hyperparameters file not found.")
 
@@ -68,12 +66,10 @@ class Yolov7ModelContextTrainer:
         ):
             raise ValueError("Dataset configuration file not found.")
 
-        if not self.model_context.results_dir or not os.path.exists(
-            self.model_context.results_dir
-        ):
+        if not self.model.results_dir or not os.path.exists(self.model.results_dir):
             raise ValueError("Results directory not found.")
 
-        project_dir = os.path.join(self.model_context.results_dir, "training")
+        project_dir = os.path.join(self.model.results_dir, "training")
         os.makedirs(project_dir, exist_ok=True)
 
         train_file_path = os.path.abspath(
@@ -84,13 +80,13 @@ class Yolov7ModelContextTrainer:
             "python3.10",
             train_file_path,
             "--weights",
-            self.model_context.pretrained_weights_path,
+            self.model.pretrained_weights_path,
             "--cfg",
-            self.model_context.config_path,
+            self.model.config_path,
             "--data",
             dataset_collection.config_path,
             "--hyp",
-            self.model_context.hyperparameters_path,
+            self.model.hyperparameters_path,
             "--epochs",
             str(hyperparameters.epochs),
             "--batch-size",
@@ -102,7 +98,7 @@ class Yolov7ModelContextTrainer:
             "--project",
             project_dir,
             "--name",
-            self.model_context.model_name,
+            self.model.name,
             "--api_token",
             api_token,
             "--organization_id",
