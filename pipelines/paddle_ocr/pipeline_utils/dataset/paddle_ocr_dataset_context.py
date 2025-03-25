@@ -1,15 +1,15 @@
 from picsellia import DatasetVersion, Label
 from picsellia.sdk.asset import MultiAsset
-from picsellia_cv_engine.models.data.dataset.coco_dataset_context import (
-    CocoDatasetContext,
+from picsellia_cv_engine.models.data.dataset.coco_dataset import (
+    CocoDataset,
 )
 
 
-class PaddleOCRDatasetContext(CocoDatasetContext):
+class PaddleOCRDataset(CocoDataset):
     """
-    A specialized dataset context for handling PaddleOCR datasets.
+    A specialized dataset for handling PaddleOCR datasets.
 
-    This class extends the generic DatasetContext to provide functionality specific to PaddleOCR,
+    This class extends the generic Dataset to provide functionality specific to PaddleOCR,
     such as handling bounding box and text annotations as well as organizing the dataset structure
     for PaddleOCR tasks.
 
@@ -21,22 +21,22 @@ class PaddleOCRDatasetContext(CocoDatasetContext):
 
     def __init__(
         self,
-        dataset_name: str,
+        name: str,
         dataset_version: DatasetVersion,
         assets: MultiAsset,
         labelmap: dict[str, Label] | None = None,
     ):
         """
-        Initializes the PaddleOCRDatasetContext with the specified dataset name, version, assets, and labelmap.
+        Initializes the PaddleOCRDataset with the specified dataset name, version, assets, and labelmap.
 
         Args:
-            dataset_name (str): The name of the dataset.
+            name (str): The name of the dataset.
             dataset_version (DatasetVersion): The version of the dataset in Picsellia.
             assets (MultiAsset): The assets associated with the dataset.
             labelmap (Optional[Dict[str, Label]]): Optional label map for the dataset.
         """
         super().__init__(
-            dataset_name=dataset_name,
+            name=name,
             dataset_version=dataset_version,
             assets=assets,
             labelmap=labelmap,

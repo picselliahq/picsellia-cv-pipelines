@@ -72,7 +72,7 @@ def paddle_ocr_training_pipeline():
         model_collection=model_collection
     )
     evaluate_paddle_ocr_model_collection(
-        model_collection=model_collection, dataset_context=dataset_collection["test"]
+        model_collection=model_collection, dataset=dataset_collection["test"]
     )
 
 

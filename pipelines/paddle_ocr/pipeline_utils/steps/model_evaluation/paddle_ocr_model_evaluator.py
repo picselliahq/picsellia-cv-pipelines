@@ -4,8 +4,8 @@ from picsellia_cv_engine.decorators.step_decorator import step
 from picsellia_cv_engine.models.contexts.training.picsellia_training_context import (
     PicselliaTrainingContext,
 )
-from picsellia_cv_engine.models.data.dataset.base_dataset_context import (
-    TBaseDatasetContext,
+from picsellia_cv_engine.models.data.dataset.base_dataset import (
+    TBaseDataset,
 )
 from picsellia_cv_engine.models.parameters.export_parameters import (
     ExportParameters,
@@ -31,7 +31,7 @@ from pipelines.paddle_ocr.pipeline_utils.steps_utils.model_prediction.paddle_ocr
 @step
 def evaluate_paddle_ocr_model_collection(
     model_collection: PaddleOCRModelCollection,
-    dataset_context: TBaseDatasetContext,
+    dataset: TBaseDataset,
 ) -> None:
     """
     Evaluates a PaddleOCR model collection on a given dataset.
@@ -42,7 +42,7 @@ def evaluate_paddle_ocr_model_collection(
 
     Args:
         model_collection (PaddleOCRModelCollection): The collection of PaddleOCR models to be evaluated.
-        dataset_context (TDatasetContext): The dataset context containing the data for evaluation.
+        dataset (TDataset): The dataset containing the data for evaluation.
 
     Returns:
         None: The function performs evaluation and logs the results but does not return any value.
@@ -54,9 +54,7 @@ def evaluate_paddle_ocr_model_collection(
     model_collection_predictor = PaddleOCRModelCollectionPredictor(
         model_collection=model_collection,
     )
-    image_paths = model_collection_predictor.pre_process_dataset_context(
-        dataset_context=dataset_context
-    )
+    image_paths = model_collection_predictor.pre_process_dataset(dataset=dataset)
     image_batches = model_collection_predictor.prepare_batches(
         image_paths=image_paths,
         batch_size=min(
@@ -70,7 +68,7 @@ def evaluate_paddle_ocr_model_collection(
     picsellia_ocr_predictions = model_collection_predictor.post_process_batches(
         image_batches=image_batches,
         batch_results=batch_results,
-        dataset_context=dataset_context,
+        dataset=dataset,
     )
 
     model_evaluator = ModelEvaluator(
