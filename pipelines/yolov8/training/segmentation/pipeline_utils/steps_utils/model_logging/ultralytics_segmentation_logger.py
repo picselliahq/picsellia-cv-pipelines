@@ -1,14 +1,12 @@
 from picsellia import Experiment
-from picsellia_cv_engine.models.steps.model.logging.base_logger import (
+from picsellia_cv_engine.models.steps.model.logging import (
     BaseLogger,
     Metric,
-)
-from picsellia_cv_engine.models.steps.model.logging.classification_logger import (
-    ClassificationMetricMapping,
+    MetricMapping,
 )
 
 
-class UltralyticsSegmentationMetricMapping(ClassificationMetricMapping):
+class UltralyticsSegmentationMetricMapping(MetricMapping):
     """ """
 
     def __init__(self):
@@ -45,6 +43,28 @@ class UltralyticsSegmentationMetricMapping(ClassificationMetricMapping):
         self.add_metric(
             phase="train",
             metric=Metric(standard_name="epoch_time", framework_name="epoch_time"),
+        )
+        self.add_metric(
+            phase="train",
+            metric=Metric(standard_name="batch_0", framework_name="train_batch0"),
+        )
+        self.add_metric(
+            phase="train",
+            metric=Metric(standard_name="batch_1", framework_name="train_batch1"),
+        )
+        self.add_metric(
+            phase="train",
+            metric=Metric(standard_name="batch_2", framework_name="train_batch2"),
+        )
+        self.add_metric(
+            phase="train",
+            metric=Metric(standard_name="labels", framework_name="labels"),
+        )
+        self.add_metric(
+            phase="train",
+            metric=Metric(
+                standard_name="labels_correlogram", framework_name="labels_correlogram"
+            ),
         )
 
         self.add_metric(
@@ -107,58 +127,107 @@ class UltralyticsSegmentationMetricMapping(ClassificationMetricMapping):
                 standard_name="mAP50-95(B)", framework_name="metrics/mAP50-95(B)"
             ),
         )
+        # self.add_metric(
+        #     phase="val",
+        #     metric=Metric(
+        #         standard_name="precision(M)-final",
+        #         framework_name="metrics/precision(M)-final",
+        #     ),
+        # )
+        # self.add_metric(
+        #     phase="val",
+        #     metric=Metric(
+        #         standard_name="recall(M)-final",
+        #         framework_name="metrics/recall(M)-final",
+        #     ),
+        # )
+        # self.add_metric(
+        #     phase="val",
+        #     metric=Metric(
+        #         standard_name="mAP50(M)-final", framework_name="metrics/mAP50(M)-final"
+        #     ),
+        # )
+        # self.add_metric(
+        #     phase="val",
+        #     metric=Metric(
+        #         standard_name="mAP50-95(M)-final",
+        #         framework_name="metrics/mAP50-95(M)-final",
+        #     ),
+        # )
+        # self.add_metric(
+        #     phase="val",
+        #     metric=Metric(
+        #         standard_name="precision(B)-final",
+        #         framework_name="metrics/precision(B)-final",
+        #     ),
+        # )
+        # self.add_metric(
+        #     phase="val",
+        #     metric=Metric(
+        #         standard_name="recall(B)-final",
+        #         framework_name="metrics/recall(B)-final",
+        #     ),
+        # )
+        # self.add_metric(
+        #     phase="val",
+        #     metric=Metric(
+        #         standard_name="mAP50(B)-final", framework_name="metrics/mAP50(B)-final"
+        #     ),
+        # )
+        # self.add_metric(
+        #     phase="val",
+        #     metric=Metric(
+        #         standard_name="mAP50-95(B)-final",
+        #         framework_name="metrics/mAP50-95(B)-final",
+        #     ),
+        # )
         self.add_metric(
             phase="val",
             metric=Metric(
-                standard_name="precision(M)-final",
-                framework_name="metrics/precision(M)-final",
+                standard_name="batch_0_labels", framework_name="val_batch0_labels"
             ),
         )
         self.add_metric(
             phase="val",
             metric=Metric(
-                standard_name="recall(M)-final",
-                framework_name="metrics/recall(M)-final",
+                standard_name="batch_1_labels", framework_name="val_batch1_labels"
             ),
         )
         self.add_metric(
             phase="val",
             metric=Metric(
-                standard_name="mAP50(M)-final", framework_name="metrics/mAP50(M)-final"
+                standard_name="batch_2_labels", framework_name="val_batch2_labels"
             ),
         )
         self.add_metric(
             phase="val",
             metric=Metric(
-                standard_name="mAP50-95(M)-final",
-                framework_name="metrics/mAP50-95(M)-final",
+                standard_name="batch_0_preds", framework_name="val_batch0_pred"
             ),
         )
         self.add_metric(
             phase="val",
             metric=Metric(
-                standard_name="precision(B)-final",
-                framework_name="metrics/precision(B)-final",
+                standard_name="batch_1_preds", framework_name="val_batch1_pred"
             ),
         )
         self.add_metric(
             phase="val",
             metric=Metric(
-                standard_name="recall(B)-final",
-                framework_name="metrics/recall(B)-final",
+                standard_name="batch_2_preds", framework_name="val_batch2_pred"
             ),
         )
         self.add_metric(
             phase="val",
             metric=Metric(
-                standard_name="mAP50(B)-final", framework_name="metrics/mAP50(B)-final"
+                standard_name="confusion_matrix", framework_name="confusion_matrix"
             ),
         )
         self.add_metric(
             phase="val",
             metric=Metric(
-                standard_name="mAP50-95(B)-final",
-                framework_name="metrics/mAP50-95(B)-final",
+                standard_name="confusion_matrix_normalized",
+                framework_name="confusion_matrix_normalized",
             ),
         )
 
