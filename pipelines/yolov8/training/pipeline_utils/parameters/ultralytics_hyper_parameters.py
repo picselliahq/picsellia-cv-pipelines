@@ -1,9 +1,7 @@
 from typing import Optional
 
 from picsellia.types.schemas import LogDataType
-from picsellia_cv_engine.models.parameters.hyper_parameters import (
-    HyperParameters,
-)
+from picsellia_cv_engine.models.parameters import HyperParameters
 
 
 class UltralyticsHyperParameters(HyperParameters):
@@ -108,5 +106,5 @@ class UltralyticsHyperParameters(HyperParameters):
             keys=["dropout"], expected_type=float, default=0.0
         )
         self.plots = self.extract_parameter(
-            keys=["plots"], expected_type=bool, default=False
+            keys=["plots"], expected_type=bool, default=True
         )
