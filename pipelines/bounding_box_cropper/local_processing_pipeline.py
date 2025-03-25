@@ -52,9 +52,9 @@ local_context = create_local_processing_context(
 )
 def bounding_box_cropper_processing_pipeline() -> None:
     dataset_collection = load_coco_datasets()
-    validate_bounding_box_cropper_data(dataset_context=dataset_collection["input"])
-    output_dataset_context = process(dataset_collection=dataset_collection)
-    upload_full_dataset(dataset_context=output_dataset_context)
+    validate_bounding_box_cropper_data(dataset=dataset_collection["input"])
+    output_dataset = process(dataset_collection=dataset_collection)
+    upload_full_dataset(dataset=output_dataset)
 
 
 if __name__ == "__main__":

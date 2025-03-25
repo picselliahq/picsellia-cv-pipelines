@@ -4,7 +4,7 @@ RUN apt-get update && apt-get install -y \
     libgl1-mesa-glx \
     && rm -rf /var/lib/apt/lists/*
 
-RUN git clone -b feat/add-base-scripts https://github.com/picselliahq/picsellia-cv-engine.git /picsellia-cv-engine
+RUN git clone https://github.com/picselliahq/picsellia-cv-engine.git /picsellia-cv-engine
 RUN pip install -e /picsellia-cv-engine
 
 WORKDIR /experiment
