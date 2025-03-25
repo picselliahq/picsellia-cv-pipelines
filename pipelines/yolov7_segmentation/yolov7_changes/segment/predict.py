@@ -40,6 +40,9 @@ if str(ROOT) not in sys.path:
     sys.path.append(str(ROOT))  # add ROOT to PATH
 ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 
+import warnings
+
+import numpy as np
 from models.common import DetectMultiBackend
 from utils.dataloaders import IMG_FORMATS, VID_FORMATS, LoadImages, LoadStreams
 from utils.general import (
@@ -62,9 +65,6 @@ from utils.plots import Annotator, colors, save_one_box
 from utils.segment.general import process_mask, scale_masks
 from utils.segment.plots import plot_masks
 from utils.torch_utils import select_device, smart_inference_mode
-
-import numpy as np
-import warnings
 
 warnings.filterwarnings("ignore", category=FutureWarning)
 
@@ -290,7 +290,7 @@ def run(
 
         # Print time (inference-only)
         LOGGER.info(
-            f"{s}{'' if len(det) else '(no detections), '}{dt[1].dt * 1E3:.1f}ms"
+            f"{s}{'' if len(det) else '(no detections), '}{dt[1].dt * 1e3:.1f}ms"
         )
 
     # Print results

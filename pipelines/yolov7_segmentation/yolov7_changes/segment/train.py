@@ -40,9 +40,10 @@ if str(ROOT) not in sys.path:
     sys.path.append(str(ROOT))  # add ROOT to PATH
 ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 
-import torch.nn.functional as F
+import warnings
 
 import segment.val as validate  # for end-of-epoch mAP
+import torch.nn.functional as F
 from models.experimental import attempt_load
 from models.yolo import SegmentationModel
 from utils.autoanchor import check_anchors
@@ -86,8 +87,6 @@ from utils.torch_utils import (
     smart_resume,
     torch_distributed_zero_first,
 )
-
-import warnings
 
 warnings.filterwarnings("ignore", category=FutureWarning)
 
@@ -508,7 +507,7 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
             # Log
             if RANK in {-1, 0}:
                 mloss = (mloss * i + loss_items) / (i + 1)  # update mean losses
-                mem = f"{torch.cuda.memory_reserved() / 1E9 if torch.cuda.is_available() else 0:.3g}G"  # (GB)
+                mem = f"{torch.cuda.memory_reserved() / 1e9 if torch.cuda.is_available() else 0:.3g}G"  # (GB)
                 pbar.set_description(
                     ("%11s" * 2 + "%11.4g" * 6)
                     % (
