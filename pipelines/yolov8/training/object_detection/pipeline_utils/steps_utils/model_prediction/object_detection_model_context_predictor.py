@@ -1,44 +1,38 @@
 import os
 
 from picsellia import Asset
-from picsellia_cv_engine.models.data.dataset.base_dataset_context import (
-    TBaseDatasetContext,
-)
-from picsellia_cv_engine.models.model.picsellia_prediction import (
+from picsellia_cv_engine.models.data import TBaseDataset
+from picsellia_cv_engine.models.model import (
     PicselliaConfidence,
     PicselliaRectangle,
     PicselliaRectanglePrediction,
 )
-from picsellia_cv_engine.models.steps.model.predictor.model_context_predictor import (
-    ModelContextPredictor,
+from picsellia_cv_engine.models.steps.model.predictor.model_predictor import (
+    ModelPredictor,
 )
 from ultralytics.engine.results import Results
 
-from pipelines.yolov8.training.pipeline_utils.model.ultralytics_model_context import (
-    UltralyticsModelContext,
+from pipelines.yolov8.training.pipeline_utils.model.ultralytics_model import (
+    UltralyticsModel,
 )
 
 
-class UltralyticsDetectionModelContextPredictor(
-    ModelContextPredictor[UltralyticsModelContext]
-):
+class UltralyticsDetectionModelPredictor(ModelPredictor[UltralyticsModel]):
     """
     A predictor class that handles model inference and result post-processing for object detection tasks
     using the Ultralytics framework.
     """
 
-    def __init__(self, model_context: UltralyticsModelContext):
-        super().__init__(model_context)
+    def __init__(self, model: UltralyticsModel):
+        super().__init__(model)
 
-    def pre_process_dataset_context(
-        self, dataset_context: TBaseDatasetContext
-    ) -> list[str]:
-        if not dataset_context.images_dir:
-            raise ValueError("No images directory found in the dataset context.")
+    def pre_process_dataset(self, dataset: TBaseDataset) -> list[str]:
+        if not dataset.images_dir:
+            raise ValueError("No images directory found in the dataset.")
 
         return [
-            os.path.join(dataset_context.images_dir, image_name)
-            for image_name in os.listdir(dataset_context.images_dir)
+            os.path.join(dataset.images_dir, image_name)
+            for image_name in os.listdir(dataset.images_dir)
         ]
 
     def prepare_batches(
@@ -58,13 +52,13 @@ class UltralyticsDetectionModelContextPredictor(
         return all_batch_results
 
     def _run_inference(self, batch_paths: list[str]) -> Results:
-        return self.model_context.loaded_model(batch_paths)
+        return self.model.loaded_model(batch_paths)
 
     def post_process_batches(
         self,
         image_batches: list[list[str]],
         batch_results: list[Results],
-        dataset_context: TBaseDatasetContext,
+        dataset: TBaseDataset,
     ) -> list[PicselliaRectanglePrediction]:
         all_predictions = []
 
@@ -75,7 +69,7 @@ class UltralyticsDetectionModelContextPredictor(
                 self._post_process(
                     image_paths=batch_paths,
                     batch_prediction=batch_result,
-                    dataset_context=dataset_context,
+                    dataset=dataset,
                 )
             )
         return all_predictions
@@ -84,16 +78,16 @@ class UltralyticsDetectionModelContextPredictor(
         self,
         image_paths: list[str],
         batch_prediction: Results,
-        dataset_context: TBaseDatasetContext,
+        dataset: TBaseDataset,
     ) -> list[PicselliaRectanglePrediction]:
         processed_predictions = []
 
         for image_path, prediction in zip(image_paths, batch_prediction, strict=False):
             asset_id = os.path.basename(image_path).split(".")[0]
-            asset = dataset_context.dataset_version.list_assets(ids=[asset_id])[0]
+            asset = dataset.dataset_version.list_assets(ids=[asset_id])[0]
 
             boxes, labels, confidences = self.format_predictions(
-                asset=asset, prediction=prediction, dataset_context=dataset_context
+                asset=asset, prediction=prediction, dataset=dataset
             )
 
             processed_prediction = PicselliaRectanglePrediction(
@@ -107,7 +101,7 @@ class UltralyticsDetectionModelContextPredictor(
         return processed_predictions
 
     def format_predictions(
-        self, asset: Asset, prediction: Results, dataset_context: TBaseDatasetContext
+        self, asset: Asset, prediction: Results, dataset: TBaseDataset
     ):
         if not prediction.boxes:
             return [], [], []
@@ -123,9 +117,7 @@ class UltralyticsDetectionModelContextPredictor(
         # Convert to Picsellia types
         picsellia_boxes = [PicselliaRectangle(*box) for box in casted_boxes]
         picsellia_labels = [
-            self.get_picsellia_label(
-                prediction.names[int(cls.cpu().numpy())], dataset_context
-            )
+            self.get_picsellia_label(prediction.names[int(cls.cpu().numpy())], dataset)
             for cls in prediction.boxes.cls
         ]
         picsellia_confidences = [

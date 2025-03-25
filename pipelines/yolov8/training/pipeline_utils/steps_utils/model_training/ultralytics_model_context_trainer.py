@@ -1,12 +1,8 @@
 import os
 
 from picsellia import Experiment
-from picsellia_cv_engine.models.data.dataset.base_dataset_context import (
-    TBaseDatasetContext,
-)
-from picsellia_cv_engine.models.data.dataset.dataset_collection import (
-    DatasetCollection,
-)
+from picsellia_cv_engine.models import DatasetCollection
+from picsellia_cv_engine.models.data import TBaseDataset
 
 from pipelines.yolov8.training.classification.pipeline_utils.steps_utils.model_logging.ultralytics_classification_logger import (
     UltralyticsClassificationLogger,
@@ -16,8 +12,8 @@ from pipelines.yolov8.training.object_detection.pipeline_utils.steps_utils.model
     UltralyticsObjectDetectionLogger,
     UltralyticsObjectDetectionMetricMapping,
 )
-from pipelines.yolov8.training.pipeline_utils.model.ultralytics_model_context import (
-    UltralyticsModelContext,
+from pipelines.yolov8.training.pipeline_utils.model.ultralytics_model import (
+    UltralyticsModel,
 )
 from pipelines.yolov8.training.pipeline_utils.parameters.ultralytics_augmentation_parameters import (
     UltralyticsAugmentationParameters,
@@ -34,61 +30,59 @@ from pipelines.yolov8.training.segmentation.pipeline_utils.steps_utils.model_log
 )
 
 
-class UltralyticsModelContextTrainer:
+class UltralyticsModelTrainer:
     """
     Trainer class for handling the training process of a model using the Ultralytics framework.
     """
 
     def __init__(
         self,
-        model_context: UltralyticsModelContext,
+        model: UltralyticsModel,
         experiment: Experiment,
     ):
         """
-        Initializes the trainer with a model context and an experiment.
+        Initializes the trainer with a model and an experiment.
 
         Args:
-            model_context (ModelContext): The context of the model to be trained.
+            model (Model): The context of the model to be trained.
             experiment (Experiment): The experiment instance used for logging and tracking.
         """
-        self.model_context = model_context
+        self.model = model
         self.experiment = experiment
-        if self.model_context.loaded_model.task == "classif":
+        if self.model.loaded_model.task == "classify":
             self.callback_handler = UltralyticsCallbacks(
                 experiment,
                 logger=UltralyticsClassificationLogger,
                 metric_mapping=UltralyticsClassificationMetricMapping(),
             )
-        elif self.model_context.loaded_model.task == "detect":
+        elif self.model.loaded_model.task == "detect":
             self.callback_handler = UltralyticsCallbacks(
                 experiment,
                 logger=UltralyticsObjectDetectionLogger,
                 metric_mapping=UltralyticsObjectDetectionMetricMapping(),
             )
-        elif self.model_context.loaded_model.task == "segment":
+        elif self.model.loaded_model.task == "segment":
             self.callback_handler = UltralyticsCallbacks(
                 experiment,
                 logger=UltralyticsSegmentationLogger,
                 metric_mapping=UltralyticsSegmentationMetricMapping(),
             )
         else:
-            raise ValueError(
-                f"Unsupported task: {self.model_context.loaded_model.task}"
-            )
+            raise ValueError(f"Unsupported task: {self.model.loaded_model.task}")
 
     def _setup_callbacks(self):
         """
         Sets up the callbacks for the model training process.
         """
         for event, callback in self.callback_handler.get_callbacks().items():
-            self.model_context.loaded_model.add_callback(event, callback)
+            self.model.loaded_model.add_callback(event, callback)
 
-    def train_model_context(
+    def train_model(
         self,
-        dataset_collection: DatasetCollection[TBaseDatasetContext],
+        dataset_collection: DatasetCollection[TBaseDataset],
         hyperparameters: UltralyticsHyperParameters,
         augmentation_parameters: UltralyticsAugmentationParameters,
-    ) -> UltralyticsModelContext:
+    ) -> UltralyticsModel:
         """
         Trains the model within the provided context using the given datasets, hyperparameters, and augmentation parameters.
 
@@ -98,18 +92,18 @@ class UltralyticsModelContextTrainer:
             augmentation_parameters (UltralyticsAugmentationParameters): The augmentation parameters applied during training.
 
         Returns:
-            ModelContext: The updated model context after training.
+            Model: The updated model after training.
         """
 
         self._setup_callbacks()
 
-        if self.model_context.loaded_model.task == "classif":
+        if self.model.loaded_model.task == "classify":
             data = dataset_collection.dataset_path
         else:
             data = os.path.join(dataset_collection.dataset_path, "data.yaml")
 
         if hyperparameters.epochs > 0:
-            self.model_context.loaded_model.train(
+            self.model.loaded_model.train(
                 # Hyperparameters
                 data=data,
                 epochs=hyperparameters.epochs,
@@ -122,8 +116,8 @@ class UltralyticsModelContextTrainer:
                 cache=hyperparameters.cache,
                 device=hyperparameters.device,
                 workers=hyperparameters.workers,
-                project=self.model_context.results_dir,
-                name=self.model_context.model_name,
+                project=self.model.results_dir,
+                name=self.model.name,
                 exist_ok=True,
                 pretrained=True,
                 optimizer=hyperparameters.optimizer,
@@ -176,4 +170,4 @@ class UltralyticsModelContextTrainer:
                 crop_fraction=augmentation_parameters.crop_fraction,
             )
 
-        return self.model_context
+        return self.model

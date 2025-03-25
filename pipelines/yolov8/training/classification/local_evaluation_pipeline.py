@@ -2,7 +2,7 @@ from argparse import ArgumentParser
 
 from picsellia_cv_engine.decorators.pipeline_decorator import pipeline
 from picsellia_cv_engine.models.contexts.training.local_picsellia_training_context import (
-    LocalPicselliaTrainingContext,
+    LocalTrainingContext,
 )
 from picsellia_cv_engine.models.parameters.export_parameters import (
     ExportParameters,
@@ -14,7 +14,7 @@ from picsellia_cv_engine.steps.data_validation.coco_classification_dataset_colle
     validate_coco_classification_dataset_collection,
 )
 from picsellia_cv_engine.steps.weights_extraction.training_weights_extractor import (
-    get_training_model_context,
+    get_training_model,
 )
 
 from pipelines.yolov8_classification.pipeline_utils.parameters.ultralytics_augmentation_parameters import (
@@ -27,10 +27,10 @@ from pipelines.yolov8_classification.pipeline_utils.steps.data_preparation.ultra
     prepare_ultralytics_classification_dataset_collection,
 )
 from pipelines.yolov8_classification.pipeline_utils.steps.model_evaluation.ultralytics_model_evaluator import (
-    evaluate_ultralytics_model_context,
+    evaluate_ultralytics_model,
 )
-from pipelines.yolov8_classification.pipeline_utils.steps.model_loading.ultralytics_model_context_loader import (
-    load_ultralytics_model_context,
+from pipelines.yolov8_classification.pipeline_utils.steps.model_loading.ultralytics_model_loader import (
+    load_ultralytics_model,
 )
 
 parser = ArgumentParser()
@@ -41,8 +41,8 @@ parser.add_argument("--experiment_id", type=str)
 args = parser.parse_args()
 
 
-def get_context() -> LocalPicselliaTrainingContext:
-    return LocalPicselliaTrainingContext(
+def get_context() -> LocalTrainingContext:
+    return LocalTrainingContext(
         api_token=args.api_token,
         organization_id=args.organization_id,
         experiment_id=args.experiment_id,
@@ -66,17 +66,13 @@ def yolov8_classification_training_pipeline():
         dataset_collection=dataset_collection
     )
 
-    model_context = get_training_model_context(
-        pretrained_weights_name="pretrained-weights"
-    )
-    model_context = load_ultralytics_model_context(
-        model_context=model_context,
-        weights_path_to_load=model_context.pretrained_weights_path,
+    model = get_training_model(pretrained_weights_name="pretrained-weights")
+    model = load_ultralytics_model(
+        model=model,
+        weights_path_to_load=model.pretrained_weights_path,
     )
 
-    evaluate_ultralytics_model_context(
-        model_context=model_context, dataset_context=dataset_collection["test"]
-    )
+    evaluate_ultralytics_model(model=model, dataset=dataset_collection["test"])
 
 
 if __name__ == "__main__":

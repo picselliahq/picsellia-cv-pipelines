@@ -6,22 +6,22 @@ from picsellia_cv_engine.models.contexts.processing.dataset.picsellia_processing
     PicselliaProcessingContext,
 )
 
-from pipelines.yolov8.training.classification.pipeline_utils.model.ultralytics_model_context import (
-    UltralyticsModelContext,
+from pipelines.yolov8.training.classification.pipeline_utils.model.ultralytics_model import (
+    UltralyticsModel,
 )
 
 
 @step
-def get_processing_ultralytics_model_context() -> UltralyticsModelContext:
+def get_processing_ultralytics_model() -> UltralyticsModel:
     context: PicselliaProcessingContext = Pipeline.get_active_context()
 
     model_version = context.model_version
-    model_context = UltralyticsModelContext(
+    model = UltralyticsModel(
         model_name=model_version.name,
         model_version=model_version,
         trained_weights_name=context.processing_parameters.model_file_name,
     )
-    model_context.download_weights(
+    model.download_weights(
         destination_dir=os.path.join(os.getcwd(), context.job_id, "model")
     )
-    return model_context
+    return model

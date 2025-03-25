@@ -1,24 +1,22 @@
 import os
 
-from picsellia_cv_engine.models.data.dataset.base_dataset_context import (
-    TBaseDatasetContext,
+from picsellia_cv_engine.models.data.dataset.base_dataset import (
+    TBaseDataset,
 )
 from picsellia_cv_engine.models.model.picsellia_prediction import (
     PicselliaClassificationPrediction,
 )
-from picsellia_cv_engine.models.steps.model.predictor.model_context_predictor import (
-    ModelContextPredictor,
+from picsellia_cv_engine.models.steps.model.predictor.model_predictor import (
+    ModelPredictor,
 )
 from ultralytics.engine.results import Results
 
-from pipelines.yolov8.training.pipeline_utils.model.ultralytics_model_context import (
-    UltralyticsModelContext,
+from pipelines.yolov8.training.pipeline_utils.model.ultralytics_model import (
+    UltralyticsModel,
 )
 
 
-class UltralyticsClassificationModelContextPredictor(
-    ModelContextPredictor[UltralyticsModelContext]
-):
+class UltralyticsClassificationModelPredictor(ModelPredictor[UltralyticsModel]):
     """
     A predictor class that handles model inference and result post-processing for classification tasks
     using the Ultralytics framework.
@@ -27,32 +25,30 @@ class UltralyticsClassificationModelContextPredictor(
     the predictions to generate PicselliaClassificationPrediction objects for classification tasks.
     """
 
-    def __init__(self, model_context: UltralyticsModelContext):
+    def __init__(self, model: UltralyticsModel):
         """
-        Initializes the UltralyticsClassificationModelContextPredictor with a provided model context.
+        Initializes the UltralyticsClassificationModelPredictor with a provided model.
 
         Args:
-            model_context (ModelContext): The context containing the loaded model and its configurations.
+            model (Model): The context containing the loaded model and its configurations.
         """
-        super().__init__(model_context)
+        super().__init__(model)
 
-    def pre_process_dataset_context(
-        self, dataset_context: TBaseDatasetContext
-    ) -> list[str]:
+    def pre_process_dataset(self, dataset: TBaseDataset) -> list[str]:
         """
-        Prepares the dataset by extracting and returning a list of image file paths from the dataset context.
+        Prepares the dataset by extracting and returning a list of image file paths from the dataset.
 
         Args:
-            dataset_context (TBaseDatasetContext): The context containing the dataset information.
+            dataset (TBaseDataset): The context containing the dataset information.
 
         Returns:
             List[str]: A list of image file paths from the dataset.
         """
-        if not dataset_context.images_dir:
-            raise ValueError("No images directory found in the dataset context.")
+        if not dataset.images_dir:
+            raise ValueError("No images directory found in the dataset.")
         image_paths = []
-        for category_name in os.listdir(dataset_context.images_dir):
-            category_dir = os.path.join(dataset_context.images_dir, category_name)
+        for category_name in os.listdir(dataset.images_dir):
+            category_dir = os.path.join(dataset.images_dir, category_name)
             image_paths.extend(
                 [
                     os.path.join(category_dir, image_name)
@@ -106,13 +102,13 @@ class UltralyticsClassificationModelContextPredictor(
         Returns:
             Results: The inference results, containing predictions for each image in the batch.
         """
-        return self.model_context.loaded_model(batch_paths)
+        return self.model.loaded_model(batch_paths)
 
     def post_process_batches(
         self,
         image_batches: list[list[str]],
         batch_results: list[Results],
-        dataset_context: TBaseDatasetContext,
+        dataset: TBaseDataset,
     ) -> list[PicselliaClassificationPrediction]:
         """
         Post-processes the inference results for each batch and returns a list of classification predictions.
@@ -120,7 +116,7 @@ class UltralyticsClassificationModelContextPredictor(
         Args:
             image_batches (List[List[str]]): A list of batches of image paths.
             batch_results (List[Results]): The list of inference results for each batch.
-            dataset_context (TBaseDatasetContext): The context of the dataset used for label mapping.
+            dataset (TBaseDataset): The context of the dataset used for label mapping.
 
         Returns:
             List[PicselliaClassificationPrediction]: A list of processed classification predictions for each image.
@@ -134,7 +130,7 @@ class UltralyticsClassificationModelContextPredictor(
                 self._post_process(
                     image_paths=batch_paths,
                     batch_prediction=batch_result,
-                    dataset_context=dataset_context,
+                    dataset=dataset,
                 )
             )
         return all_predictions
@@ -143,7 +139,7 @@ class UltralyticsClassificationModelContextPredictor(
         self,
         image_paths: list[str],
         batch_prediction: Results,
-        dataset_context: TBaseDatasetContext,
+        dataset: TBaseDataset,
     ) -> list[PicselliaClassificationPrediction]:
         """
         Post-processes the predictions for a single batch of images, mapping predicted classes and confidence scores
@@ -152,7 +148,7 @@ class UltralyticsClassificationModelContextPredictor(
         Args:
             image_paths (List[str]): The list of image paths for the batch.
             batch_prediction (Results): The inference results for the batch.
-            dataset_context (TBaseDatasetContext): The dataset context used for label mapping.
+            dataset (TBaseDataset): The dataset used for label mapping.
 
         Returns:
             List[PicselliaClassificationPrediction]: A list of processed predictions, including image paths,
@@ -162,9 +158,9 @@ class UltralyticsClassificationModelContextPredictor(
 
         for image_path, prediction in zip(image_paths, batch_prediction, strict=False):
             asset_id = os.path.basename(image_path).split(".")[0]
-            asset = dataset_context.dataset_version.list_assets(ids=[asset_id])[0]
+            asset = dataset.dataset_version.list_assets(ids=[asset_id])[0]
             predicted_label = self.get_picsellia_label(
-                prediction.names[int(prediction.probs.top1)], dataset_context
+                prediction.names[int(prediction.probs.top1)], dataset
             )
             prediction_confidence = self.get_picsellia_confidence(
                 float(prediction.probs.top1conf.cpu().numpy())

@@ -1,17 +1,14 @@
 import os
 
 import yaml
-from picsellia_cv_engine.decorators.step_decorator import step
-from picsellia_cv_engine.models.data.dataset.dataset_collection import DatasetCollection
-from picsellia_cv_engine.models.data.dataset.yolo_dataset_context import (
-    YoloDatasetContext,
-)
+from picsellia_cv_engine import step
+from picsellia_cv_engine.models import DatasetCollection, YoloDataset
 
 
 @step
 def prepare_ultralytics_dataset_collection(
-    dataset_collection: DatasetCollection[YoloDatasetContext],
-) -> DatasetCollection[YoloDatasetContext]:
+    dataset_collection: DatasetCollection[YoloDataset],
+) -> DatasetCollection[YoloDataset]:
     data_yaml = {
         "train": os.path.join(dataset_collection.dataset_path, "images", "train"),
         "val": os.path.join(dataset_collection.dataset_path, "images", "val"),

@@ -17,8 +17,8 @@ from picsellia.types.enums import InferenceType
 from pipelines.yolov8.pre_annotation.pipeline_utils.parameters.processing_yolov8_preannotation_parameters import (
     ProcessingYOLOV8PreannotationParameters,
 )
-from pipelines.yolov8.training.classification.pipeline_utils.model.ultralytics_model_context import (
-    UltralyticsModelContext,
+from pipelines.yolov8.training.classification.pipeline_utils.model.ultralytics_model import (
+    UltralyticsModel,
 )
 
 
@@ -347,13 +347,13 @@ class PreAnnotator:
         self,
         client: Client,
         dataset_version: DatasetVersion,
-        model_context: UltralyticsModelContext,
+        model: UltralyticsModel,
         model_labels: list[str],
         parameters: ProcessingYOLOV8PreannotationParameters,
     ) -> None:
         self.client = client
         self.dataset_version = dataset_version
-        self.model_context = model_context
+        self.model = model
         self.model_labels_name = model_labels
         self.parameters = parameters
 
@@ -403,7 +403,7 @@ class PreAnnotator:
             url_list = [asset.sync()["data"]["presigned_url"] for asset in assets]
 
             # Get predictions for batch
-            predictions = self.model_context.loaded_model(url_list, imgsz=image_size)
+            predictions = self.model.loaded_model(url_list, imgsz=image_size)
 
             # Process each asset and prediction
             for asset, prediction in list(zip(assets, predictions, strict=False)):

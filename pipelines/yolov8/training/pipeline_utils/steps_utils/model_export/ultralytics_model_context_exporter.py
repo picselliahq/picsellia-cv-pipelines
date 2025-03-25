@@ -2,13 +2,11 @@ import logging
 import os
 import shutil
 
-from picsellia_cv_engine.models.steps.model.export.model_context_exporter import (
-    ModelContextExporter,
-)
+from picsellia_cv_engine.models.steps.model.export.model_exporter import ModelExporter
 from ultralytics import YOLO
 
-from pipelines.yolov8.training.pipeline_utils.model.ultralytics_model_context import (
-    UltralyticsModelContext,
+from pipelines.yolov8.training.pipeline_utils.model.ultralytics_model import (
+    UltralyticsModel,
 )
 from pipelines.yolov8.training.pipeline_utils.parameters.ultralytics_hyper_parameters import (
     UltralyticsHyperParameters,
@@ -17,35 +15,35 @@ from pipelines.yolov8.training.pipeline_utils.parameters.ultralytics_hyper_param
 logger = logging.getLogger(__name__)
 
 
-class UltralyticsModelContextExporter(ModelContextExporter):
+class UltralyticsModelExporter(ModelExporter):
     """
-    Exporter class for Ultralytics model contexts.
+    Exporter class for Ultralytics models.
 
     This class handles the export of models trained with the Ultralytics framework. It supports exporting the model
     to a specified format (e.g., ONNX) and moving the resulting file to a designated destination for deployment or further use.
 
     Attributes:
-        model_context (UltralyticsModelContext): The Ultralytics model context to be exported.
+        model (UltralyticsModel): The Ultralytics model to be exported.
     """
 
-    def __init__(self, model_context: UltralyticsModelContext):
+    def __init__(self, model: UltralyticsModel):
         """
-        Initializes an instance of UltralyticsModelContextExporter.
+        Initializes an instance of UltralyticsModelExporter.
 
         Args:
-            model_context (UltralyticsModelContext): The model context containing details about the model and paths.
+            model (UltralyticsModel): The model containing details about the model and paths.
         """
-        super().__init__(model_context=model_context)
-        self.model_context: UltralyticsModelContext = model_context
+        super().__init__(model=model)
+        self.model: UltralyticsModel = model
 
-    def export_model_context(
+    def export_model(
         self,
         exported_model_destination_path: str,
         export_format: str,
         hyperparameters: UltralyticsHyperParameters,
     ) -> None:
         """
-        Exports the Ultralytics model context by converting it to the specified format (e.g., ONNX) and
+        Exports the Ultralytics model by converting it to the specified format (e.g., ONNX) and
         moves the resulting file to the designated destination path.
 
         Args:
@@ -75,7 +73,7 @@ class UltralyticsModelContextExporter(ModelContextExporter):
             export_format (str): The format to export the model in (e.g., ONNX).
             hyperparameters (UltralyticsHyperParameters): Hyperparameters specifying the image size, batch size, etc.
         """
-        loaded_model: YOLO = self.model_context.loaded_model
+        loaded_model: YOLO = self.model.loaded_model
         loaded_model.export(
             format=export_format,
             imgsz=hyperparameters.image_size,
@@ -94,11 +92,9 @@ class UltralyticsModelContextExporter(ModelContextExporter):
         Raises:
             ValueError: If no ONNX file is found in the weights directory.
         """
-        if not self.model_context.latest_run_dir:
+        if not self.model.latest_run_dir:
             raise ValueError("The latest run directory is not set.")
-        ultralytics_weights_dir = os.path.join(
-            self.model_context.latest_run_dir, "weights"
-        )
+        ultralytics_weights_dir = os.path.join(self.model.latest_run_dir, "weights")
         onnx_files = [
             f for f in os.listdir(ultralytics_weights_dir) if f.endswith(".onnx")
         ]

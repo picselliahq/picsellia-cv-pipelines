@@ -1,43 +1,37 @@
 import os
 
-from picsellia_cv_engine.models.data.dataset.base_dataset_context import (
-    TBaseDatasetContext,
-)
-from picsellia_cv_engine.models.model.picsellia_prediction import (
+from picsellia_cv_engine.models.data import TBaseDataset
+from picsellia_cv_engine.models.model import (
     PicselliaConfidence,
     PicselliaPolygon,
     PicselliaPolygonPrediction,
 )
-from picsellia_cv_engine.models.steps.model.predictor.model_context_predictor import (
-    ModelContextPredictor,
+from picsellia_cv_engine.models.steps.model.predictor.model_predictor import (
+    ModelPredictor,
 )
 from ultralytics.engine.results import Results
 
-from pipelines.yolov8.training.pipeline_utils.model.ultralytics_model_context import (
-    UltralyticsModelContext,
+from pipelines.yolov8.training.pipeline_utils.model.ultralytics_model import (
+    UltralyticsModel,
 )
 
 
-class UltralyticsSegmentationModelContextPredictor(
-    ModelContextPredictor[UltralyticsModelContext]
-):
+class UltralyticsSegmentationModelPredictor(ModelPredictor[UltralyticsModel]):
     """
     A predictor class that handles model inference and result post-processing for segmentation tasks
     using the Ultralytics framework.
     """
 
-    def __init__(self, model_context: UltralyticsModelContext):
-        super().__init__(model_context)
+    def __init__(self, model: UltralyticsModel):
+        super().__init__(model)
 
-    def pre_process_dataset_context(
-        self, dataset_context: TBaseDatasetContext
-    ) -> list[str]:
-        if not dataset_context.images_dir:
-            raise ValueError("No images directory found in the dataset context.")
+    def pre_process_dataset(self, dataset: TBaseDataset) -> list[str]:
+        if not dataset.images_dir:
+            raise ValueError("No images directory found in the dataset.")
 
         return [
-            os.path.join(dataset_context.images_dir, image_name)
-            for image_name in os.listdir(dataset_context.images_dir)
+            os.path.join(dataset.images_dir, image_name)
+            for image_name in os.listdir(dataset.images_dir)
         ]
 
     def prepare_batches(
@@ -52,38 +46,36 @@ class UltralyticsSegmentationModelContextPredictor(
         return [self._run_inference(batch) for batch in image_batches]
 
     def _run_inference(self, batch_paths: list[str]) -> Results:
-        return self.model_context.loaded_model(batch_paths)
+        return self.model.loaded_model(batch_paths)
 
     def post_process_batches(
         self,
         image_batches: list[list[str]],
         batch_results: list[Results],
-        dataset_context: TBaseDatasetContext,
+        dataset: TBaseDataset,
     ) -> list[PicselliaPolygonPrediction]:
         return [
             prediction
             for batch_paths, batch_result in zip(
                 image_batches, batch_results, strict=False
             )
-            for prediction in self._post_process(
-                batch_paths, batch_result, dataset_context
-            )
+            for prediction in self._post_process(batch_paths, batch_result, dataset)
         ]
 
     def _post_process(
         self,
         image_paths: list[str],
         batch_prediction: Results,
-        dataset_context: TBaseDatasetContext,
+        dataset: TBaseDataset,
     ) -> list[PicselliaPolygonPrediction]:
         processed_predictions = []
 
         for image_path, prediction in zip(image_paths, batch_prediction, strict=False):
             asset_id = os.path.basename(image_path).split(".")[0]
-            asset = dataset_context.dataset_version.list_assets(ids=[asset_id])[0]
+            asset = dataset.dataset_version.list_assets(ids=[asset_id])[0]
 
             polygons, labels, confidences = self.format_predictions(
-                prediction=prediction, dataset_context=dataset_context
+                prediction=prediction, dataset=dataset
             )
 
             processed_predictions.append(
@@ -97,9 +89,7 @@ class UltralyticsSegmentationModelContextPredictor(
 
         return processed_predictions
 
-    def format_predictions(
-        self, prediction: Results, dataset_context: TBaseDatasetContext
-    ):
+    def format_predictions(self, prediction: Results, dataset: TBaseDataset):
         if prediction.masks is None:
             return [], [], []
 
@@ -113,7 +103,7 @@ class UltralyticsSegmentationModelContextPredictor(
         picsellia_labels = [
             self.get_picsellia_label(
                 prediction.names[int(cls.cpu().numpy())],
-                dataset_context=dataset_context,
+                dataset=dataset,
             )
             for cls in prediction.boxes.cls
         ]

@@ -1,7 +1,7 @@
 import os
 
 from picsellia import Label, ModelVersion
-from picsellia_cv_engine.models.model.model_context import ModelContext
+from picsellia_cv_engine.models import Model
 
 
 def find_latest_run_dir(dir: str, model_name: str):
@@ -21,10 +21,10 @@ def find_latest_run_dir(dir: str, model_name: str):
     )
 
 
-class UltralyticsModelContext(ModelContext):
+class UltralyticsModel(Model):
     def __init__(
         self,
-        model_name: str,
+        name: str,
         model_version: ModelVersion,
         pretrained_weights_name: str | None = None,
         trained_weights_name: str | None = None,
@@ -33,7 +33,7 @@ class UltralyticsModelContext(ModelContext):
         labelmap: dict[str, Label] | None = None,
     ):
         super().__init__(
-            model_name=model_name,
+            name=name,
             model_version=model_version,
             pretrained_weights_name=pretrained_weights_name,
             trained_weights_name=trained_weights_name,
@@ -49,7 +49,7 @@ class UltralyticsModelContext(ModelContext):
         """
         if not self.results_dir or not os.path.exists(self.results_dir):
             raise ValueError("The results directory is not set.")
-        self.latest_run_dir = find_latest_run_dir(self.results_dir, self.model_name)
+        self.latest_run_dir = find_latest_run_dir(self.results_dir, self.name)
 
     def set_trained_weights_path(self):
         """
