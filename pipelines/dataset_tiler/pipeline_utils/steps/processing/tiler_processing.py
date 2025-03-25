@@ -3,8 +3,8 @@ from picsellia_cv_engine.decorators.step_decorator import step
 from picsellia_cv_engine.models.contexts.processing.dataset.picsellia_processing_context import (
     PicselliaProcessingContext,
 )
-from picsellia_cv_engine.models.data.dataset.coco_dataset_context import (
-    CocoDatasetContext,
+from picsellia_cv_engine.models.data.dataset.coco_dataset import (
+    CocoDataset,
 )
 from picsellia_cv_engine.models.data.dataset.dataset_collection import (
     DatasetCollection,
@@ -20,8 +20,8 @@ from pipelines.dataset_tiler.pipeline_utils.steps_utils.processing.tiler_process
 
 @step
 def process(
-    dataset_collection: DatasetCollection[CocoDatasetContext],
-) -> CocoDatasetContext:
+    dataset_collection: DatasetCollection[CocoDataset],
+) -> CocoDataset:
     context: PicselliaProcessingContext[ProcessingTilerParameters] = (
         Pipeline.get_active_context()
     )

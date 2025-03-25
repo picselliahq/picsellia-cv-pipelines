@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from pipelines.dataset_tiler.pipeline_utils.steps_utils.processing.object_detection_tiler_processing import (
     ObjectDetectionTilerProcessing,
@@ -10,12 +10,12 @@ class SegmentationTilerProcessing(ObjectDetectionTilerProcessing):
 
     def _adjust_coco_annotation(
         self,
-        annotation: Dict[str, Any],
+        annotation: dict[str, Any],
         tile_x: int,
         tile_y: int,
-        tile_info: Dict[str, Any],
-        output_coco_data: Dict[str, Any],
-    ) -> Optional[Dict[str, Any]]:
+        tile_info: dict[str, Any],
+        output_coco_data: dict[str, Any],
+    ) -> dict[str, Any] | None:
         """
         Adjust annotation for a specific tile within a segmentation dataset.
 
@@ -27,7 +27,7 @@ class SegmentationTilerProcessing(ObjectDetectionTilerProcessing):
             output_coco_data: Final COCO data that will be sent to Picsellia. Used to compute the new annotation id.
 
         Returns:
-            Optional[Dict[str, Any]]: Adjusted annotation for the tile.
+            Optional[dict[str, Any]]: Adjusted annotation for the tile.
         """
         # Adjust the bounding box first
         new_annotation = super()._adjust_coco_annotation(
@@ -56,14 +56,56 @@ class SegmentationTilerProcessing(ObjectDetectionTilerProcessing):
 
         return new_annotation
 
+    def _clip_polygon(self, polygon, clip_rect):
+        """Clip a polygon to a rectangle using Sutherland-Hodgman algorithm."""
+
+        def inside(p, cp1, cp2):
+            return (cp2[0] - cp1[0]) * (p[1] - cp1[1]) > (cp2[1] - cp1[1]) * (
+                p[0] - cp1[0]
+            )
+
+        def compute_intersection(cp1, cp2, s, e):
+            dc = [cp1[0] - cp2[0], cp1[1] - cp2[1]]
+            dp = [s[0] - e[0], s[1] - e[1]]
+            n1 = cp1[0] * cp2[1] - cp1[1] * cp2[0]
+            n2 = s[0] * e[1] - s[1] * e[0]
+            n3 = 1.0 / (dc[0] * dp[1] - dc[1] * dp[0])
+            return [(n1 * dp[0] - n2 * dc[0]) * n3, (n1 * dp[1] - n2 * dc[1]) * n3]
+
+        output_list = polygon
+        cp1 = clip_rect[-1]
+
+        for clip_vertex in clip_rect:
+            cp2 = clip_vertex
+            input_list = output_list
+            output_list = []
+
+            if not input_list:
+                break
+
+            s = input_list[-1]
+
+            for subject_vertex in input_list:
+                e = subject_vertex
+                if inside(e, cp1, cp2):
+                    if not inside(s, cp1, cp2):
+                        output_list.append(compute_intersection(cp1, cp2, s, e))
+                    output_list.append(e)
+                elif inside(s, cp1, cp2):
+                    output_list.append(compute_intersection(cp1, cp2, s, e))
+                s = e
+            cp1 = cp2
+
+        return output_list
+
     def _adjust_segmentation_annotation(
         self,
-        polygons: List[List[float]],
+        polygons: list[list[float]],
         tile_x: int,
         tile_y: int,
         tile_width: int,
         tile_height: int,
-    ) -> List[List[float]]:
+    ) -> list[list[float]]:
         """
         Adjust segmentation coordinates for a tile and clip the polygon to the tile boundaries.
 
@@ -77,48 +119,6 @@ class SegmentationTilerProcessing(ObjectDetectionTilerProcessing):
         Returns:
             List[List[float]]: Adjusted and clipped segmentation coordinates.
         """
-
-        def clip_polygon(polygon, clip_rect):
-            """Clip a polygon to a rectangle using Sutherland-Hodgman algorithm."""
-
-            def inside(p, cp1, cp2):
-                return (cp2[0] - cp1[0]) * (p[1] - cp1[1]) > (cp2[1] - cp1[1]) * (
-                    p[0] - cp1[0]
-                )
-
-            def compute_intersection(cp1, cp2, s, e):
-                dc = [cp1[0] - cp2[0], cp1[1] - cp2[1]]
-                dp = [s[0] - e[0], s[1] - e[1]]
-                n1 = cp1[0] * cp2[1] - cp1[1] * cp2[0]
-                n2 = s[0] * e[1] - s[1] * e[0]
-                n3 = 1.0 / (dc[0] * dp[1] - dc[1] * dp[0])
-                return [(n1 * dp[0] - n2 * dc[0]) * n3, (n1 * dp[1] - n2 * dc[1]) * n3]
-
-            output_list = polygon
-            cp1 = clip_rect[-1]
-
-            for clip_vertex in clip_rect:
-                cp2 = clip_vertex
-                input_list = output_list
-                output_list = []
-
-                if not input_list:
-                    break
-
-                s = input_list[-1]
-
-                for subject_vertex in input_list:
-                    e = subject_vertex
-                    if inside(e, cp1, cp2):
-                        if not inside(s, cp1, cp2):
-                            output_list.append(compute_intersection(cp1, cp2, s, e))
-                        output_list.append(e)
-                    elif inside(s, cp1, cp2):
-                        output_list.append(compute_intersection(cp1, cp2, s, e))
-                    s = e
-                cp1 = cp2
-
-            return output_list
 
         adjusted_segmentation = []
         clip_rect = [
@@ -136,7 +136,7 @@ class SegmentationTilerProcessing(ObjectDetectionTilerProcessing):
             ]
 
             # Clip the polygon
-            clipped_poly = clip_polygon(points, clip_rect)
+            clipped_poly = self._clip_polygon(points, clip_rect)
 
             # Convert back to flat list and add to adjusted segmentation
             if (

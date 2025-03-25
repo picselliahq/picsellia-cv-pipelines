@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from pipelines.dataset_tiler.pipeline_utils.steps_utils.processing.base_tiler_processing import (
     BaseTilerProcessing,
@@ -10,12 +10,12 @@ class ObjectDetectionTilerProcessing(BaseTilerProcessing):
 
     def _adjust_coco_annotation(
         self,
-        annotation: Dict[str, Any],
+        annotation: dict[str, Any],
         tile_x: int,
         tile_y: int,
-        tile_info: Dict[str, Any],
-        output_coco_data: Dict[str, Any],
-    ) -> Optional[Dict[str, Any]]:
+        tile_info: dict[str, Any],
+        output_coco_data: dict[str, Any],
+    ) -> dict[str, Any] | None:
         """
         Adjust annotation for a specific tile.
 
@@ -65,7 +65,7 @@ class ObjectDetectionTilerProcessing(BaseTilerProcessing):
         return new_annotation
 
     def _should_bounding_box_annotation_be_kept(
-        self, old_bounding_box: List[int], new_bounding_box: List[int]
+        self, old_bounding_box: list[int], new_bounding_box: list[int]
     ) -> bool:
         """
         Check if the annotation should be kept based on the new bounding box.

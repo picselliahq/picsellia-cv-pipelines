@@ -30,11 +30,11 @@ def get_context() -> PicselliaProcessingContext[ProcessingTilerParameters]:
 def tiler_processing_pipeline() -> None:
     dataset_collection = load_coco_datasets()
     dataset_collection["input"] = validate_tiler_data(
-        dataset_context=dataset_collection["input"]
+        dataset=dataset_collection["input"]
     )
-    output_dataset_context = process(dataset_collection=dataset_collection)
+    output_dataset = process(dataset_collection=dataset_collection)
     upload_full_dataset(
-        dataset_context=output_dataset_context,
+        dataset=output_dataset,
         use_id=False,
         fail_on_asset_not_found=False,
     )
