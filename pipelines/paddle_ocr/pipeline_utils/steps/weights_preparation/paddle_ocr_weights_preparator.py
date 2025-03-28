@@ -11,8 +11,8 @@ from picsellia_cv_engine.models.parameters.export_parameters import (
     ExportParameters,
 )
 
-from pipelines.paddle_ocr.pipeline_utils.dataset.paddle_ocr_dataset_context import (
-    PaddleOCRDatasetContext,
+from pipelines.paddle_ocr.pipeline_utils.dataset.paddle_ocr_dataset import (
+    PaddleOCRDataset,
 )
 from pipelines.paddle_ocr.pipeline_utils.model.paddle_ocr_model_collection import (
     PaddleOCRModelCollection,
@@ -31,7 +31,7 @@ from pipelines.paddle_ocr.pipeline_utils.steps_utils.weights_preparation.paddle_
 @step
 def prepare_paddle_ocr_model_collection(
     model_collection: PaddleOCRModelCollection,
-    dataset_collection: DatasetCollection[PaddleOCRDatasetContext],
+    dataset_collection: DatasetCollection[PaddleOCRDataset],
 ) -> PaddleOCRModelCollection:
     context: PicselliaTrainingContext[
         PaddleOCRHyperParameters, PaddleOCRAugmentationParameters, ExportParameters

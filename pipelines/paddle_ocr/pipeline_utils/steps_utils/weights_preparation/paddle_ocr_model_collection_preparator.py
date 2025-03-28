@@ -4,10 +4,10 @@ import yaml
 from picsellia_cv_engine.models.data.dataset.dataset_collection import (
     DatasetCollection,
 )
-from picsellia_cv_engine.models.model.model_context import ModelContext
+from picsellia_cv_engine.models.model.model import Model
 
-from pipelines.paddle_ocr.pipeline_utils.dataset.paddle_ocr_dataset_context import (
-    PaddleOCRDatasetContext,
+from pipelines.paddle_ocr.pipeline_utils.dataset.paddle_ocr_dataset import (
+    PaddleOCRDataset,
 )
 from pipelines.paddle_ocr.pipeline_utils.model.paddle_ocr_model_collection import (
     PaddleOCRModelCollection,
@@ -18,38 +18,38 @@ from pipelines.paddle_ocr.pipeline_utils.parameters.paddle_ocr_hyper_parameters 
 
 
 def generate_bbox_yaml_config(
-    dataset_collection: DatasetCollection[PaddleOCRDatasetContext],
-    model_context: ModelContext,
+    dataset_collection: DatasetCollection[PaddleOCRDataset],
+    model: Model,
     hyperparameters: PaddleOCRHyperParameters,
 ):
     """
     Generates a YAML configuration for the bounding box detection model in PaddleOCR.
 
     This function updates and modifies the YAML configuration for the bounding box model
-    based on the dataset, model context, and provided hyperparameters.
+    based on the dataset, model, and provided hyperparameters.
 
     Args:
         dataset_collection (DatasetCollection): The collection of datasets for training and validation.
-        model_context (ModelContext): The context of the model, including paths to pretrained and saved weights.
+        model (Model): The context of the model, including paths to pretrained and saved weights.
         hyperparameters (PaddleOCRHyperParameters): Hyperparameters to customize the training process.
 
     Returns:
         dict: The modified configuration dictionary.
     """
-    if model_context.config_path is None:
-        raise ValueError("No config file path provided for the model context")
+    if model.config_path is None:
+        raise ValueError("No config file path provided for the model")
 
-    with open(model_context.config_path) as file:
+    with open(model.config_path) as file:
         config = yaml.load(file, Loader=yaml.FullLoader)
 
     config["Global"]["use_gpu"] = (
         True if hyperparameters.device.startswith("cuda") else False
     )
     config["Global"]["epoch_num"] = hyperparameters.bbox_epochs
-    config["Global"]["pretrained_model"] = model_context.pretrained_weights_path
-    config["Global"]["save_model_dir"] = model_context.trained_weights_dir
-    config["Global"]["save_res_path"] = model_context.results_dir
-    config["Global"]["save_inference_dir"] = model_context.exported_weights_dir
+    config["Global"]["pretrained_model"] = model.pretrained_weights_path
+    config["Global"]["save_model_dir"] = model.trained_weights_dir
+    config["Global"]["save_res_path"] = model.results_dir
+    config["Global"]["save_inference_dir"] = model.exported_weights_dir
     config["Global"]["save_epoch_step"] = hyperparameters.bbox_save_epoch_step
 
     config["Optimizer"]["lr"]["learning_rate"] = hyperparameters.bbox_learning_rate
@@ -74,48 +74,48 @@ def generate_bbox_yaml_config(
 
 
 def generate_text_yaml_config(
-    dataset_collection: DatasetCollection[PaddleOCRDatasetContext],
-    model_context: ModelContext,
+    dataset_collection: DatasetCollection[PaddleOCRDataset],
+    model: Model,
     hyperparameters: PaddleOCRHyperParameters,
 ):
     """
     Generates a YAML configuration for the text recognition model in PaddleOCR.
 
     This function updates and modifies the YAML configuration for the text model
-    based on the dataset, model context, and provided hyperparameters.
+    based on the dataset, model, and provided hyperparameters.
 
     Args:
         dataset_collection (DatasetCollection): The collection of datasets for training and validation.
-        model_context (ModelContext): The context of the model, including paths to pretrained and saved weights.
+        model (Model): The context of the model, including paths to pretrained and saved weights.
         hyperparameters (PaddleOCRHyperParameters): Hyperparameters to customize the training process.
 
     Returns:
         dict: The modified configuration dictionary.
     """
-    if not model_context.config_path:
-        raise ValueError("No config file path provided for the model context")
+    if not model.config_path:
+        raise ValueError("No config file path provided for the model")
 
-    if not model_context.weights_dir:
-        raise ValueError("No weights directory provided for the model context")
+    if not model.weights_dir:
+        raise ValueError("No weights directory provided for the model")
 
-    with open(model_context.config_path) as file:
+    with open(model.config_path) as file:
         config = yaml.load(file, Loader=yaml.FullLoader)
 
     config["Global"]["use_gpu"] = (
         True if hyperparameters.device.startswith("cuda") else False
     )
     config["Global"]["epoch_num"] = hyperparameters.text_epochs
-    if model_context.pretrained_weights_path is not None:
+    if model.pretrained_weights_path is not None:
         config["Global"]["pretrained_model"] = os.path.join(
-            model_context.pretrained_weights_path, "best_accuracy"
+            model.pretrained_weights_path, "best_accuracy"
         )
-    config["Global"]["save_model_dir"] = model_context.trained_weights_dir
-    config["Global"]["save_res_path"] = model_context.results_dir
-    config["Global"]["save_inference_dir"] = model_context.exported_weights_dir
+    config["Global"]["save_model_dir"] = model.trained_weights_dir
+    config["Global"]["save_res_path"] = model.results_dir
+    config["Global"]["save_inference_dir"] = model.exported_weights_dir
     config["Global"]["save_epoch_step"] = hyperparameters.text_save_epoch_step
     config["Global"]["max_text_length"] = hyperparameters.max_text_length
     config["Global"]["character_dict_path"] = os.path.join(
-        model_context.weights_dir, "en_dict.txt"
+        model.weights_dir, "en_dict.txt"
     )
 
     if "SARHead" in config["Architecture"]["Head"]["head_list"]:

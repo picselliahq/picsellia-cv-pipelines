@@ -4,12 +4,12 @@ import os
 import cv2
 import numpy as np
 from imutils import perspective
-from picsellia_cv_engine.models.data.dataset.coco_dataset_context import (
-    CocoDatasetContext,
+from picsellia_cv_engine.models.data.dataset.coco_dataset import (
+    CocoDataset,
 )
 
-from pipelines.paddle_ocr.pipeline_utils.dataset.paddle_ocr_dataset_context import (
-    PaddleOCRDatasetContext,
+from pipelines.paddle_ocr.pipeline_utils.dataset.paddle_ocr_dataset import (
+    PaddleOCRDataset,
 )
 
 
@@ -176,78 +176,74 @@ def get_text_annotations(coco: dict, image_directory: str, new_image_directory: 
     return processed_data
 
 
-class PaddleOCRDatasetContextPreparator:
+class PaddleOCRDatasetPreparator:
     """
     Prepares and organizes a dataset for OCR tasks using the PaddleOCR format.
 
-    This class takes a dataset context and processes it to extract bounding box and text annotations
+    This class takes a dataset and processes it to extract bounding box and text annotations
     in a format suitable for PaddleOCR.
 
     Attributes:
-        dataset_context (CocoDatasetContext): The context of the dataset to organize.
+        dataset (CocoDataset): The context of the dataset to organize.
         destination_path (str): The target directory where the processed dataset will be saved.
-        paddle_ocr_dataset_context (PaddleOCRDatasetContext): The prepared dataset context for PaddleOCR.
+        paddle_ocr_dataset (PaddleOCRDataset): The prepared dataset for PaddleOCR.
     """
 
-    def __init__(self, dataset_context: CocoDatasetContext, destination_path: str):
+    def __init__(self, dataset: CocoDataset, destination_path: str):
         """
-        Initializes the organizer with a given dataset context.
+        Initializes the organizer with a given dataset.
 
         Args:
-            dataset_context (CocoDatasetContext): The dataset context to organize.
+            dataset (CocoDataset): The dataset to organize.
             destination_path (str): The directory where the organized dataset will be stored.
         """
-        self.dataset_context = dataset_context
+        self.dataset = dataset
         self.destination_path = destination_path
-        self.paddle_ocr_dataset_context = PaddleOCRDatasetContext(
-            dataset_name=self.dataset_context.dataset_name,
-            dataset_version=self.dataset_context.dataset_version,
-            assets=self.dataset_context.assets,
-            labelmap=self.dataset_context.labelmap,
+        self.paddle_ocr_dataset = PaddleOCRDataset(
+            name=self.dataset.name,
+            dataset_version=self.dataset.dataset_version,
+            assets=self.dataset.assets,
+            labelmap=self.dataset.labelmap,
         )
-        self.paddle_ocr_dataset_context.images_dir = self.dataset_context.images_dir
-        self.paddle_ocr_dataset_context.annotations_dir = (
-            self.dataset_context.annotations_dir
-        )
-        self.paddle_ocr_dataset_context.coco_file_path = (
-            self.dataset_context.coco_file_path
-        )
-        self.paddle_ocr_dataset_context.coco_data = self.dataset_context.coco_data
+        self.paddle_ocr_dataset.images_dir = self.dataset.images_dir
+        self.paddle_ocr_dataset.annotations_dir = self.dataset.annotations_dir
+        self.paddle_ocr_dataset.coco_file_path = self.dataset.coco_file_path
+        self.paddle_ocr_dataset.coco_data = self.dataset.coco_data
 
-    def organize(self) -> PaddleOCRDatasetContext:
+    def organize(self) -> PaddleOCRDataset:
         """
-        Organizes the dataset context by preparing it for OCR tasks.
+        Organizes the dataset by preparing it for OCR tasks.
 
         This method processes the COCO data to extract bounding box and text annotations, creates
         the necessary directories, and writes the annotation files in the PaddleOCR format.
 
         Returns:
-            PaddleOCRDatasetContext: The prepared dataset context, ready for OCR tasks.
+            PaddleOCRDataset: The prepared dataset, ready for OCR tasks.
         """
-        if not self.paddle_ocr_dataset_context.coco_data:
-            raise ValueError("No COCO data loaded in the dataset context.")
-        if not self.paddle_ocr_dataset_context.images_dir:
-            raise ValueError("No images directory found in the dataset context.")
+        if not self.paddle_ocr_dataset.coco_data:
+            raise ValueError("No COCO data loaded in the dataset.")
+        if not self.paddle_ocr_dataset.images_dir:
+            raise ValueError("No images directory found in the dataset.")
         paddleocr_bbox_annotations = get_bbox_annotations(
-            coco=self.paddle_ocr_dataset_context.coco_data,
-            image_directory=self.paddle_ocr_dataset_context.images_dir,
+            coco=self.paddle_ocr_dataset.coco_data,
+            image_directory=self.paddle_ocr_dataset.images_dir,
         )
-        self.paddle_ocr_dataset_context.text_images_dir = os.path.join(
+        self.paddle_ocr_dataset.text_images_dir = os.path.join(
             self.destination_path, "text_images"
         )
         paddleocr_text_annotations = get_text_annotations(
-            coco=self.paddle_ocr_dataset_context.coco_data,
-            image_directory=self.paddle_ocr_dataset_context.images_dir,
-            new_image_directory=self.paddle_ocr_dataset_context.text_images_dir,
+            coco=self.paddle_ocr_dataset.coco_data,
+            image_directory=self.paddle_ocr_dataset.images_dir,
+            new_image_directory=self.paddle_ocr_dataset.text_images_dir,
         )
 
-        self.paddle_ocr_dataset_context.paddle_ocr_bbox_annotations_path = os.path.join(
+        self.paddle_ocr_dataset.paddle_ocr_bbox_annotations_path = os.path.join(
             self.destination_path,
             "annotations",
             "bbox",
             "annotations.txt",
         )
-        self.paddle_ocr_dataset_context.paddle_ocr_text_annotations_path = os.path.join(
+        self.paddle_ocr_dataset.paddle_ocr_text_annotations_path = os.path.join(
             self.destination_path,
             "annotations",
             "text",
@@ -255,11 +251,11 @@ class PaddleOCRDatasetContextPreparator:
         )
         write_annotations_file(
             data=paddleocr_bbox_annotations,
-            output_path=self.paddle_ocr_dataset_context.paddle_ocr_bbox_annotations_path,
+            output_path=self.paddle_ocr_dataset.paddle_ocr_bbox_annotations_path,
         )
 
         write_annotations_file(
             data=paddleocr_text_annotations,
-            output_path=self.paddle_ocr_dataset_context.paddle_ocr_text_annotations_path,
+            output_path=self.paddle_ocr_dataset.paddle_ocr_text_annotations_path,
         )
-        return self.paddle_ocr_dataset_context
+        return self.paddle_ocr_dataset

@@ -3,7 +3,7 @@ import subprocess
 
 from picsellia import Experiment
 from picsellia.sdk.log import LogType
-from picsellia_cv_engine.models.model.model_context import ModelContext
+from picsellia_cv_engine.models.model.model import Model
 
 
 def extract_and_log_metrics(log_line: str) -> dict[str, str | int | float]:
@@ -56,44 +56,44 @@ def handle_training_failure(process: subprocess.Popen):
         print(errors)
 
 
-class PaddleOCRModelContextTrainer:
+class PaddleOCRModelTrainer:
     """
     Trainer for PaddleOCR models. This class manages the model training process and captures
     metrics during training, logging them to the Picsellia experiment.
 
     Attributes:
-        model_context (ModelContext): The context containing the model configuration and paths.
+        model (Model): The context containing the model configuration and paths.
         experiment (Experiment): The Picsellia experiment where logs will be recorded.
         last_logged_epoch (Union[int, None]): The last epoch for which metrics were logged.
     """
 
-    def __init__(self, model_context: ModelContext, experiment: Experiment):
+    def __init__(self, model: Model, experiment: Experiment):
         """
-        Initializes the trainer with a model context and experiment.
+        Initializes the trainer with a model and experiment.
 
         Args:
-            model_context (ModelContext): The context for the PaddleOCR model being trained.
+            model (Model): The context for the PaddleOCR model being trained.
             experiment (Experiment): The Picsellia experiment to log training metrics.
         """
-        self.model_context = model_context
+        self.model = model
         self.experiment = experiment
         self.last_logged_epoch: int | None = None  # Last epoch that was logged
 
-    def train_model_context(self):
+    def train_model(self):
         """
-        Trains the PaddleOCR model using the configuration provided in the model context.
+        Trains the PaddleOCR model using the configuration provided in the model.
 
         This method constructs a command to execute the training script, processes the output logs,
         and logs relevant metrics to the experiment. If the configuration file path is missing,
         it raises a ValueError.
 
         Raises:
-            ValueError: If no configuration file path is found in the model context.
+            ValueError: If no configuration file path is found in the model.
         """
-        config_path = self.model_context.config_path
+        config_path = self.model.config_path
         if not config_path:
             raise ValueError(
-                f"No configuration file path found in {self.model_context.model_name} model context"
+                f"No configuration file path found in {self.model.name} model"
             )
 
         command = [
@@ -110,7 +110,7 @@ class PaddleOCRModelContextTrainer:
         )
 
         try:
-            self._process_training_output(process, self.model_context)
+            self._process_training_output(process, self.model)
         except Exception as e:
             print("Error during model training:", e)
         finally:
@@ -120,9 +120,7 @@ class PaddleOCRModelContextTrainer:
 
             os.environ["PYTHONPATH"] = current_pythonpath
 
-    def _process_training_output(
-        self, process: subprocess.Popen, model_context: ModelContext
-    ):
+    def _process_training_output(self, process: subprocess.Popen, model: Model):
         """
         Processes the output from the training subprocess and extracts metrics.
 
@@ -131,7 +129,7 @@ class PaddleOCRModelContextTrainer:
 
         Args:
             process (subprocess.Popen): The subprocess object running the training command.
-            model_context (ModelContext): The model context containing information about the model being trained.
+            model (Model): The model containing information about the model being trained.
         """
         if process.stdout:
             for line in iter(process.stdout.readline, ""):
@@ -153,7 +151,7 @@ class PaddleOCRModelContextTrainer:
                         for key, value in metrics.items():
                             if isinstance(value, int | float):
                                 self.experiment.log(
-                                    name=f"{model_context.model_name}/{key}",
+                                    name=f"{model.name}/{key}",
                                     data=value,
                                     type=LogType.LINE,
                                 )

@@ -7,7 +7,7 @@ from picsellia_cv_engine.decorators.step_decorator import step
 from picsellia_cv_engine.models.contexts.training.picsellia_training_context import (
     PicselliaTrainingContext,
 )
-from picsellia_cv_engine.models.model.model_context import ModelContext
+from picsellia_cv_engine.models.model.model import Model
 from picsellia_cv_engine.models.parameters.export_parameters import (
     ExportParameters,
 )
@@ -29,7 +29,7 @@ def get_paddle_ocr_model_collection() -> PaddleOCRModelCollection:
     Extracts a PaddleOCR model collection from a Picsellia experiment.
 
     This function retrieves the active training context and extracts the base model version from the experiment.
-    It creates two `ModelContext` objects for the bounding box detection model ("bbox-model") and the text
+    It creates two `Model` objects for the bounding box detection model ("bbox-model") and the text
     recognition model ("text-model"), specifying their configurations and pretrained weights. The function
     then downloads the necessary model weights and returns the `PaddleOCRModelCollection` containing both models.
 
@@ -43,16 +43,16 @@ def get_paddle_ocr_model_collection() -> PaddleOCRModelCollection:
 
     model_version = context.experiment.get_base_model_version()
 
-    bbox_model = ModelContext(
-        model_name="bbox-model",
+    bbox_model = Model(
+        name="bbox-model",
         model_version=model_version,
         pretrained_weights_name="bbox-pretrained-model",
         trained_weights_name=None,
         config_name="bbox-config",
         exported_weights_name=None,
     )
-    text_model = ModelContext(
-        model_name="text-model",
+    text_model = Model(
+        name="text-model",
         model_version=model_version,
         pretrained_weights_name="text-pretrained-model",
         trained_weights_name=None,

@@ -5,8 +5,8 @@ from picsellia_cv_engine.decorators.step_decorator import step
 from picsellia_cv_engine.models.contexts.training.picsellia_training_context import (
     PicselliaTrainingContext,
 )
-from picsellia_cv_engine.models.data.dataset.yolo_dataset_context import (
-    YoloDatasetContext,
+from picsellia_cv_engine.models.data.dataset.yolo_dataset import (
+    YoloDataset,
 )
 from picsellia_cv_engine.models.steps.data.dataset.loader.training_dataset_collection_extractor import (
     TrainingDatasetCollectionExtractor,
@@ -34,7 +34,7 @@ def yolov7_dataset_collection_extractor() -> Yolov7DatasetCollection:
     facilitating data analysis and tracking in the experiment.
 
     Returns:
-        DatasetCollection: A collection of dataset contexts prepared for training, validation, and testing,
+        DatasetCollection: A collection of datasets prepared for training, validation, and testing,
         with all necessary assets and annotations downloaded.
 
     Raises:
@@ -49,7 +49,7 @@ def yolov7_dataset_collection_extractor() -> Yolov7DatasetCollection:
     )
 
     yolo_dataset_collection = dataset_collection_extractor.get_dataset_collection(
-        context_class=YoloDatasetContext,
+        context_class=YoloDataset,
         random_seed=context.hyperparameters.seed,
     )
 

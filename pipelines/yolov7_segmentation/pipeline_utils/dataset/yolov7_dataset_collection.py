@@ -1,16 +1,16 @@
 import os
 
 import yaml
-from picsellia_cv_engine.models.data.dataset.base_dataset_context import (
-    TBaseDatasetContext,
+from picsellia_cv_engine.models.data.dataset.base_dataset import (
+    TBaseDataset,
 )
 from picsellia_cv_engine.models.data.dataset.dataset_collection import (
     DatasetCollection,
 )
 
 
-class Yolov7DatasetCollection(DatasetCollection[TBaseDatasetContext]):
-    def __init__(self, datasets: list[TBaseDatasetContext]):
+class Yolov7DatasetCollection(DatasetCollection[TBaseDataset]):
+    def __init__(self, datasets: list[TBaseDataset]):
         super().__init__(datasets=datasets)
         self.config_path: str | None = None
 

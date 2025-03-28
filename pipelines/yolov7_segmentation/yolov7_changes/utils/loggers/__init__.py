@@ -504,8 +504,6 @@ def web_project_name(project):
     suffix = (
         "-Classify"
         if project.endswith("-cls")
-        else "-Segment"
-        if project.endswith("-seg")
-        else ""
+        else "-Segment" if project.endswith("-seg") else ""
     )
     return f"YOLOv5{suffix}"

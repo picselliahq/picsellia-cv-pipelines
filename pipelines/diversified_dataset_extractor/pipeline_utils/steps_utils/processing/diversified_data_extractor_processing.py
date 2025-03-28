@@ -7,8 +7,8 @@ import PIL
 import requests
 from picsellia import Client, Data, Datalake, DatasetVersion
 from picsellia.sdk.asset import MultiAsset
-from picsellia_cv_engine.models.data.dataset.base_dataset_context import (
-    TBaseDatasetContext,
+from picsellia_cv_engine.models.data.dataset.base_dataset import (
+    TBaseDataset,
 )
 from picsellia_cv_engine.models.logging.colors import Colors
 from picsellia_cv_engine.models.steps.processing.dataset_version_creation_processing import (
@@ -34,7 +34,7 @@ class DiversifiedDataExtractorProcessing(DatasetVersionCreationProcessing):
         self,
         client: Client,
         datalake: Datalake,
-        input_dataset_context: TBaseDatasetContext,
+        input_dataset: TBaseDataset,
         output_dataset_version: DatasetVersion,
         embedding_model: EmbeddingModel,
         distance_threshold: float,
@@ -44,7 +44,7 @@ class DiversifiedDataExtractorProcessing(DatasetVersionCreationProcessing):
             datalake=datalake,
             output_dataset_version=output_dataset_version,
         )
-        self.input_dataset_context = input_dataset_context
+        self.input_dataset = input_dataset
         self.embedding_model = embedding_model
         self.distance_threshold = distance_threshold
 
@@ -54,7 +54,7 @@ class DiversifiedDataExtractorProcessing(DatasetVersionCreationProcessing):
 
     @property
     def input_dataset_version_size(self) -> int:
-        return self.input_dataset_context.dataset_version.sync()["size"]
+        return self.input_dataset.dataset_version.sync()["size"]
 
     @property
     def output_dataset_description(self) -> str:
@@ -66,8 +66,8 @@ class DiversifiedDataExtractorProcessing(DatasetVersionCreationProcessing):
         """
         return (
             f"Diversified dataset created from dataset version "
-            f"'{self.input_dataset_context.dataset_version.version}' "
-            f"(id: {self.input_dataset_context.dataset_version.id}). "
+            f"'{self.input_dataset.dataset_version.version}' "
+            f"(id: {self.input_dataset.dataset_version.id}). "
             f"The distance threshold used is {self.distance_threshold}"
         )
 
@@ -159,7 +159,7 @@ class DiversifiedDataExtractorProcessing(DatasetVersionCreationProcessing):
             description=self.output_dataset_description
         )
         self.update_output_dataset_version_inference_type(
-            inference_type=self.input_dataset_context.dataset_version.type
+            inference_type=self.input_dataset.dataset_version.type
         )
         self._process_dataset_version()
 
@@ -180,7 +180,7 @@ class DiversifiedDataExtractorProcessing(DatasetVersionCreationProcessing):
         result_batch = None
         for i in range(0, retry_number):
             try:
-                result_batch = self.input_dataset_context.get_assets_batch(
+                result_batch = self.input_dataset.get_assets_batch(
                     limit=limit, offset=offset
                 )
 

@@ -1,12 +1,10 @@
-from typing import Union
-
 from picsellia import Experiment
 
 from pipelines.paddle_ocr.pipeline_utils.model.paddle_ocr_model_collection import (
     PaddleOCRModelCollection,
 )
-from pipelines.paddle_ocr.pipeline_utils.steps_utils.model_training.paddle_ocr_model_context_trainer import (
-    PaddleOCRModelContextTrainer,
+from pipelines.paddle_ocr.pipeline_utils.steps_utils.model_training.paddle_ocr_model_trainer import (
+    PaddleOCRModelTrainer,
 )
 
 
@@ -35,7 +33,7 @@ class PaddleOCRModelCollectionTrainer:
         """
         self.model_collection = model_collection
         self.experiment = experiment
-        self.last_logged_epoch: Union[int, None] = None  # Last epoch that was logged
+        self.last_logged_epoch: int | None = None  # Last epoch that was logged
 
     def train_model_collection(
         self, bbox_epochs: int, text_epochs: int
@@ -59,21 +57,21 @@ class PaddleOCRModelCollectionTrainer:
         """
         if bbox_epochs > 0:
             print("Starting training for bounding box model...")
-            model_context_trainer = PaddleOCRModelContextTrainer(
-                model_context=self.model_collection.bbox_model,
+            model_trainer = PaddleOCRModelTrainer(
+                model=self.model_collection.bbox_model,
                 experiment=self.experiment,
             )
-            model_context_trainer.train_model_context()
+            model_trainer.train_model()
         else:
             print("Skipping training for bounding box model...")
 
         if text_epochs > 0:
             print("Starting training for text recognition model...")
-            model_context_trainer = PaddleOCRModelContextTrainer(
-                model_context=self.model_collection.text_model,
+            model_trainer = PaddleOCRModelTrainer(
+                model=self.model_collection.text_model,
                 experiment=self.experiment,
             )
-            model_context_trainer.train_model_context()
+            model_trainer.train_model()
         else:
             print("Skipping training for text recognition model...")
 

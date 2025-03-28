@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional
+from typing import Any
 
 from pipelines.dataset_tiler.pipeline_utils.steps_utils.processing.base_tiler_processing import (
     BaseTilerProcessing,
@@ -10,12 +10,12 @@ class ClassificationTilerProcessing(BaseTilerProcessing):
 
     def _adjust_coco_annotation(
         self,
-        annotation: Dict[str, Any],
+        annotation: dict[str, Any],
         tile_x: int,
         tile_y: int,
-        tile_info: Dict[str, Any],
-        output_coco_data: Dict[str, Any],
-    ) -> Optional[Dict[str, Any]]:
+        tile_info: dict[str, Any],
+        output_coco_data: dict[str, Any],
+    ) -> dict[str, Any] | None:
         """
         Adjust annotation for a specific tile within a classification dataset.
 
@@ -27,7 +27,7 @@ class ClassificationTilerProcessing(BaseTilerProcessing):
             output_coco_data: Output COCO data to which the adjusted annotation will be added.
 
         Returns:
-            Optional[Dict[str, Any]]: Adjusted annotation for the tile.
+            Optional[dict[str, Any]]: Adjusted annotation for the tile.
         """
         image_info = {
             "id": tile_info["id"],

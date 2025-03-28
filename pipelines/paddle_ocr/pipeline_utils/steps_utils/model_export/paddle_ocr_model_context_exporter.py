@@ -4,65 +4,65 @@ import subprocess
 from typing import Any
 
 import yaml
-from picsellia_cv_engine.models.model.model_context import ModelContext
-from picsellia_cv_engine.models.steps.model.export.model_context_exporter import (
-    ModelContextExporter,
+from picsellia_cv_engine.models.model.model import Model
+from picsellia_cv_engine.models.steps.model.export.model_exporter import (
+    ModelExporter,
 )
 
 logger = logging.getLogger(__name__)
 
 
-class PaddleOCRModelContextExporter(ModelContextExporter):
+class PaddleOCRModelExporter(ModelExporter):
     """
     Handles the export of a PaddleOCR model by preparing the configuration, finding the trained model,
     and executing the export process.
 
-    This class extends the `ModelContextExporter` to implement export logic specific to PaddleOCR models.
+    This class extends the `ModelExporter` to implement export logic specific to PaddleOCR models.
 
     Attributes:
-        model_context (ModelContext): The context containing model configuration and paths.
-        config (dict): The configuration loaded from the model context's config file.
+        model (Model): The context containing model configuration and paths.
+        config (dict): The configuration loaded from the model's config file.
         current_pythonpath (str): The current PYTHONPATH environment variable before modifications.
     """
 
-    def __init__(self, model_context: ModelContext):
+    def __init__(self, model: Model):
         """
-        Initializes the PaddleOCRModelContextExporter with the provided model context.
+        Initializes the PaddleOCRModelExporter with the provided model.
 
         Args:
-            model_context (ModelContext): The context containing the PaddleOCR model information.
+            model (Model): The context containing the PaddleOCR model information.
         """
-        super().__init__(model_context=model_context)
+        super().__init__(model=model)
         self.config = self.get_config()
         self.current_pythonpath = os.environ.get("PYTHONPATH", "")
         os.environ["PYTHONPATH"] = f".:{self.current_pythonpath}"
 
     def get_config(self) -> dict:
         """
-        Loads the configuration file from the model context.
+        Loads the configuration file from the model.
 
         Returns:
             dict: The loaded configuration file as a dictionary.
 
         Raises:
-            ValueError: If no configuration file path is found in the model context.
+            ValueError: If no configuration file path is found in the model.
         """
-        if not self.model_context.config_path:
-            raise ValueError("No configuration file path found in model context")
-        with open(self.model_context.config_path) as file:
+        if not self.model.config_path:
+            raise ValueError("No configuration file path found in model")
+        with open(self.model.config_path) as file:
             config = yaml.load(file, Loader=yaml.FullLoader)
         return config
 
     def write_config(self):
         """
-        Writes the current configuration back to the model context's configuration file.
+        Writes the current configuration back to the model's configuration file.
 
         Raises:
-            ValueError: If no configuration file path is found in the model context.
+            ValueError: If no configuration file path is found in the model.
         """
-        if not self.model_context.config_path:
-            raise ValueError("No configuration file path found in model context")
-        with open(self.model_context.config_path, "w") as file:
+        if not self.model.config_path:
+            raise ValueError("No configuration file path found in model")
+        with open(self.model.config_path, "w") as file:
             yaml.dump(self.config, file)
 
     def find_model_path(self, saved_model_path: str) -> str | None:
@@ -88,7 +88,7 @@ class PaddleOCRModelContextExporter(ModelContextExporter):
                     return os.path.join(saved_model_path, "latest")
         return None
 
-    def export_model(self):
+    def _export_model(self):
         """
         Executes the PaddleOCR model export process by running the export script.
 
@@ -96,15 +96,15 @@ class PaddleOCRModelContextExporter(ModelContextExporter):
         Logs any errors encountered during the export process.
 
         Raises:
-            ValueError: If no configuration file path is found in the model context.
+            ValueError: If no configuration file path is found in the model.
         """
-        if not self.model_context.config_path:
-            raise ValueError("No configuration file path found in model context")
+        if not self.model.config_path:
+            raise ValueError("No configuration file path found in model")
         command = [
             "python3.10",
             "src/pipelines/paddle_ocr/PaddleOCR/tools/export_model.py",
             "-c",
-            self.model_context.config_path,
+            self.model.config_path,
         ]
 
         os.setuid(os.geteuid())
@@ -123,14 +123,14 @@ class PaddleOCRModelContextExporter(ModelContextExporter):
         # Restore original PYTHONPATH
         os.environ["PYTHONPATH"] = self.current_pythonpath
 
-    def export_model_context(
+    def export_model(
         self,
         exported_model_destination_path: str,
         export_format: str,
         hyperparameters: Any,
     ):
         """
-        Prepares and exports the model context by finding the trained model, updating the config, and running the export process.
+        Prepares and exports the model by finding the trained model, updating the config, and running the export process.
 
         Args:
             exported_model_destination_path (str): The path where the exported model will be saved.
@@ -138,11 +138,11 @@ class PaddleOCRModelContextExporter(ModelContextExporter):
             hyperparameters (Any): The hyperparameters to use for the export process.
 
         Raises:
-            ValueError: If no trained weights directory is found in the model context or if no model files are found after export.
+            ValueError: If no trained weights directory is found in the model or if no model files are found after export.
         """
-        saved_model_dir = self.model_context.trained_weights_dir
+        saved_model_dir = self.model.trained_weights_dir
         if not saved_model_dir:
-            raise ValueError("No trained weights directory found in model context")
+            raise ValueError("No trained weights directory found in model")
 
         found_model_path = self.find_model_path(saved_model_dir)
 
@@ -157,7 +157,7 @@ class PaddleOCRModelContextExporter(ModelContextExporter):
             self.write_config()
 
             # Run the export process
-            self.export_model()
+            self._export_model()
 
         # Check if model files were exported
         exported_model = os.listdir(exported_model_destination_path)

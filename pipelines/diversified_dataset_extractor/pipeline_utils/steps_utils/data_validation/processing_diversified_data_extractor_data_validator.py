@@ -1,17 +1,17 @@
-from picsellia_cv_engine.models.data.dataset.base_dataset_context import (
-    TBaseDatasetContext,
+from picsellia_cv_engine.models.data.dataset.base_dataset import (
+    TBaseDataset,
 )
-from picsellia_cv_engine.models.steps.data.dataset.validator.common.dataset_context_validator import (
-    DatasetContextValidator,
+from picsellia_cv_engine.models.steps.data.dataset.validator.common.dataset_validator import (
+    DatasetValidator,
 )
 
 
-class ProcessingDiversifiedDataExtractorDataValidator(DatasetContextValidator):
+class ProcessingDiversifiedDataExtractorDataValidator(DatasetValidator):
     def __init__(
         self,
-        dataset_context: TBaseDatasetContext,
+        dataset: TBaseDataset,
     ):
-        super().__init__(dataset_context=dataset_context)
+        super().__init__(dataset=dataset)
 
     def _validate_dataset_version_size(self) -> None:
         """
@@ -20,7 +20,7 @@ class ProcessingDiversifiedDataExtractorDataValidator(DatasetContextValidator):
         Raises:
             ValueError: If the dataset version size is equal to 0 or 1.
         """
-        dataset_version_size = self.dataset_context.dataset_version.sync()["size"]
+        dataset_version_size = self.dataset.dataset_version.sync()["size"]
         if dataset_version_size == 0:
             raise ValueError(
                 "This dataset version cannot be diversified because it is empty. "

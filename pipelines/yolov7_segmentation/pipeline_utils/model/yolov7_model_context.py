@@ -3,7 +3,7 @@ from typing import Any
 
 import yaml
 from picsellia import Label, ModelVersion
-from picsellia_cv_engine.models.model.model_context import ModelContext
+from picsellia_cv_engine.models.model.model import Model
 
 
 def find_latest_run_dir(dir):
@@ -32,10 +32,10 @@ def find_latest_run_dir(dir):
     return processed_run_dirs[max(processed_run_dirs)]
 
 
-class Yolov7ModelContext(ModelContext):
+class Yolov7Model(Model):
     def __init__(
         self,
-        model_name: str,
+        name: str,
         model_version: ModelVersion,
         pretrained_weights_name: str | None = None,
         trained_weights_name: str | None = None,
@@ -45,7 +45,7 @@ class Yolov7ModelContext(ModelContext):
         labelmap: dict[str, Label] | None = None,
     ):
         super().__init__(
-            model_name=model_name,
+            name=name,
             model_version=model_version,
             pretrained_weights_name=pretrained_weights_name,
             trained_weights_name=trained_weights_name,

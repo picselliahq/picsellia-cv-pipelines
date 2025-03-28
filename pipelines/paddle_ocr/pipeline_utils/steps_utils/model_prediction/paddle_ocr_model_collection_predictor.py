@@ -1,7 +1,7 @@
 import os
 
-from picsellia_cv_engine.models.data.dataset.base_dataset_context import (
-    TBaseDatasetContext,
+from picsellia_cv_engine.models.data.dataset.base_dataset import (
+    TBaseDataset,
 )
 from picsellia_cv_engine.models.model.picsellia_prediction import (
     PicselliaConfidence,
@@ -32,30 +32,28 @@ class PaddleOCRModelCollectionPredictor(
 
     def __init__(self, model_collection: PaddleOCRModelCollection):
         """
-        Initializes the PaddleOCRModelContextPredictor with the provided model collection.
+        Initializes the PaddleOCRModelPredictor with the provided model collection.
 
         Args:
             model_collection (PaddleOCRModelCollection): The collection of PaddleOCR models.
         """
         super().__init__(model_collection)
 
-    def pre_process_dataset_context(
-        self, dataset_context: TBaseDatasetContext
-    ) -> list[str]:
+    def pre_process_dataset(self, dataset: TBaseDataset) -> list[str]:
         """
-        Prepares the dataset by extracting and returning a list of image file paths from the dataset context.
+        Prepares the dataset by extracting and returning a list of image file paths from the dataset.
 
         Args:
-            dataset_context (TDatasetContext): The context containing the dataset information.
+            dataset (TDataset): The context containing the dataset information.
 
         Returns:
             List[str]: A list of image file paths from the dataset.
         """
-        if not dataset_context.images_dir:
-            raise ValueError("No images directory found in the dataset context.")
+        if not dataset.images_dir:
+            raise ValueError("No images directory found in the dataset.")
         image_paths = [
-            os.path.join(dataset_context.images_dir, image_name)
-            for image_name in os.listdir(dataset_context.images_dir)
+            os.path.join(dataset.images_dir, image_name)
+            for image_name in os.listdir(dataset.images_dir)
         ]
         return image_paths
 
@@ -113,7 +111,7 @@ class PaddleOCRModelCollectionPredictor(
         self,
         image_batches: list[list[str]],
         batch_results: list[list],
-        dataset_context: TBaseDatasetContext,
+        dataset: TBaseDataset,
     ) -> list[PicselliaOCRPrediction]:
         """
         Post-processes the inference results for each batch and returns a list of OCR predictions.
@@ -121,7 +119,7 @@ class PaddleOCRModelCollectionPredictor(
         Args:
             image_batches (List[List[str]]): A list of batches of image paths.
             batch_results (List[List]): The list of inference results for each batch.
-            dataset_context (TDatasetContext): The context of the dataset used for label mapping.
+            dataset (TDataset): The context of the dataset used for label mapping.
 
         Returns:
             List[PicselliaOCRPrediction]: A list of processed OCR predictions for each image.
@@ -134,7 +132,7 @@ class PaddleOCRModelCollectionPredictor(
                 self._post_process(
                     batch_paths=batch_paths,
                     batch_prediction=batch_result,
-                    dataset_context=dataset_context,
+                    dataset=dataset,
                 )
             )
         return all_predictions
@@ -143,7 +141,7 @@ class PaddleOCRModelCollectionPredictor(
         self,
         batch_paths: list[str],
         batch_prediction: list,
-        dataset_context: TBaseDatasetContext,
+        dataset: TBaseDataset,
     ) -> list[PicselliaOCRPrediction]:
         """
         Post-processes the predictions for a single batch of images, mapping predicted bounding boxes, texts,
@@ -152,7 +150,7 @@ class PaddleOCRModelCollectionPredictor(
         Args:
             batch_paths (List[str]): The list of image paths for the batch.
             batch_prediction (List): The inference results for the batch.
-            dataset_context (TDatasetContext): The dataset context used for label mapping.
+            dataset (TDataset): The dataset used for label mapping.
 
         Returns:
             List[PicselliaOCRPrediction]: A list of processed predictions, including image paths, predicted texts,
@@ -163,11 +161,9 @@ class PaddleOCRModelCollectionPredictor(
         for image_path, prediction in zip(batch_paths, batch_prediction, strict=False):
             boxes, texts, confidences = self.get_annotations_from_result(prediction)
             asset_id = os.path.basename(image_path).split(".")[0]
-            asset = dataset_context.dataset_version.list_assets(ids=[asset_id])[0]
+            asset = dataset.dataset_version.list_assets(ids=[asset_id])[0]
             labels = [
-                PicselliaLabel(
-                    dataset_context.dataset_version.get_or_create_label("text")
-                )
+                PicselliaLabel(dataset.dataset_version.get_or_create_label("text"))
                 for _ in texts
                 for _ in texts
             ]

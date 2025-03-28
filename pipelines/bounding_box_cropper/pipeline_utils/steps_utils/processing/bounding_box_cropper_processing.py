@@ -37,12 +37,12 @@ class BoundingBoxCropperProcessing:
         Updates the output dataset version with the description and type.
         """
         output_dataset_type = InferenceType.CLASSIFICATION
-        input_dataset_context = self.dataset_collection["input"]
+        input_dataset = self.dataset_collection["input"]
         output_dataset_description = (
             f"Dataset extracted from dataset version "
-            f"'{input_dataset_context.dataset_version.version}' "
-            f"(id: {input_dataset_context.dataset_version.id}) in dataset "
-            f"'{input_dataset_context.dataset_version.name}' with label '{self.label_name_to_extract}'."
+            f"'{input_dataset.dataset_version.version}' "
+            f"(id: {input_dataset.dataset_version.id}) in dataset "
+            f"'{input_dataset.dataset_version.name}' with label '{self.label_name_to_extract}'."
         )
         self.dataset_collection["output"].dataset_version.update(
             description=output_dataset_description, type=output_dataset_type

@@ -10,8 +10,8 @@ from typing import Any
 import numpy as np
 from picsellia import DatasetVersion
 from picsellia.types.enums import InferenceType
-from picsellia_cv_engine.models.data.dataset.coco_dataset_context import (
-    CocoDatasetContext,
+from picsellia_cv_engine.models.data.dataset.coco_dataset import (
+    CocoDataset,
 )
 from picsellia_cv_engine.models.data.dataset.dataset_collection import (
     DatasetCollection,
@@ -87,10 +87,10 @@ class BaseTilerProcessing(ABC):
         return int(parts[-2]), int(parts[-1])
 
     def process_dataset_collection(
-        self, dataset_collection: DatasetCollection[CocoDatasetContext]
-    ) -> DatasetCollection[CocoDatasetContext]:
+        self, dataset_collection: DatasetCollection[CocoDataset]
+    ) -> DatasetCollection[CocoDataset]:
         """
-        Process each dataset context of the dataset collection by tiling the images and annotations.
+        Process each dataset of the dataset collection by tiling the images and annotations.
 
         Args:
             dataset_collection: The dataset collection to process.
@@ -165,7 +165,7 @@ class BaseTilerProcessing(ABC):
         return tiles_data
 
     def _process_dataset_collection(
-        self, dataset_collection: DatasetCollection[CocoDatasetContext]
+        self, dataset_collection: DatasetCollection[CocoDataset]
     ) -> None:
         """
         Process all images and annotations from the dataset collection.
@@ -177,61 +177,61 @@ class BaseTilerProcessing(ABC):
             ValueError: If the dataset type is not supported or configured.
         """
         if not dataset_collection["input"].images_dir:
-            raise ValueError("No images directory found in the dataset context.")
+            raise ValueError("No images directory found in the dataset.")
 
         if not dataset_collection["output"].images_dir:
-            raise ValueError("No images directory found in the dataset context.")
+            raise ValueError("No images directory found in the dataset.")
 
         if not dataset_collection["output"].coco_file_path:
-            raise ValueError("No COCO file found in the dataset context.")
+            raise ValueError("No COCO file found in the dataset.")
 
-        self._process_dataset_context(
-            dataset_context=dataset_collection["input"],
+        self._process_dataset(
+            dataset=dataset_collection["input"],
             output_dir=dataset_collection["output"].images_dir,
             output_coco_path=dataset_collection["output"].coco_file_path,
         )
 
-    def _process_dataset_context(
+    def _process_dataset(
         self,
-        dataset_context: CocoDatasetContext,
+        dataset: CocoDataset,
         output_dir: str,
         output_coco_path: str,
     ) -> None:
         """
-        Process the dataset context by tiling the images and annotations.
+        Process the dataset by tiling the images and annotations.
 
         This method can handle different dataset types (classification, object detection, segmentation)
         and applies appropriate tiling strategies for each.
 
         Args:
-            dataset_context: The dataset context to process.
+            dataset: The dataset to process.
             output_dir: The output directory where the tiled images will be saved.
             output_coco_path: The output COCO file path where the tiled annotations will be saved.
         """
-        dataset_type = dataset_context.dataset_version.type
+        dataset_type = dataset.dataset_version.type
 
         if dataset_type == InferenceType.NOT_CONFIGURED:
             raise ValueError("Dataset type is not configured.")
 
-        if not dataset_context.images_dir:
-            raise ValueError("No images directory found in the dataset context.")
+        if not dataset.images_dir:
+            raise ValueError("No images directory found in the dataset.")
 
-        if not dataset_context.coco_data:
-            raise ValueError("No COCO data found in the dataset context.")
+        if not dataset.coco_data:
+            raise ValueError("No COCO data found in the dataset.")
 
-        number_of_images = len(dataset_context.coco_data["images"])
+        number_of_images = len(dataset.coco_data["images"])
 
         output_coco_data = {
             "images": [],
             "annotations": [],
-            "categories": dataset_context.coco_data.get("categories", []),
+            "categories": dataset.coco_data.get("categories", []),
         }
 
         current_tile_id = 0
 
-        for idx, image_info in enumerate(dataset_context.coco_data["images"]):
+        for idx, image_info in enumerate(dataset.coco_data["images"]):
             image_filename = image_info["file_name"]
-            image_path = os.path.join(dataset_context.images_dir, image_filename)
+            image_path = os.path.join(dataset.images_dir, image_filename)
             image = Image.open(image_path)
             if image.mode != "RGB" or image.mode != "RGBA":
                 image = image.convert("RGB")
@@ -250,7 +250,7 @@ class BaseTilerProcessing(ABC):
             )
 
             self._tile_annotation(
-                coco_data=dataset_context.coco_data,
+                coco_data=dataset.coco_data,
                 coco_image_info=image_info,
                 output_coco_data=output_coco_data,
                 tiles_batch_info=tiles_batch_info,

@@ -3,7 +3,7 @@ from argparse import ArgumentParser
 
 from picsellia_cv_engine.decorators.pipeline_decorator import pipeline
 from picsellia_cv_engine.models.contexts.training.local_picsellia_training_context import (
-    LocalPicselliaTrainingContext,
+    LocalTrainingContext,
 )
 from picsellia_cv_engine.models.parameters.export_parameters import (
     ExportParameters,
@@ -46,8 +46,8 @@ parser.add_argument("--experiment_id", type=str)
 args = parser.parse_args()
 
 
-def get_context() -> LocalPicselliaTrainingContext:
-    return LocalPicselliaTrainingContext(
+def get_context() -> LocalTrainingContext:
+    return LocalTrainingContext(
         api_token=args.api_token,
         organization_id=args.organization_id,
         experiment_id=args.experiment_id,
@@ -81,7 +81,7 @@ def paddle_ocr_training_pipeline():
         model_collection=model_collection
     )
     evaluate_paddle_ocr_model_collection(
-        model_collection=model_collection, dataset_context=dataset_collection["test"]
+        model_collection=model_collection, dataset=dataset_collection["test"]
     )
 
 

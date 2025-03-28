@@ -7,8 +7,8 @@ from picsellia_cv_engine.models.parameters.export_parameters import (
     ExportParameters,
 )
 
-from pipelines.yolov7_segmentation.pipeline_utils.model.yolov7_model_context import (
-    Yolov7ModelContext,
+from pipelines.yolov7_segmentation.pipeline_utils.model.yolov7_model import (
+    Yolov7Model,
 )
 from pipelines.yolov7_segmentation.pipeline_utils.parameters.yolov7_augmentation_parameters import (
     Yolov7AugmentationParameters,
@@ -19,9 +19,9 @@ from pipelines.yolov7_segmentation.pipeline_utils.parameters.yolov7_hyper_parame
 
 
 @step
-def yolov7_model_context_preparator(
-    model_context: Yolov7ModelContext,
-) -> Yolov7ModelContext:
+def yolov7_model_preparator(
+    model: Yolov7Model,
+) -> Yolov7Model:
     context: PicselliaTrainingContext[
         Yolov7HyperParameters, Yolov7AugmentationParameters, ExportParameters
     ] = Pipeline.get_active_context()
@@ -59,12 +59,12 @@ def yolov7_model_context_preparator(
         "loss_ota": context.hyperparameters.loss_ota,
     }
 
-    if not model_context.hyperparameters_path:
+    if not model.hyperparameters_path:
         raise (ValueError("Hyperparameters path is not set"))
 
-    model_context.update_hyperparameters(
+    model.update_hyperparameters(
         hyperparameters=input_hyperparameters,
-        hyperparameters_path=model_context.hyperparameters_path,
+        hyperparameters_path=model.hyperparameters_path,
     )
 
-    return model_context
+    return model
