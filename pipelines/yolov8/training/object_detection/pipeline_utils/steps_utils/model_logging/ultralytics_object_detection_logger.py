@@ -2,11 +2,14 @@ from picsellia import Experiment
 from picsellia_cv_engine.models.steps.model.logging import (
     BaseLogger,
     Metric,
-    MetricMapping,
+)
+
+from pipelines.yolov8.training.pipeline_utils.steps_utils.model_logging.ultralytics_base_model_logger import (
+    UltralyticsBaseMetricMapping,
 )
 
 
-class UltralyticsObjectDetectionMetricMapping(MetricMapping):
+class UltralyticsObjectDetectionMetricMapping(UltralyticsBaseMetricMapping):
     """ """
 
     def __init__(self):
@@ -23,34 +26,6 @@ class UltralyticsObjectDetectionMetricMapping(MetricMapping):
         self.add_metric(
             phase="train",
             metric=Metric(standard_name="dfl_loss", framework_name="train/dfl_loss"),
-        )
-        self.add_metric(
-            phase="train",
-            metric=Metric(standard_name="learning_rate", framework_name="lr/pg0"),
-        )
-        self.add_metric(
-            phase="train",
-            metric=Metric(standard_name="learning_rate_pg1", framework_name="lr/pg1"),
-        )
-        self.add_metric(
-            phase="train",
-            metric=Metric(standard_name="learning_rate_pg2", framework_name="lr/pg2"),
-        )
-        self.add_metric(
-            phase="train",
-            metric=Metric(standard_name="epoch_time", framework_name="epoch_time"),
-        )
-        self.add_metric(
-            phase="train",
-            metric=Metric(standard_name="batch_0", framework_name="train_batch0"),
-        )
-        self.add_metric(
-            phase="train",
-            metric=Metric(standard_name="batch_1", framework_name="train_batch1"),
-        )
-        self.add_metric(
-            phase="train",
-            metric=Metric(standard_name="batch_2", framework_name="train_batch2"),
         )
         self.add_metric(
             phase="train",
@@ -95,82 +70,6 @@ class UltralyticsObjectDetectionMetricMapping(MetricMapping):
             phase="val",
             metric=Metric(
                 standard_name="mAP50-95(B)", framework_name="metrics/mAP50-95(B)"
-            ),
-        )
-        # self.add_metric(
-        #     phase="val",
-        #     metric=Metric(
-        #         standard_name="precision(B)-final",
-        #         framework_name="metrics/precision(B)-final",
-        #     ),
-        # )
-        # self.add_metric(
-        #     phase="val",
-        #     metric=Metric(
-        #         standard_name="recall(B)-final",
-        #         framework_name="metrics/recall(B)-final",
-        #     ),
-        # )
-        # self.add_metric(
-        #     phase="val",
-        #     metric=Metric(
-        #         standard_name="mAP50(B)-final", framework_name="metrics/mAP50(B)-final"
-        #     ),
-        # )
-        # self.add_metric(
-        #     phase="val",
-        #     metric=Metric(
-        #         standard_name="mAP50-95(B)-final",
-        #         framework_name="metrics/mAP50-95(B)-final",
-        #     ),
-        # )
-        self.add_metric(
-            phase="val",
-            metric=Metric(
-                standard_name="batch_0_labels", framework_name="val_batch0_labels"
-            ),
-        )
-        self.add_metric(
-            phase="val",
-            metric=Metric(
-                standard_name="batch_1_labels", framework_name="val_batch1_labels"
-            ),
-        )
-        self.add_metric(
-            phase="val",
-            metric=Metric(
-                standard_name="batch_2_labels", framework_name="val_batch2_labels"
-            ),
-        )
-        self.add_metric(
-            phase="val",
-            metric=Metric(
-                standard_name="batch_0_preds", framework_name="val_batch0_pred"
-            ),
-        )
-        self.add_metric(
-            phase="val",
-            metric=Metric(
-                standard_name="batch_1_preds", framework_name="val_batch1_pred"
-            ),
-        )
-        self.add_metric(
-            phase="val",
-            metric=Metric(
-                standard_name="batch_2_preds", framework_name="val_batch2_pred"
-            ),
-        )
-        self.add_metric(
-            phase="val",
-            metric=Metric(
-                standard_name="confusion_matrix", framework_name="confusion_matrix"
-            ),
-        )
-        self.add_metric(
-            phase="val",
-            metric=Metric(
-                standard_name="confusion_matrix_normalized",
-                framework_name="confusion_matrix_normalized",
             ),
         )
 
