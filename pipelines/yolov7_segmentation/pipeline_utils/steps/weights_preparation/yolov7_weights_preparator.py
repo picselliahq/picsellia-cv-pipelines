@@ -1,13 +1,13 @@
-from picsellia_cv_engine.decorators.pipeline_decorator import Pipeline
-from picsellia_cv_engine.decorators.step_decorator import step
-from picsellia_cv_engine.models.contexts.training.picsellia_training_context import (
+from picsellia_cv_engine.core.contexts import (
     PicselliaTrainingContext,
 )
-from picsellia_cv_engine.models.parameters.export_parameters import (
+from picsellia_cv_engine.core.parameters.export_parameters import (
     ExportParameters,
 )
+from picsellia_cv_engine.decorators.pipeline_decorator import Pipeline
+from picsellia_cv_engine.decorators.step_decorator import step
 
-from pipelines.yolov7_segmentation.pipeline_utils.model.yolov7_model import (
+from pipelines.yolov7_segmentation.pipeline_utils.model.yolov7_model_context import (
     Yolov7Model,
 )
 from pipelines.yolov7_segmentation.pipeline_utils.parameters.yolov7_augmentation_parameters import (

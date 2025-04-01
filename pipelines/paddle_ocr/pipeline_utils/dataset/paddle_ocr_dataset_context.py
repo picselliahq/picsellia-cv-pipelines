@@ -1,6 +1,6 @@
 from picsellia import DatasetVersion, Label
 from picsellia.sdk.asset import MultiAsset
-from picsellia_cv_engine.models.data.dataset.coco_dataset import (
+from picsellia_cv_engine.core import (
     CocoDataset,
 )
 

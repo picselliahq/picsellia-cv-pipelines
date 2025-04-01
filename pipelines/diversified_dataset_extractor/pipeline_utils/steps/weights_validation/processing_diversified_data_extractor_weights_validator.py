@@ -1,9 +1,9 @@
 import open_clip
-from picsellia_cv_engine.decorators.pipeline_decorator import Pipeline
-from picsellia_cv_engine.decorators.step_decorator import step
-from picsellia_cv_engine.models.contexts.processing.dataset.picsellia_processing_context import (
+from picsellia_cv_engine.core.contexts.processing.dataset.picsellia_processing_context import (
     PicselliaProcessingContext,
 )
+from picsellia_cv_engine.decorators.pipeline_decorator import Pipeline
+from picsellia_cv_engine.decorators.step_decorator import step
 
 from pipelines.diversified_dataset_extractor.pipeline_utils.parameters.processing_diversified_data_extractor_parameters import (
     ProcessingDiversifiedDataExtractorParameters,

@@ -10,10 +10,8 @@ from typing import Any
 import numpy as np
 from picsellia import DatasetVersion
 from picsellia.types.enums import InferenceType
-from picsellia_cv_engine.models.data.dataset.coco_dataset import (
+from picsellia_cv_engine.core import (
     CocoDataset,
-)
-from picsellia_cv_engine.models.data.dataset.dataset_collection import (
     DatasetCollection,
 )
 from PIL import Image

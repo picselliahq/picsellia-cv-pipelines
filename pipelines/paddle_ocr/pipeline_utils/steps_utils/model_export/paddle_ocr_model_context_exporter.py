@@ -4,8 +4,8 @@ import subprocess
 from typing import Any
 
 import yaml
-from picsellia_cv_engine.models.model.model import Model
-from picsellia_cv_engine.models.steps.model.export.model_exporter import (
+from picsellia_cv_engine.core.models import Model
+from picsellia_cv_engine.services.base.model.export.model_exporter import (
     ModelExporter,
 )
 

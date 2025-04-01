@@ -3,17 +3,17 @@ import shutil
 import subprocess
 
 import cv2
-from picsellia_cv_engine.models.data.dataset.base_dataset import (
+from picsellia_cv_engine.core.data import (
     TBaseDataset,
 )
-from picsellia_cv_engine.models.model.picsellia_prediction import (
+from picsellia_cv_engine.core.models import (
     PicselliaConfidence,
     PicselliaLabel,
     PicselliaPolygon,
     PicselliaPolygonPrediction,
 )
 
-from pipelines.yolov7_segmentation.pipeline_utils.model.yolov7_model import (
+from pipelines.yolov7_segmentation.pipeline_utils.model.yolov7_model_context import (
     Yolov7Model,
     find_latest_run_dir,
 )

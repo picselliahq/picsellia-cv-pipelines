@@ -17,7 +17,7 @@ from picsellia.types.enums import InferenceType
 from pipelines.yolov8.pre_annotation.pipeline_utils.parameters.processing_yolov8_preannotation_parameters import (
     ProcessingYOLOV8PreannotationParameters,
 )
-from pipelines.yolov8.training.classification.pipeline_utils.model.ultralytics_model import (
+from pipelines.yolov8.training.pipeline_utils.model.ultralytics_model import (
     UltralyticsModel,
 )
 

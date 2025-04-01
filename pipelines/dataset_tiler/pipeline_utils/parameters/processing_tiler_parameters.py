@@ -1,4 +1,4 @@
-from picsellia_cv_engine.models.parameters.base_parameters import Parameters
+from picsellia_cv_engine.core.parameters import Parameters
 
 from pipelines.dataset_tiler.pipeline_utils.steps_utils.processing.base_tiler_processing import (
     TileMode,

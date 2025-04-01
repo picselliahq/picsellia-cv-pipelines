@@ -1,8 +1,8 @@
 import logging
 
 from picsellia_cv_engine import Pipeline, step
-from picsellia_cv_engine.models.contexts import PicselliaTrainingContext
-from picsellia_cv_engine.models.parameters import ExportParameters
+from picsellia_cv_engine.core.contexts import PicselliaTrainingContext
+from picsellia_cv_engine.core.parameters import ExportParameters
 
 from pipelines.yolov8.training.pipeline_utils.model.ultralytics_model import (
     UltralyticsModel,

@@ -1,13 +1,13 @@
 import json
 
-from picsellia_cv_engine.decorators.pipeline_decorator import Pipeline
-from picsellia_cv_engine.decorators.step_decorator import step
-from picsellia_cv_engine.models.contexts.processing.dataset.picsellia_processing_context import (
-    PicselliaProcessingContext,
-)
-from picsellia_cv_engine.models.data.dataset.coco_dataset import (
+from picsellia_cv_engine.core import (
     CocoDataset,
 )
+from picsellia_cv_engine.core.contexts.processing.dataset.picsellia_processing_context import (
+    PicselliaProcessingContext,
+)
+from picsellia_cv_engine.decorators.pipeline_decorator import Pipeline
+from picsellia_cv_engine.decorators.step_decorator import step
 
 from pipelines.yolov8.pre_annotation.pipeline_utils.steps_utils.processing.yolov8_preannotation_processing import (
     PreAnnotator,
@@ -15,7 +15,7 @@ from pipelines.yolov8.pre_annotation.pipeline_utils.steps_utils.processing.yolov
     _get_model_labels_name,
     _type_coherence_check,
 )
-from pipelines.yolov8.training.classification.pipeline_utils.model.ultralytics_model import (
+from pipelines.yolov8.training.pipeline_utils.model.ultralytics_model import (
     UltralyticsModel,
 )
 

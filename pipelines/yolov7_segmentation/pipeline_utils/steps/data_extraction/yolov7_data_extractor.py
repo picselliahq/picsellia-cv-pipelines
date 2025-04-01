@@ -1,17 +1,17 @@
 import os
 
-from picsellia_cv_engine.decorators.pipeline_decorator import Pipeline
-from picsellia_cv_engine.decorators.step_decorator import step
-from picsellia_cv_engine.models.contexts.training.picsellia_training_context import (
-    PicselliaTrainingContext,
-)
-from picsellia_cv_engine.models.data.dataset.yolo_dataset import (
+from picsellia_cv_engine.core import (
     YoloDataset,
 )
-from picsellia_cv_engine.models.steps.data.dataset.loader.training_dataset_collection_extractor import (
+from picsellia_cv_engine.core.contexts import (
+    PicselliaTrainingContext,
+)
+from picsellia_cv_engine.decorators.pipeline_decorator import Pipeline
+from picsellia_cv_engine.decorators.step_decorator import step
+from picsellia_cv_engine.services.base.data.dataset.loader.training_dataset_collection_extractor import (
     TrainingDatasetCollectionExtractor,
 )
-from picsellia_cv_engine.models.utils.dataset_logging import (
+from picsellia_cv_engine.services.base.utils.dataset_logging import (
     log_labelmap,
 )
 

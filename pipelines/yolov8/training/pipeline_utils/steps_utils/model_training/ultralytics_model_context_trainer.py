@@ -1,8 +1,8 @@
 import os
 
 from picsellia import Experiment
-from picsellia_cv_engine.models import DatasetCollection
-from picsellia_cv_engine.models.data import TBaseDataset
+from picsellia_cv_engine.core import DatasetCollection
+from picsellia_cv_engine.core.data import TBaseDataset
 
 from pipelines.yolov8.training.classification.pipeline_utils.steps_utils.model_logging.ultralytics_classification_logger import (
     UltralyticsClassificationLogger,

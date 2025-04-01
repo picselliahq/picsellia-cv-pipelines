@@ -1,4 +1,4 @@
-from picsellia_cv_engine.models.steps.model.logging.base_logger import (
+from picsellia_cv_engine.services.base.model.logging.base_logger import (
     Metric,
     MetricMapping,
 )

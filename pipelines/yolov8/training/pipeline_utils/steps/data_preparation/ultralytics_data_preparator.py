@@ -2,7 +2,7 @@ import os
 
 import yaml
 from picsellia_cv_engine import step
-from picsellia_cv_engine.models import DatasetCollection, YoloDataset
+from picsellia_cv_engine.core import DatasetCollection, YoloDataset
 
 
 @step

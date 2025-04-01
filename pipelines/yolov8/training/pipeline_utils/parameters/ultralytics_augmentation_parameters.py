@@ -1,5 +1,5 @@
 from picsellia.types.schemas import LogDataType
-from picsellia_cv_engine.models.parameters import AugmentationParameters
+from picsellia_cv_engine.core.parameters import AugmentationParameters
 
 
 class UltralyticsAugmentationParameters(AugmentationParameters):

@@ -1,8 +1,8 @@
 import os
 
 from picsellia_cv_engine import Pipeline, step
-from picsellia_cv_engine.models import CocoDataset, DatasetCollection
-from picsellia_cv_engine.models.steps.data.dataset.preprocessing import (
+from picsellia_cv_engine.core import CocoDataset, DatasetCollection
+from picsellia_cv_engine.services.base.data.dataset.preprocessing import (
     ClassificationBaseDatasetPreparator,
 )
 

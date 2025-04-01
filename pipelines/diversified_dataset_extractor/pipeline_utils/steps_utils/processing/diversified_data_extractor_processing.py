@@ -6,12 +6,12 @@ import picsellia
 import PIL
 import requests
 from picsellia import Client, Data, Datalake, DatasetVersion
+from picsellia.colors import Colors
 from picsellia.sdk.asset import MultiAsset
-from picsellia_cv_engine.models.data.dataset.base_dataset import (
+from picsellia_cv_engine.core.data import (
     TBaseDataset,
 )
-from picsellia_cv_engine.models.logging.colors import Colors
-from picsellia_cv_engine.models.steps.processing.dataset_version_creation_processing import (
+from picsellia_cv_engine.services.base.processing.dataset_version_creation_processing import (
     DatasetVersionCreationProcessing,
 )
 from PIL import Image, ImageOps

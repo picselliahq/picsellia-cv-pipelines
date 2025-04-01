@@ -1,7 +1,7 @@
 from typing import Optional
 
 from picsellia.types.schemas import LogDataType
-from picsellia_cv_engine.models.parameters import HyperParameters
+from picsellia_cv_engine.core.parameters import HyperParameters
 
 
 class UltralyticsHyperParameters(HyperParameters):

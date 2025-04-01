@@ -2,7 +2,7 @@ import logging
 import os
 import shutil
 
-from picsellia_cv_engine.models.steps.model.export.model_exporter import ModelExporter
+from picsellia_cv_engine.services.base.model.export.model_exporter import ModelExporter
 from ultralytics import YOLO
 
 from pipelines.yolov8.training.pipeline_utils.model.ultralytics_model import (

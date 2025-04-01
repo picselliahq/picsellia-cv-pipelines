@@ -2,11 +2,11 @@ from argparse import ArgumentParser
 
 from picsellia.types.enums import ProcessingType
 from picsellia_cv_engine.decorators.pipeline_decorator import pipeline
-from picsellia_cv_engine.models.utils.local_context import (
+from picsellia_cv_engine.services.base.utils.local_context import (
     create_local_processing_context,
 )
-from picsellia_cv_engine.steps.dataset.loader import load_coco_datasets
-from picsellia_cv_engine.steps.dataset.uploader import upload_dataset_annotations
+from picsellia_cv_engine.steps.base.dataset.loader import load_coco_datasets
+from picsellia_cv_engine.steps.base.dataset.uploader import upload_dataset_annotations
 
 from pipelines.yolov8.pre_annotation.pipeline_utils.steps.model_loading.processing_ultralytics_model_loader import (
     load_processing_ultralytics_model,

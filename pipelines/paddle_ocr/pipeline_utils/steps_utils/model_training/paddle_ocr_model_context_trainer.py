@@ -3,7 +3,7 @@ import subprocess
 
 from picsellia import Experiment
 from picsellia.sdk.log import LogType
-from picsellia_cv_engine.models.model.model import Model
+from picsellia_cv_engine.core.models import Model
 
 
 def extract_and_log_metrics(log_line: str) -> dict[str, str | int | float]:

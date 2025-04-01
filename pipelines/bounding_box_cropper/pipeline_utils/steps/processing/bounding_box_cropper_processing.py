@@ -1,14 +1,12 @@
-from picsellia_cv_engine.decorators.pipeline_decorator import Pipeline
-from picsellia_cv_engine.decorators.step_decorator import step
-from picsellia_cv_engine.models.contexts.processing.dataset.picsellia_processing_context import (
-    PicselliaProcessingContext,
-)
-from picsellia_cv_engine.models.data.dataset.coco_dataset import (
+from picsellia_cv_engine.core import (
     CocoDataset,
-)
-from picsellia_cv_engine.models.data.dataset.dataset_collection import (
     DatasetCollection,
 )
+from picsellia_cv_engine.core.contexts.processing.dataset.picsellia_processing_context import (
+    PicselliaProcessingContext,
+)
+from picsellia_cv_engine.decorators.pipeline_decorator import Pipeline
+from picsellia_cv_engine.decorators.step_decorator import step
 
 from pipelines.bounding_box_cropper.pipeline_utils.parameters.processing_bounding_box_cropper_parameters import (
     ProcessingBoundingBoxCropperParameters,

@@ -1,8 +1,8 @@
 from picsellia import Client
-from picsellia_cv_engine.models.data.dataset.coco_dataset import (
+from picsellia_cv_engine.core import (
     CocoDataset,
 )
-from picsellia_cv_engine.models.steps.data.dataset.validator.object_detection.coco_object_detection_dataset_validator import (
+from picsellia_cv_engine.services.base.data.dataset.validator.object_detection.coco_object_detection_dataset_validator import (
     CocoObjectDetectionDatasetValidator,
 )
 

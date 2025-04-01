@@ -1,7 +1,7 @@
 import os
 
 from picsellia import Label, ModelVersion
-from picsellia_cv_engine.models import Model
+from picsellia_cv_engine.core.models import Model
 
 
 def find_latest_run_dir(dir: str, model_name: str):

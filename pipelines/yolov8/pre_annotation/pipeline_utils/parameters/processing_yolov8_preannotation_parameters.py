@@ -1,4 +1,4 @@
-from picsellia_cv_engine.models.parameters.base_parameters import Parameters
+from picsellia_cv_engine.core.parameters.base_parameters import Parameters
 
 
 class ProcessingYOLOV8PreannotationParameters(Parameters):

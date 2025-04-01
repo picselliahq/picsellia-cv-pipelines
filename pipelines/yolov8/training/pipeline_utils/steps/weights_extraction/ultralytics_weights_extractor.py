@@ -1,7 +1,7 @@
 import os
 
 from picsellia_cv_engine import Pipeline, step
-from picsellia_cv_engine.models.contexts import PicselliaTrainingContext
+from picsellia_cv_engine.core.contexts import PicselliaTrainingContext
 
 from pipelines.yolov8.training.pipeline_utils.model.ultralytics_model import (
     UltralyticsModel,

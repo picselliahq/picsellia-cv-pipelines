@@ -1,12 +1,12 @@
 import os
 
-from picsellia_cv_engine.models.data.dataset.base_dataset import (
+from picsellia_cv_engine.core.data import (
     TBaseDataset,
 )
-from picsellia_cv_engine.models.model.picsellia_prediction import (
+from picsellia_cv_engine.core.models import (
     PicselliaClassificationPrediction,
 )
-from picsellia_cv_engine.models.steps.model.predictor.model_predictor import (
+from picsellia_cv_engine.services.base.model.predictor.model_predictor import (
     ModelPredictor,
 )
 from ultralytics.engine.results import Results

@@ -1,22 +1,20 @@
 from picsellia.types.enums import InferenceType
-from picsellia_cv_engine.decorators.pipeline_decorator import Pipeline
-from picsellia_cv_engine.decorators.step_decorator import step
-from picsellia_cv_engine.models.contexts.processing.dataset.picsellia_processing_context import (
+from picsellia_cv_engine.core import CocoDataset
+from picsellia_cv_engine.core.contexts.processing.dataset.picsellia_processing_context import (
     PicselliaProcessingContext,
 )
-from picsellia_cv_engine.models.data.dataset.coco_dataset import (
-    CocoDataset,
-)
-from picsellia_cv_engine.models.steps.data.dataset.validator.classification.coco_classification_dataset_validator import (
+from picsellia_cv_engine.decorators.pipeline_decorator import Pipeline
+from picsellia_cv_engine.decorators.step_decorator import step
+from picsellia_cv_engine.services.base.data.dataset.validator.classification.coco_classification_dataset_context_validator import (
     CocoClassificationDatasetValidator,
 )
-from picsellia_cv_engine.models.steps.data.dataset.validator.common.not_configured_dataset_validator import (
+from picsellia_cv_engine.services.base.data.dataset.validator.common.not_configured_dataset_validator import (
     NotConfiguredDatasetValidator,
 )
-from picsellia_cv_engine.models.steps.data.dataset.validator.object_detection.coco_object_detection_dataset_validator import (
+from picsellia_cv_engine.services.base.data.dataset.validator.object_detection.coco_object_detection_dataset_validator import (
     CocoObjectDetectionDatasetValidator,
 )
-from picsellia_cv_engine.models.steps.data.dataset.validator.segmentation.coco_segmentation_dataset_validator import (
+from picsellia_cv_engine.services.base.data.dataset.validator.segmentation.coco_segmentation_dataset_validator import (
     CocoSegmentationDatasetValidator,
 )
 

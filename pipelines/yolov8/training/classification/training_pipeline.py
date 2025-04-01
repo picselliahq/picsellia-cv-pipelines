@@ -1,8 +1,8 @@
 from picsellia_cv_engine import pipeline
-from picsellia_cv_engine.models.contexts import PicselliaTrainingContext
-from picsellia_cv_engine.models.parameters import ExportParameters
-from picsellia_cv_engine.steps.dataset.loader import load_coco_datasets
-from picsellia_cv_engine.steps.dataset.validator import validate_dataset
+from picsellia_cv_engine.core.contexts import PicselliaTrainingContext
+from picsellia_cv_engine.core.parameters import ExportParameters
+from picsellia_cv_engine.steps.base.dataset.loader import load_coco_datasets
+from picsellia_cv_engine.steps.base.dataset.validator import validate_dataset
 
 from pipelines.yolov8.training.classification.pipeline_utils.steps.data_preparation.ultralytics_classification_data_preparator import (
     prepare_ultralytics_classification_dataset_collection,

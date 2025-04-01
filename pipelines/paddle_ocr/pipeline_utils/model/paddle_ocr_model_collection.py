@@ -1,5 +1,4 @@
-from picsellia_cv_engine.models.model.model import Model
-from picsellia_cv_engine.models.model.model_collection import ModelCollection
+from picsellia_cv_engine.core.models import Model, ModelCollection
 
 
 class PaddleOCRModelCollection(ModelCollection):

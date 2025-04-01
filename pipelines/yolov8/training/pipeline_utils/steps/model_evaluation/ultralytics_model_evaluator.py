@@ -1,10 +1,10 @@
 import os
 
 from picsellia_cv_engine import Pipeline, step
-from picsellia_cv_engine.models.contexts import PicselliaTrainingContext
-from picsellia_cv_engine.models.data import TBaseDataset
-from picsellia_cv_engine.models.parameters import ExportParameters
-from picsellia_cv_engine.models.steps.model.evaluator.model_evaluator import (
+from picsellia_cv_engine.core.contexts import PicselliaTrainingContext
+from picsellia_cv_engine.core.data import TBaseDataset
+from picsellia_cv_engine.core.parameters import ExportParameters
+from picsellia_cv_engine.services.base.model.evaluator.model_evaluator import (
     ModelEvaluator,
 )
 

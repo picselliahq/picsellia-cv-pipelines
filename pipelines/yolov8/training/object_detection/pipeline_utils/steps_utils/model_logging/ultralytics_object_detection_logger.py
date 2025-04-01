@@ -1,5 +1,5 @@
 from picsellia import Experiment
-from picsellia_cv_engine.models.steps.model.logging import (
+from picsellia_cv_engine.services.base.model.logging import (
     BaseLogger,
     Metric,
 )
