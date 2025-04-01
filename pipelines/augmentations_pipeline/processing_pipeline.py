@@ -1,9 +1,9 @@
 from picsellia_cv_engine.decorators.pipeline_decorator import pipeline
-from picsellia_cv_engine.models.utils.picsellia_context import (
+from picsellia_cv_engine.services.base.utils.picsellia_context import (
     create_picsellia_processing_context,
 )
-from picsellia_cv_engine.steps.dataset.loader import load_coco_datasets
-from picsellia_cv_engine.steps.dataset.uploader import upload_full_dataset
+from picsellia_cv_engine.steps.base.dataset.loader import load_coco_datasets
+from picsellia_cv_engine.steps.base.dataset.uploader import upload_full_dataset
 
 from pipelines.augmentations_pipeline.process_dataset import process_dataset
 
