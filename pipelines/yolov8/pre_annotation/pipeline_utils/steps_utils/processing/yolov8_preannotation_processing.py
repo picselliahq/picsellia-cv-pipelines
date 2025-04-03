@@ -277,6 +277,11 @@ class AnnotationProcessor:
         scores = predictions.boxes.conf.cpu().numpy()
         labels = predictions.boxes.cls.cpu().numpy().astype(np.int16)
         masks = GeometryUtils.format_polygons(predictions=predictions)
+        if len(masks) == 0:
+            logging.warning(
+                f"Segmentation prediction for {asset.filename} returned no masks."
+            )
+            return
 
         # Limit the number of polygons to reduce processing time
         nb_polygons_limit = min(100, len(masks))
@@ -289,6 +294,8 @@ class AnnotationProcessor:
                     self.label_manager.get_label_by_name(label_name)
 
                     segmentation = masks[i]
+                    if len(segmentation) == 0:
+                        continue
                     segmentation_list = [list(point) for point in segmentation]
                     bbox = GeometryUtils.polygon_bbox(segmentation_list)
                     area = GeometryUtils.polygon_area(segmentation_list)

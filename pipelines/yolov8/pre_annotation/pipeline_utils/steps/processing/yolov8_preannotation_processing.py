@@ -1,4 +1,5 @@
 import json
+import os
 
 from picsellia_cv_engine.core import (
     CocoDataset,
@@ -46,6 +47,10 @@ def process(model: UltralyticsModel, dataset: CocoDataset) -> CocoDataset:
         confidence_threshold=context.processing_parameters.confidence_threshold
     )
 
+    if not dataset.coco_file_path:
+        dataset.coco_file_path = os.path.join(
+            dataset.annotations_dir, "coco_annotations.json"
+        )
     with open(dataset.coco_file_path, "w") as f:
         json.dump(dataset.coco_data, f)
 
