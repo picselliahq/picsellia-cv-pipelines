@@ -23,3 +23,9 @@ class ProcessingYOLOV8PreannotationParameters(Parameters):
         self.device = self.extract_parameter(
             keys=["device"], expected_type=str, default="cuda"
         )
+        self.agnostic_nms = self.extract_parameter(
+            keys=["agnostic_nms"], expected_type=bool, default=True
+        )
+        self.replace_annotations = self.extract_parameter(
+            keys=["replace_annotations"], expected_type=bool, default=False
+        )
