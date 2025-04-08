@@ -1,7 +1,7 @@
 from argparse import ArgumentParser
 
 from picsellia.types.enums import ProcessingType
-from picsellia_cv_engine.decorators.pipeline_decorator import pipeline
+from picsellia_cv_engine import pipeline
 from picsellia_cv_engine.services.base.utils.local_context import (
     create_local_processing_context,
 )
@@ -47,8 +47,13 @@ local_context = create_local_processing_context(
         "image_size": args.image_size,
         "label_matching_strategy": args.label_matching_strategy,
         "device": "cuda",
+        "agnostic_nms": True,
+        "replace_annotations": False,
     },
 )
+# local_context.model_version = local_context.client.get_public_model(name="YoloV8-Segmentation").get_version(version="YoloV8-m-segmentation")
+local_context.processing_parameters.agnostic_nms = True
+local_context.processing_parameters.replace_annotations = False
 
 
 @pipeline(
