@@ -395,7 +395,9 @@ class PreAnnotator:
         # Verify label compatibility
         self.label_manager.check_labels_coherence(self.model_labels_name)
 
-    def preannotate(self, confidence_threshold: float) -> dict:
+    def preannotate(
+        self, confidence_threshold: float, agnostic_nms: bool = False
+    ) -> dict:
         """Run pre-annotation on the dataset"""
         dataset_size = self.dataset_version.sync()["size"]
         batch_size = min(self.parameters.batch_size, dataset_size)
@@ -410,7 +412,9 @@ class PreAnnotator:
             url_list = [asset.sync()["data"]["presigned_url"] for asset in assets]
 
             # Get predictions for batch
-            predictions = self.model.loaded_model(url_list, imgsz=image_size)
+            predictions = self.model.loaded_model(
+                url_list, imgsz=image_size, agnostic_nms=agnostic_nms
+            )
 
             # Process each asset and prediction
             for asset, prediction in list(zip(assets, predictions, strict=False)):
