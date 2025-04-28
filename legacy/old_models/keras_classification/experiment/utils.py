@@ -1,9 +1,8 @@
 import os
 import shutil
-from typing import List, Tuple, Optional
+from typing import Optional
 
 import numpy as np
-import picsellia
 import tensorflow as tf
 from keras import backend as K
 from picsellia.sdk.dataset_version import DatasetVersion
@@ -39,42 +38,9 @@ def dataset(experiment, assets, count, split_type, new_size, n_classes):
     return np.asarray(X), y
 
 
-def get_experiment() -> Experiment:
-    if "api_token" not in os.environ:
-        raise Exception("You must set an api_token to run this image")
-    api_token = os.environ["api_token"]
-
-    if "host" not in os.environ:
-        host = "https://app.picsellia.com"
-    else:
-        host = os.environ["host"]
-
-    if "organization_id" not in os.environ:
-        organization_id = None
-    else:
-        organization_id = os.environ["organization_id"]
-
-    client = picsellia.Client(
-        api_token=api_token, host=host, organization_id=organization_id
-    )
-
-    if "experiment_name" in os.environ:
-        experiment_name = os.environ["experiment_name"]
-        if "project_token" in os.environ:
-            project_token = os.environ["project_token"]
-            project = client.get_project_by_id(project_token)
-        elif "project_name" in os.environ:
-            project_name = os.environ["project_name"]
-            project = client.get_project(project_name)
-        experiment = project.get_experiment(experiment_name)
-    else:
-        Exception("You must set the project_token or project_name and experiment_name")
-    return experiment
-
-
 def get_train_test_eval_datasets_from_experiment(
     experiment: Experiment,
-) -> Tuple[bool, DatasetVersion, DatasetVersion, DatasetVersion]:
+) -> tuple[bool, DatasetVersion, DatasetVersion, DatasetVersion]:
     is_split = _is_train_test_eval_dataset(experiment)
     if is_split:
         print("We found 3 datasets:")
@@ -95,7 +61,7 @@ def get_train_test_eval_datasets_from_experiment(
 
 
 def _is_train_test_eval_dataset(experiment: Experiment) -> bool:
-    datasets: List[DatasetVersion] = experiment.list_attached_dataset_versions()
+    datasets: list[DatasetVersion] = experiment.list_attached_dataset_versions()
     if len(datasets) < 3:
         return False
     template = ["train", "test", "eval"]
@@ -207,18 +173,20 @@ class Metrics(tf.keras.callbacks.Callback):
         self.batch_size = batch_size
         self.experiment = experiment
 
-    def on_train_begin(self, logs={}):
+    def on_train_begin(self, logs=None):
+        logs = logs or {}
         self.val_f1s = []
         self.val_recalls = []
         self.val_precisions = []
 
-    def on_epoch_end(self, epoch, logs={}):
+    def on_epoch_end(self, epoch, logs=None):
+        logs = logs or {}
         batches = len(self.validation_data)
         # total = batches * self.batch_size
 
         val_pred = []
         val_true = []
-        for batch in range(batches):
+        for _ in range(batches):
             xVal, yVal = next(self.validation_data)
 
             # val_pred_batch = np.zeros((len(xVal)))
@@ -243,8 +211,7 @@ class Metrics(tf.keras.callbacks.Callback):
         logs["val_recall"] = _val_recall
         logs["val_precision"] = _val_precision
         print(
-            " - val_f1_macro: %f - val_precision_macro: %f - val_recall_macro: %f"
-            % (_val_f1, _val_precision, _val_recall)
+            f" - val_f1_macro: {_val_f1:.6f} - val_precision_macro: {_val_precision:.6f} - val_recall_macro: {_val_recall:.6f}"
         )
 
         if self.experiment is not None:

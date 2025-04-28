@@ -9,6 +9,7 @@ WORKDIR /experiment
 
 COPY ./keras-classification/experiment ./
 COPY ./keras-classification/requirements.txt ./
+COPY ./core_utils ./core_utils
 
 ARG REBUILD_ALL
 ARG REBUILD_PICSELLIA
