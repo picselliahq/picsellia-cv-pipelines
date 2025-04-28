@@ -1,12 +1,6 @@
 import os
 from abc import abstractmethod
 
-from picsellia.sdk.asset import MultiAsset
-from picsellia.sdk.dataset import DatasetVersion
-from picsellia.types.enums import LogType
-from pycocotools.coco import COCO
-
-from abstract_trainer.trainer import AbstractTrainer
 from core_utils.yolov8 import (
     extract_file_name,
     get_batch_mosaics,
@@ -17,6 +11,12 @@ from core_utils.yolov8 import (
     make_annotation_dict_by_dataset,
     write_annotation_file,
 )
+from picsellia.sdk.asset import MultiAsset
+from picsellia.sdk.dataset import DatasetVersion
+from picsellia.types.enums import LogType
+from pycocotools.coco import COCO
+
+from abstract_trainer.trainer import AbstractTrainer
 
 
 class Yolov8Trainer(AbstractTrainer):
@@ -99,9 +99,7 @@ class Yolov8Trainer(AbstractTrainer):
             test_rep,
             val_rep,
             labels,
-        ) = self.train_set.train_test_val_split(
-            ([prop, (1 - prop) / 2, (1 - prop) / 2])
-        )
+        ) = self.train_set.train_test_val_split([prop, (1 - prop) / 2, (1 - prop) / 2])
 
         for data_type, assets in {
             "train": train_assets,
