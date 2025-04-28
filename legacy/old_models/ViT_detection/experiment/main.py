@@ -27,7 +27,7 @@ class LogObjectDetectionMetricsCallback(TrainerCallback):
 
 
 training_pipeline = TrainingPipeline()
-experiment = training_pipeline.get_experiment()
+experiment = training_pipeline.experiment
 train_test_valid_dataset, dataset = training_pipeline.prepare_data_for_training()
 trainer = training_pipeline.train(
     train_test_valid_dataset=train_test_valid_dataset,

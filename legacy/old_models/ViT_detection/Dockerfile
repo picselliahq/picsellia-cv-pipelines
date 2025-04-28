@@ -13,5 +13,6 @@ RUN python3.10 -m pip install -U transformers
 WORKDIR /experiment
 
 COPY ./ViT-classification/experiment ./
+COPY ./core_utils ./core_utils
 
 ENTRYPOINT ["run", "python3.10", "main.py"]

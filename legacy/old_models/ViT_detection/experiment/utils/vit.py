@@ -1,6 +1,5 @@
 import json
 import os
-from typing import Dict, List
 
 import albumentations
 import evaluate
@@ -34,7 +33,7 @@ class CocoDetection(torchvision.datasets.CocoDetection):
 
     def __getitem__(self, idx):
         # read in PIL image and target in COCO format
-        img, target = super(CocoDetection, self).__getitem__(idx)
+        img, target = super().__getitem__(idx)
 
         # preprocess image and target: converting target to DETR format,
         # resizing + normalization of both image and target)
@@ -52,7 +51,7 @@ class CocoDetection(torchvision.datasets.CocoDetection):
 
 def get_id2label_mapping(annotations: dict) -> dict:
     categories = get_category_names(annotations=annotations)
-    id2label = {index: x for index, x in enumerate(categories, start=0)}
+    id2label = dict(enumerate(categories, start=0))
 
     return id2label
 
@@ -67,7 +66,7 @@ def log_labelmap(id2label: dict, experiment: Experiment):
 
 
 def create_objects_dict(annotations: dict, image_id: int) -> dict:
-    curr_object: Dict[str, List] = {
+    curr_object: dict[str, list] = {
         key: [] for key in ["id", "bbox", "category", "area", "image_id"]
     }
 
@@ -135,7 +134,7 @@ def write_metadata_file(data: list[dict], output_path: str):
             for entry in data:
                 json.dump(entry, f)
                 f.write("\n")
-    except IOError:
+    except OSError:
         print("could not write metadata file")
 
 
@@ -180,7 +179,7 @@ def save_annotation_file_images(
     dataset: Dataset, experiment: Experiment, id2label: dict
 ) -> tuple[str, str]:
     # Save images and annotations into the test_files torchvision.datasets.CocoDetection expects
-    output_json: Dict[str, List] = {}
+    output_json: dict[str, list] = {}
     path_output = os.path.join(experiment.base_dir, "output")
 
     if not os.path.exists(path_output):
@@ -278,13 +277,11 @@ def run_evaluation(test_ds_coco_format, im_processor, model) -> dict:
     )
 
     with torch.no_grad():
-        for idx, batch in enumerate(tqdm(val_dataloader)):
+        for _idx, batch in enumerate(tqdm(val_dataloader)):
             pixel_values = batch["pixel_values"]
             pixel_mask = batch["pixel_mask"]
 
-            labels = [
-                {k: v for k, v in t.items()} for t in batch["labels"]
-            ]  # these are in DETR format, resized + normalized
+            labels = [dict(t) for t in batch["labels"]]
 
             # forward pass
             outputs = model(pixel_values=pixel_values, pixel_mask=pixel_mask)
