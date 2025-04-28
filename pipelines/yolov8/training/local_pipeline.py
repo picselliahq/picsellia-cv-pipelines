@@ -19,7 +19,10 @@ from picsellia_cv_engine.steps.ultralytics.model.exporter import (
     export_ultralytics_model,
 )
 from picsellia_cv_engine.steps.ultralytics.model.loader import load_ultralytics_model
-from picsellia_cv_engine.steps.ultralytics.model.trainer import train_ultralytics_model
+
+from pipelines.yolov8.training.utils.training_steps import (
+    simple_train_ultralytics_model,
+)
 
 parser = ArgumentParser()
 parser.add_argument("--api_token", type=str)
@@ -50,7 +53,7 @@ def yolov8_training_pipeline():
 
     model = load_ultralytics_model(pretrained_weights_name="pretrained-weights")
 
-    train_ultralytics_model(model=model, dataset_collection=dataset_collection)
+    simple_train_ultralytics_model(model=model, dataset_collection=dataset_collection)
 
     export_ultralytics_model(model=model)
 
