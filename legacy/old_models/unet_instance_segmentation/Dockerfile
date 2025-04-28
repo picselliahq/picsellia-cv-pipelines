@@ -11,5 +11,6 @@ ENV SM_FRAMEWORK="tf.keras"
 
 COPY ./unet-instance-segmentation/experiment ./
 COPY ./abstract_trainer ./abstract_trainer
+COPY ./core_utils ./core_utils
 
 ENTRYPOINT ["run", "python3.10", "main.py"]
