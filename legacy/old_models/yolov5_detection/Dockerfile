@@ -19,6 +19,7 @@ RUN git clone https://github.com/ultralytics/yolov5
 COPY ./yolov5-detection/experiment/yolov5_utils/train.py /experiment/yolov5/train.py
 
 COPY ./yolov5-detection/experiment ./
+COPY ./core_utils ./core_utils
 
 ENV PYTHONPATH="/experiment/yolov5/:/experiment/yolov5/utils:${PYTHONPATH}"
 

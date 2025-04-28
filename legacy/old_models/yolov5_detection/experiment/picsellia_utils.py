@@ -9,7 +9,6 @@ import numpy as np
 import torch
 import tqdm
 import yaml
-from picsellia import Client
 from picsellia.exceptions import NoDataError
 from picsellia.sdk.asset import Asset, MultiAsset
 from picsellia.sdk.dataset import Dataset
@@ -235,98 +234,19 @@ def picsellia_train_test_split(
     random_seed=None,
     dataset_length: int = 0,
 ):
-    nb_pages = int(dataset_length / 100) + 1
-    extended_assets: dict[str, list] = {"items": []}
-    for page in range(1, nb_pages + 1):
-        params = {"limit": 100, "offset": (page - 1) * 100}
-        try:
-            r = dataset.connexion.get(
-                f"/sdk/dataset/version/{dataset.id}/assets/extended", params=params
-            ).json()
-            if r["count"] == 0:
-                raise NoDataError("No asset with annotation found in this dataset")
-        except Exception:
-            pass
-        extended_assets["items"] = extended_assets["items"] + r["items"]
-
-    count = 0
-    items = []
-    for item in extended_assets["items"]:
-        if not item["annotations"]:
-            continue
-
-        count += 1
-        items.append(item)
+    extended_assets = _fetch_extended_assets(dataset, dataset_length)
+    items = _filter_assets_with_annotations(extended_assets)
 
     if random_seed is not None:
         random.seed(random_seed)
 
-    nb_assets_train = int(count * prop)
-    train_eval_rep = [1] * nb_assets_train + [0] * (count - nb_assets_train)
-    random.shuffle(train_eval_rep)
+    train_items, eval_items = _split_assets(items, prop)
 
     labels = dataset.list_labels()
     label_names = {str(label.id): label.name for label in labels}
 
-    k = 0
-
-    train_assets = []
-    eval_assets = []
-
-    train_label_count: dict[str, int] = {}
-    eval_label_count: dict[str, int] = {}
-    for item in items:
-        annotations = item["annotations"]
-
-        # TODO: Get only from worker or status
-        annotation = annotations[0]
-
-        asset = Asset(dataset.connexion, dataset_version_id=dataset.id, data=item)
-
-        if train_eval_rep[k] == 0:
-            eval_assets.append(asset)
-            label_count_ref = eval_label_count
-        else:
-            train_assets.append(asset)
-            label_count_ref = train_label_count
-
-        k += 1
-
-        label_ids = []
-        for shape in annotation["rectangles"]:
-            label_ids.append(shape["label_id"])
-
-        for shape in annotation["classifications"]:
-            label_ids.append(shape["label_id"])
-
-        for shape in annotation["points"]:
-            label_ids.append(shape["label_id"])
-
-        for shape in annotation["polygons"]:
-            label_ids.append(shape["label_id"])
-
-        for shape in annotation["lines"]:
-            label_ids.append(shape["label_id"])
-
-        for label_id in label_ids:
-            try:
-                label_name = label_names[label_id]
-                if label_name not in label_count_ref:
-                    label_count_ref[label_name] = 1
-                else:
-                    label_count_ref[label_name] += 1
-            except KeyError:  # pragma: no cover
-                pass
-
-    train_repartition = {
-        "x": list(train_label_count.keys()),
-        "y": list(train_label_count.values()),
-    }
-
-    eval_repartition = {
-        "x": list(eval_label_count.keys()),
-        "y": list(eval_label_count.values()),
-    }
+    train_assets, train_repartition = _build_assets(train_items, dataset, label_names)
+    eval_assets, eval_repartition = _build_assets(eval_items, dataset, label_names)
 
     return (
         MultiAsset(dataset.connexion, dataset.id, train_assets),
@@ -335,6 +255,75 @@ def picsellia_train_test_split(
         eval_repartition,
         labels,
     )
+
+
+def _fetch_extended_assets(dataset: Dataset, dataset_length: int) -> list:
+    nb_pages = int(dataset_length / 100) + 1
+    extended_items = []
+    for page in range(1, nb_pages + 1):
+        params = {"limit": 100, "offset": (page - 1) * 100}
+        try:
+            r = dataset.connexion.get(
+                f"/sdk/dataset/version/{dataset.id}/assets/extended", params=params
+            ).json()
+            if r["count"] == 0:
+                raise NoDataError("No asset with annotation found in this dataset")
+            extended_items += r["items"]
+        except Exception:
+            pass
+    return extended_items
+
+
+def _filter_assets_with_annotations(extended_assets: list) -> list:
+    return [item for item in extended_assets if item.get("annotations")]
+
+
+def _split_assets(items: list, prop: float) -> tuple[list, list]:
+    count = len(items)
+    nb_assets_train = int(count * prop)
+    train_eval_rep = [1] * nb_assets_train + [0] * (count - nb_assets_train)
+    random.shuffle(train_eval_rep)
+
+    train_items = []
+    eval_items = []
+
+    for item, is_train in zip(items, train_eval_rep):
+        if is_train:
+            train_items.append(item)
+        else:
+            eval_items.append(item)
+
+    return train_items, eval_items
+
+
+def _build_assets(
+    items: list, dataset: Dataset, label_names: dict
+) -> tuple[list, dict]:
+    assets = []
+    label_count: dict[str, int] = {}
+
+    for item in items:
+        annotation = item["annotations"][0]
+        asset = Asset(dataset.connexion, dataset_version_id=dataset.id, data=item)
+        assets.append(asset)
+
+        label_ids: list[int] = []
+        for key in ["rectangles", "classifications", "points", "polygons", "lines"]:
+            label_ids.extend(shape["label_id"] for shape in annotation.get(key, []))
+
+        for label_id in label_ids:
+            try:
+                label_name = label_names[label_id]
+                label_count[label_name] = label_count.get(label_name, 0) + 1
+            except KeyError:
+                pass
+
+    repartition = {
+        "x": list(label_count.keys()),
+        "y": list(label_count.values()),
+    }
+
+    return assets, repartition
 
 
 def create_yolo_detection_label(exp, data_type, annotations_dict, annotations_coco):
@@ -418,10 +407,10 @@ def countList(lst1, lst2):
 def coco_to_yolo_segmentation(ann, image_w, image_h):
     pair_index = np.arange(0, len(ann[0]), 2)
     impair_index = np.arange(1, len(ann[0]), 2)
-    Xs = list(map(ann[0].__getitem__, pair_index))
-    xs = list(map(lambda x: x / image_w, Xs))
-    Ys = list(map(ann[0].__getitem__, impair_index))
-    ys = list(map(lambda x: x / image_h, Ys))
+    Xs = [ann[0][i] for i in pair_index]
+    xs = [x / image_w for x in Xs]
+    Ys = [ann[0][i] for i in impair_index]
+    ys = [y / image_h for y in Ys]
     return countList(xs, ys)
 
 
@@ -429,10 +418,14 @@ def setup_hyp(
     experiment=None,
     data_yaml_path=None,
     config_path=None,
-    params={},
-    label_map=[],
+    params=None,
+    label_map=None,
     cwd=None,
 ):
+    if params is None:
+        params = {}
+    if label_map is None:
+        label_map = []
     tmp = os.listdir(experiment.checkpoint_dir)
 
     for f in tmp:
@@ -575,68 +568,34 @@ def get_weights_and_config(final_run_path):
 
 
 def get_metrics_curves(final_run_path):
-    confusion_matrix = None
-    F1_curve = None
-    labels_correlogram = None
-    labels = None
-    P_curve = None
-    PR_curve = None
-    R_curve = None
-    BoxF1_curve = None
-    BoxP_curve = None
-    BoxPR_curve = None
-    BoxR_curve = None
-    MaskF1_curve = None
-    MaskP_curve = None
-    MaskPR_curve = None
-    MaskR_curve = None
-    if os.path.isfile(os.path.join(final_run_path, "confusion_matrix.png")):
-        confusion_matrix = os.path.join(final_run_path, "confusion_matrix.png")
-    if os.path.isfile(os.path.join(final_run_path, "F1_curve.png")):
-        F1_curve = os.path.join(final_run_path, "F1_curve.png")
-    if os.path.isfile(os.path.join(final_run_path, "labels_correlogram.jpg")):
-        labels_correlogram = os.path.join(final_run_path, "labels_correlogram.jpg")
-    if os.path.isfile(os.path.join(final_run_path, "labels.jpg")):
-        labels = os.path.join(final_run_path, "labels.jpg")
-    if os.path.isfile(os.path.join(final_run_path, "P_curve.png")):
-        P_curve = os.path.join(final_run_path, "P_curve.png")
-    if os.path.isfile(os.path.join(final_run_path, "PR_curve.png")):
-        PR_curve = os.path.join(final_run_path, "PR_curve.png")
-    if os.path.isfile(os.path.join(final_run_path, "R_curve.png")):
-        R_curve = os.path.join(final_run_path, "R_curve.png")
-    if os.path.isfile(os.path.join(final_run_path, "BoxF1_curve.png")):
-        BoxF1_curve = os.path.join(final_run_path, "BoxF1_curve.png")
-    if os.path.isfile(os.path.join(final_run_path, "BoxP_curve.png")):
-        BoxP_curve = os.path.join(final_run_path, "BoxP_curve.png")
-    if os.path.isfile(os.path.join(final_run_path, "BoxPR_curve.png")):
-        BoxPR_curve = os.path.join(final_run_path, "BoxPR_curve.png")
-    if os.path.isfile(os.path.join(final_run_path, "BoxR_curve.png")):
-        BoxR_curve = os.path.join(final_run_path, "BoxR_curve.png")
-    if os.path.isfile(os.path.join(final_run_path, "MaskF1_curve.png")):
-        MaskF1_curve = os.path.join(final_run_path, "MaskF1_curve.png")
-    if os.path.isfile(os.path.join(final_run_path, "MaskP_curve.png")):
-        MaskP_curve = os.path.join(final_run_path, "MaskP_curve.png")
-    if os.path.isfile(os.path.join(final_run_path, "MaskPR_curve.png")):
-        MaskPR_curve = os.path.join(final_run_path, "MaskPR_curve.png")
-    if os.path.isfile(os.path.join(final_run_path, "MaskR_curve.png")):
-        MaskR_curve = os.path.join(final_run_path, "MaskR_curve.png")
-    return (
-        confusion_matrix,
-        F1_curve,
-        labels_correlogram,
-        labels,
-        P_curve,
-        PR_curve,
-        R_curve,
-        BoxF1_curve,
-        BoxP_curve,
-        BoxPR_curve,
-        BoxR_curve,
-        MaskF1_curve,
-        MaskP_curve,
-        MaskPR_curve,
-        MaskR_curve,
-    )
+    curve_names = [
+        "confusion_matrix",
+        "F1_curve",
+        "labels_correlogram",
+        "labels",
+        "P_curve",
+        "PR_curve",
+        "R_curve",
+        "BoxF1_curve",
+        "BoxP_curve",
+        "BoxPR_curve",
+        "BoxR_curve",
+        "MaskF1_curve",
+        "MaskP_curve",
+        "MaskPR_curve",
+        "MaskR_curve",
+    ]
+    curves = []
+
+    for name in curve_names:
+        file_ext = "jpg" if "labels" in name else "png"
+        file_path = os.path.join(final_run_path, f"{name}.{file_ext}")
+        if os.path.isfile(file_path):
+            curves.append(file_path)
+        else:
+            curves.append(None)
+
+    return tuple(curves)
 
 
 def send_run_to_picsellia(experiment, cwd):
@@ -664,36 +623,3 @@ def send_run_to_picsellia(experiment, cwd):
         if batch is not None:
             name = batch.split("/")[-1].split(".")[0]
             experiment.log(name, batch, LogType.IMAGE)
-
-
-def get_experiment():
-    if "api_token" not in os.environ:
-        raise Exception("You must set an api_token to run this image")
-    api_token = os.environ["api_token"]
-
-    if "host" not in os.environ:
-        host = "https://app.picsellia.com"
-    else:
-        host = os.environ["host"]
-
-    if "organization_id" not in os.environ:
-        organization_id = None
-    else:
-        organization_id = os.environ["organization_id"]
-
-    client = Client(api_token=api_token, host=host, organization_id=organization_id)
-
-    if "experiment_name" in os.environ:
-        experiment_name = os.environ["experiment_name"]
-        if "project_token" in os.environ:
-            project_token = os.environ["project_token"]
-            project = client.get_project_by_id(project_token)
-        elif "project_name" in os.environ:
-            project_name = os.environ["project_name"]
-            project = client.get_project(project_name)
-        experiment = project.get_experiment(experiment_name)
-    else:
-        raise Exception(
-            "You must set the project_token or project_name and experiment_name"
-        )
-    return experiment
