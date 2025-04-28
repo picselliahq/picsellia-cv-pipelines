@@ -5,9 +5,7 @@ RUN apt-get update && apt-get install -y \
     git \
     && rm -rf /var/lib/apt/lists/*
 
-RUN git clone -b feat/add-utils-for-training-template https://github.com/picselliahq/picsellia-cv-engine.git
-RUN git clone https://github.com/picselliahq/picsellia-pipelines-cli.git
-RUN uv pip install --python=$(which python3.10) -e /picsellia-cv-engine
+RUN uv pip install --python=$(which python3.10) git+https://github.com/picselliahq/picsellia-cv-engine.git@feat/add-utils-for-training-template
 
 WORKDIR /experiment
 
