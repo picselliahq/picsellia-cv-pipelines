@@ -12,5 +12,6 @@ RUN python3.8 -m pip install picsellia --upgrade
 WORKDIR /experiment
 
 COPY ./yolov5-segmentation/experiment ./
+COPY ./core_utils ./core_utils
 
 ENTRYPOINT ["run", "python3.8", "main.py"]
