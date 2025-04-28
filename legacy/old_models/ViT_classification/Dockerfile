@@ -19,6 +19,7 @@ COPY ./ViT-classification/experiment ./
 RUN mkdir -p /workspace
 COPY ./abstract_trainer ./abstract_trainer
 COPY ./evaluator ./evaluator
+COPY ./core_utils ./core_utils
 RUN chown -R 42420:42420 /workspace
 
 ENTRYPOINT ["run", "python3.10", "main.py"]

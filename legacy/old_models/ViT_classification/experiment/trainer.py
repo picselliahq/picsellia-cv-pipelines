@@ -1,5 +1,6 @@
 import os
 
+from abstract_trainer.trainer import AbstractTrainer
 from datasets import load_dataset
 from optimum.onnxruntime import ORTModelForImageClassification
 from picsellia.exceptions import ResourceNotFoundError
@@ -25,8 +26,6 @@ from utils import (
     prepare_datasets_with_annotation,
     split_single_dataset,
 )
-
-from abstract_trainer.trainer import AbstractTrainer
 
 
 class VitClassificationTrainer(AbstractTrainer):
@@ -211,7 +210,7 @@ class VitClassificationTrainer(AbstractTrainer):
 
     def _get_label2id_id2label(self) -> tuple[dict, dict]:
         self.labels = self.loaded_dataset["train"].features["label"].names
-        label2id, id2label = dict(), dict()
+        label2id, id2label = {}, {}
         for i, label in enumerate(self.labels):
             label2id[label] = str(i)
             id2label[str(i)] = label
@@ -222,7 +221,7 @@ class VitClassificationTrainer(AbstractTrainer):
 
         self.create_and_store_onnx_model(classifier)
 
-        for path, subdirs, file_list in os.walk(self.eval_path):
+        for path, _subdirs, file_list in os.walk(self.eval_path):
             for file in file_list:
                 self._run_one_asset_evaluation(
                     path=path, file=file, classifier=classifier
