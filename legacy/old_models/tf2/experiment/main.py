@@ -2,16 +2,15 @@ import logging
 import os
 import shutil
 
-from picsellia import Client
-from picsellia.exceptions import ResourceNotFoundError
-from picsellia.types.enums import InferenceType
-
+import pxl_tf
+import pxl_utils
+from core_utils.picsellia_utils import get_experiment
 from evaluator.tf_evaluator import (
     DetectionTensorflowEvaluator,
     SegmentationTensorflowEvaluator,
 )
-import pxl_utils
-import pxl_tf
+from picsellia.exceptions import ResourceNotFoundError
+from picsellia.types.enums import InferenceType
 
 os.environ["PICSELLIA_SDK_CUSTOM_LOGGING"] = "True"
 os.environ["PICSELLIA_SDK_DOWNLOAD_BAR_MODE"] = "2"
@@ -19,36 +18,7 @@ os.environ["PICSELLIA_SDK_SECTION_HANDLER"] = "1"
 
 logging.getLogger("picsellia").setLevel(logging.INFO)
 
-if "api_token" not in os.environ:
-    raise RuntimeError("You must set an api_token to run this image")
-
-api_token = os.environ["api_token"]
-
-if "host" not in os.environ:
-    host = "https://app.picsellia.com"
-else:
-    host = os.environ["host"]
-
-if "organization_id" not in os.environ:
-    organization_id = None
-else:
-    organization_id = os.environ["organization_id"]
-
-client = Client(api_token=api_token, host=host, organization_id=organization_id)
-
-if "experiment_name" in os.environ:
-    experiment_name = os.environ["experiment_name"]
-    if "project_token" in os.environ:
-        project_token = os.environ["project_token"]
-        project = client.get_project_by_id(project_token)
-    elif "project_name" in os.environ:
-        project_name = os.environ["project_name"]
-        project = client.get_project(project_name)
-    experiment = project.get_experiment(experiment_name)
-else:
-    raise RuntimeError(
-        "You must set the project_token or project_name and experiment_name"
-    )
+experiment = get_experiment()
 
 experiment.download_artifacts(with_tree=True)
 parameters = experiment.get_log(name="parameters").data
@@ -57,28 +27,28 @@ attached_datasets = experiment.list_attached_dataset_versions()
 if len(attached_datasets) == 3:
     try:
         train_ds = experiment.get_dataset(name="train")
-    except Exception:
+    except Exception as e:
         raise ResourceNotFoundError(
             "Found 3 attached datasets, but can't find any 'train' dataset.\n \
                                             accepting 'train', 'test', 'eval'"
-        )
+        ) from e
     try:
         test_ds = experiment.get_dataset(name="test")
-    except Exception:
+    except Exception as e:
         raise ResourceNotFoundError(
             "Found 3 attached datasets, but can't find any 'test' dataset.\n \
                                             accepting 'train', 'test', 'eval'"
-        )
+        ) from e
     try:
         eval_ds = experiment.get_dataset(name="val")
     except Exception:
         try:
             eval_ds = experiment.get_dataset(name="eval")
-        except Exception:
+        except Exception as e:
             raise ResourceNotFoundError(
                 "Found 3 attached datasets, but can't find any 'eval' dataset.\n \
                                                accepting 'train', 'test', 'eval'"
-            )
+            ) from e
 
     labels = train_ds.list_labels()
     label_names = [label.name for label in labels]

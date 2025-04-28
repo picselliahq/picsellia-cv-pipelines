@@ -13,6 +13,7 @@ RUN git clone https://github.com/tensorflow/models.git
 COPY ./tf2/experiment ./
 COPY ./tf2/requirements.txt ./
 COPY ./evaluator ./evaluator
+COPY ./core_utils ./core_utils
 
 COPY ./tf2/experiment/tf2_utils/model_lib_v2.py /experiment/models/research/object_detection/model_lib_v2.py
 

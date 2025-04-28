@@ -2,7 +2,6 @@ import logging
 import os
 import zipfile
 from abc import abstractmethod
-from typing import List
 
 import tensorflow as tf
 from picsellia.exceptions import PicselliaError
@@ -44,10 +43,10 @@ class TensorflowEvaluator(AbstractEvaluator):
                 f"Impossible to load saved model located at: {self._model_weights_path}"
             ) from e
 
-    def _evaluate_asset_list(self, asset_list: List[Asset]) -> None:
+    def _evaluate_asset_list(self, asset_list: list[Asset]) -> None:
         if not self._loaded_model:
             raise ValueError("Model not loaded, can't evaluate")
-        for i, asset in enumerate(asset_list):
+        for asset in asset_list:
             try:
                 inputs = self._preprocess_image(asset)
             except UnidentifiedImageError:
@@ -60,6 +59,9 @@ class TensorflowEvaluator(AbstractEvaluator):
                 asset=asset, prediction=predictions
             )
             self._send_evaluations_to_platform(asset=asset, evaluations=evaluations)
+
+    def _preprocess_images(self, asset_list: list[Asset]):
+        return [self._preprocess_image(asset) for asset in asset_list]
 
     def _preprocess_image(self, asset: Asset):
         image = open_asset_as_tensor(asset, self.input_width, self.input_height)
