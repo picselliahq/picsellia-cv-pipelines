@@ -6,14 +6,12 @@ from picsellia_cv_engine.core import (
 from picsellia_cv_engine.core.contexts import (
     PicselliaTrainingContext,
 )
-from picsellia_cv_engine.decorators.pipeline_decorator import Pipeline
-from picsellia_cv_engine.decorators.step_decorator import step
-from picsellia_cv_engine.services.base.data.dataset.loader.training_dataset_collection_extractor import (
+from picsellia_cv_engine.core.services.data.dataset.loader import (
     TrainingDatasetCollectionExtractor,
 )
-from picsellia_cv_engine.services.base.utils.dataset_logging import (
-    log_labelmap,
-)
+from picsellia_cv_engine.core.services.utils.dataset_logging import log_labelmap
+from picsellia_cv_engine.decorators.pipeline_decorator import Pipeline
+from picsellia_cv_engine.decorators.step_decorator import step
 
 from pipelines.yolov7_segmentation.pipeline_utils.dataset.yolov7_dataset_collection import (
     Yolov7DatasetCollection,
@@ -68,10 +66,10 @@ def yolov7_dataset_collection_extractor() -> Yolov7DatasetCollection:
     )
 
     yolov7_dataset_collection.download_all(
-        images_destination_path=os.path.join(
+        images_destination_dir=os.path.join(
             yolov7_dataset_collection.dataset_path, "images"
         ),
-        annotations_destination_path=os.path.join(
+        annotations_destination_dir=os.path.join(
             yolov7_dataset_collection.dataset_path, "labels"
         ),
         use_id=True,

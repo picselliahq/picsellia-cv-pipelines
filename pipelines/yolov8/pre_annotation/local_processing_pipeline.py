@@ -2,11 +2,11 @@ from argparse import ArgumentParser
 
 from picsellia.types.enums import ProcessingType
 from picsellia_cv_engine import pipeline
-from picsellia_cv_engine.services.base.utils.local_context import (
+from picsellia_cv_engine.core.services.utils.local_context import (
     create_local_processing_context,
 )
-from picsellia_cv_engine.steps.base.dataset.loader import load_coco_datasets
-from picsellia_cv_engine.steps.base.dataset.uploader import upload_dataset_annotations
+from picsellia_cv_engine.core.steps.dataset.loader import load_coco_datasets
+from picsellia_cv_engine.core.steps.dataset.uploader import upload_dataset_annotations
 
 from pipelines.yolov8.pre_annotation.pipeline_utils.steps.model_loading.processing_ultralytics_model_loader import (
     load_processing_ultralytics_model,
@@ -20,8 +20,7 @@ from pipelines.yolov8.pre_annotation.pipeline_utils.steps.weights_extraction.ult
 
 parser = ArgumentParser()
 parser.add_argument("--api_token", type=str)
-parser.add_argument("--organization_id", type=str)
-parser.add_argument("--job_id", type=str)
+parser.add_argument("--organization_name", type=str)
 parser.add_argument("--input_dataset_version_id", type=str)
 parser.add_argument("--model_version_id", type=str)
 parser.add_argument("--model_file_name", type=str)
@@ -35,8 +34,7 @@ args = parser.parse_args()
 
 local_context = create_local_processing_context(
     api_token=args.api_token,
-    organization_id=args.organization_id,
-    job_id=args.job_id,
+    organization_name=args.organization_name,
     job_type=ProcessingType.PRE_ANNOTATION,
     input_dataset_version_id=args.input_dataset_version_id,
     model_version_id=args.model_version_id,

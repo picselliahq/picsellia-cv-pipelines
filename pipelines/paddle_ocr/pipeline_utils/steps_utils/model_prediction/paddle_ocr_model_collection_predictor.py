@@ -10,7 +10,7 @@ from picsellia_cv_engine.core.models import (
     PicselliaRectangle,
     PicselliaText,
 )
-from picsellia_cv_engine.services.base.model.predictor.model_collection_predictor import (
+from picsellia_cv_engine.core.services.model.predictor.model_collection_predictor import (
     ModelCollectionPredictor,
 )
 

@@ -7,11 +7,12 @@ from picsellia_cv_engine.core.data import (
 from picsellia_cv_engine.core.parameters.export_parameters import (
     ExportParameters,
 )
-from picsellia_cv_engine.decorators.pipeline_decorator import Pipeline
-from picsellia_cv_engine.decorators.step_decorator import step
-from picsellia_cv_engine.services.base.model.evaluator.model_evaluator import (
+from picsellia_cv_engine.core.services.model.evaluator.model_evaluator import (
     ModelEvaluator,
 )
+from picsellia_cv_engine.core.steps.model.evaluator import evaluate_model_impl
+from picsellia_cv_engine.decorators.pipeline_decorator import Pipeline
+from picsellia_cv_engine.decorators.step_decorator import step
 
 from pipelines.yolov7_segmentation.pipeline_utils.model.yolov7_model_context import (
     Yolov7Model,
@@ -51,3 +52,11 @@ def yolov7_model_evaluator(
         experiment=context.experiment, inference_type=model.model_version.type
     )
     model_evaluator.evaluate(picsellia_predictions=picsellia_polygons_predictions)
+
+    evaluate_model_impl(
+        context=context,
+        picsellia_predictions=picsellia_polygons_predictions,
+        inference_type=model.model_version.type,
+        assets=dataset.assets,
+        output_dir=context.experiment.get_logs_dir(),
+    )

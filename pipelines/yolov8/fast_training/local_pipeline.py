@@ -3,23 +3,27 @@ from argparse import ArgumentParser
 from picsellia_cv_engine import pipeline
 from picsellia_cv_engine.core.contexts import LocalTrainingContext
 from picsellia_cv_engine.core.parameters import ExportParameters
-from picsellia_cv_engine.core.parameters.ultralytics.augmentation_parameters import (
+from picsellia_cv_engine.frameworks.ultralytics.parameters.augmentation_parameters import (
     UltralyticsAugmentationParameters,
 )
-from picsellia_cv_engine.core.parameters.ultralytics.hyper_parameters import (
+from picsellia_cv_engine.frameworks.ultralytics.parameters.hyper_parameters import (
     UltralyticsHyperParameters,
 )
-from picsellia_cv_engine.steps.ultralytics.dataset.preparator import (
+from picsellia_cv_engine.frameworks.ultralytics.steps.dataset.preparator import (
     prepare_ultralytics_dataset,
 )
-from picsellia_cv_engine.steps.ultralytics.model.evaluator import (
+from picsellia_cv_engine.frameworks.ultralytics.steps.model.evaluator import (
     evaluate_ultralytics_model,
 )
-from picsellia_cv_engine.steps.ultralytics.model.exporter import (
+from picsellia_cv_engine.frameworks.ultralytics.steps.model.exporter import (
     export_ultralytics_model,
 )
-from picsellia_cv_engine.steps.ultralytics.model.loader import load_ultralytics_model
-from picsellia_cv_engine.steps.ultralytics.model.trainer import train_ultralytics_model
+from picsellia_cv_engine.frameworks.ultralytics.steps.model.loader import (
+    load_ultralytics_model,
+)
+from picsellia_cv_engine.frameworks.ultralytics.steps.model.trainer import (
+    train_ultralytics_model,
+)
 
 parser = ArgumentParser()
 parser.add_argument("--api_token", type=str)

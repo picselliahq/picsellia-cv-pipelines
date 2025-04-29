@@ -1,12 +1,12 @@
 from argparse import ArgumentParser
 
 from picsellia.types.enums import ProcessingType
-from picsellia_cv_engine.decorators.pipeline_decorator import pipeline
-from picsellia_cv_engine.services.base.utils.local_context import (
+from picsellia_cv_engine.core.services.utils.local_context import (
     create_local_processing_context,
 )
-from picsellia_cv_engine.steps.base.dataset.loader import load_coco_datasets
-from picsellia_cv_engine.steps.base.dataset.uploader import upload_full_dataset
+from picsellia_cv_engine.core.steps.dataset.loader import load_coco_datasets
+from picsellia_cv_engine.core.steps.dataset.uploader import upload_full_dataset
+from picsellia_cv_engine.decorators.pipeline_decorator import pipeline
 
 from pipelines.dataset_tiler.pipeline_utils.steps.data_validation.processing_tiler_data_validator import (
     validate_tiler_data,
@@ -20,7 +20,7 @@ from pipelines.dataset_tiler.pipeline_utils.steps_utils.processing.base_tiler_pr
 
 parser = ArgumentParser()
 parser.add_argument("--api_token", type=str)
-parser.add_argument("--organization_id", type=str)
+parser.add_argument("--organization_name", type=str)
 parser.add_argument("--job_id", type=str)
 parser.add_argument("--input_dataset_version_id", type=str)
 parser.add_argument("--output_dataset_version_name", type=str)
@@ -40,8 +40,7 @@ args = parser.parse_args()
 
 local_context = create_local_processing_context(
     api_token=args.api_token,
-    organization_id=args.organization_id,
-    job_id=args.job_id,
+    organization_name=args.organization_name,
     job_type=ProcessingType.DATASET_VERSION_CREATION,
     input_dataset_version_id=args.input_dataset_version_id,
     output_dataset_version_name=args.output_dataset_version_name,

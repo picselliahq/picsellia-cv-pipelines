@@ -8,11 +8,11 @@ from picsellia_cv_engine.core.data import (
 from picsellia_cv_engine.core.parameters.export_parameters import (
     ExportParameters,
 )
-from picsellia_cv_engine.decorators.pipeline_decorator import Pipeline
-from picsellia_cv_engine.decorators.step_decorator import step
-from picsellia_cv_engine.services.base.model.evaluator.model_evaluator import (
+from picsellia_cv_engine.core.services.model.evaluator.model_evaluator import (
     ModelEvaluator,
 )
+from picsellia_cv_engine.decorators.pipeline_decorator import Pipeline
+from picsellia_cv_engine.decorators.step_decorator import step
 
 from pipelines.paddle_ocr.pipeline_utils.model.paddle_ocr_model_collection import (
     PaddleOCRModelCollection,

@@ -5,20 +5,20 @@ from picsellia_cv_engine import Pipeline, step
 from picsellia_cv_engine.core import DatasetCollection
 from picsellia_cv_engine.core.contexts import PicselliaTrainingContext
 from picsellia_cv_engine.core.data import TBaseDataset
-from picsellia_cv_engine.core.models.ultralytics.model import UltralyticsModel
 from picsellia_cv_engine.core.parameters import ExportParameters
-from picsellia_cv_engine.core.parameters.ultralytics.augmentation_parameters import (
+from picsellia_cv_engine.frameworks.ultralytics.model.model import UltralyticsModel
+from picsellia_cv_engine.frameworks.ultralytics.parameters.augmentation_parameters import (
     UltralyticsAugmentationParameters,
 )
-from picsellia_cv_engine.core.parameters.ultralytics.hyper_parameters import (
+from picsellia_cv_engine.frameworks.ultralytics.parameters.hyper_parameters import (
     UltralyticsHyperParameters,
 )
-from picsellia_cv_engine.services.ultralytics.model.callbacks import (
+from picsellia_cv_engine.frameworks.ultralytics.services.model.callbacks import (
     TBaseTrainer,
     TBaseValidator,
     UltralyticsCallbacks,
 )
-from picsellia_cv_engine.services.ultralytics.model.trainer import (
+from picsellia_cv_engine.frameworks.ultralytics.services.model.trainer import (
     UltralyticsModelTrainer,
 )
 

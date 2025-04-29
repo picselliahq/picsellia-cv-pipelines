@@ -11,7 +11,7 @@ from picsellia.sdk.asset import MultiAsset
 from picsellia_cv_engine.core.data import (
     TBaseDataset,
 )
-from picsellia_cv_engine.services.base.processing.dataset_version_creation_processing import (
+from picsellia_cv_engine.core.services.processing.dataset_version_creation_processing import (
     DatasetVersionCreationProcessing,
 )
 from PIL import Image, ImageOps

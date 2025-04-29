@@ -5,10 +5,7 @@ from picsellia_cv_engine.core.contexts.processing.dataset.picsellia_processing_c
 )
 from picsellia_cv_engine.decorators.pipeline_decorator import Pipeline
 from picsellia_cv_engine.decorators.step_decorator import step
-
-from pipelines.yolov8.training.pipeline_utils.model.ultralytics_model import (
-    UltralyticsModel,
-)
+from picsellia_cv_engine.frameworks.ultralytics.model.model import UltralyticsModel
 
 
 @step
