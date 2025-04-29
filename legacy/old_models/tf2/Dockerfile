@@ -31,6 +31,6 @@ ARG REBUILD_PICSELLIA
 
 RUN export UV_HTTP_TIMEOUT=900 && uv pip install --python=$(which python3.10) --no-cache -r requirements.txt
 
-ENV PYTHONPATH="/experiment/models/research:${PYTHONPATH}"
+ENV PYTHONPATH="/experiment/models/research"
 
 ENTRYPOINT ["run", "python3.10", "main.py"]
