@@ -13,6 +13,7 @@ RUN git clone https://github.com/tensorflow/models.git
 COPY ./tf2/experiment ./
 COPY ./tf2/requirements.txt ./
 COPY ./evaluator ./evaluator
+COPY ./core_utils ./core_utils
 
 COPY ./tf2/experiment/tf2_utils/model_lib_v2.py /experiment/models/research/object_detection/model_lib_v2.py
 
@@ -30,6 +31,6 @@ ARG REBUILD_PICSELLIA
 
 RUN export UV_HTTP_TIMEOUT=900 && uv pip install --python=$(which python3.10) --no-cache -r requirements.txt
 
-ENV PYTHONPATH="/experiment/models/research:${PYTHONPATH}"
+ENV PYTHONPATH="/experiment/models/research"
 
 ENTRYPOINT ["run", "python3.10", "main.py"]

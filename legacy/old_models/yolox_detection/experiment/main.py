@@ -3,10 +3,12 @@ import os
 
 import picsellia
 import torch
+from core_utils.picsellia_utils import get_experiment
+from evaluator.framework_formatter import YoloFormatter
+from evaluator.type_formatter import DetectionFormatter
 from utils import (
     evaluate_model,
     extract_dataset_assets,
-    get_experiment,
 )
 from YOLOX.tools.demo import Predictor
 from YOLOX.tools.train import main, make_parser
@@ -14,9 +16,6 @@ from YOLOX.yolox.exp import check_exp_value
 from YOLOX.yolox.exp.build import get_exp_by_name
 from YOLOX.yolox.models.network_blocks import SiLU
 from YOLOX.yolox.utils import configure_module, get_num_devices, replace_module
-
-from evaluator.framework_formatter import YoloFormatter
-from evaluator.type_formatter import DetectionFormatter
 
 os.environ["PICSELLIA_SDK_CUSTOM_LOGGING"] = "True"
 os.environ["PICSELLIA_SDK_DOWNLOAD_BAR_MODE"] = "2"
@@ -163,7 +162,7 @@ model.eval()
 
 # 8 - Run the evaluation
 test_label_names = [label.name for label in test_labels]
-test_labelmap = {i: label for i, label in enumerate(test_labels)}
+test_labelmap = dict(enumerate(test_labels))
 
 framework_formatter = YoloFormatter(labelmap=test_labelmap)
 type_formatter = DetectionFormatter(framework_formatter=framework_formatter)

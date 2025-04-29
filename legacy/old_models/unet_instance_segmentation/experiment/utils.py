@@ -261,9 +261,9 @@ def get_preprocessing(preprocessing_fn) -> A.Compose:
 
 
 def format_and_log_eval_metrics(experiment: Experiment, metrics: list, scores: list):
-    eval_metrics = {"loss": float("{:.5f}".format(scores[0]))}
+    eval_metrics = {"loss": float(f"{scores[0]:.5f}")}
     for metric, value in zip(metrics, scores[1:]):
-        eval_metrics[metric.__name__] = float("{:.5f}".format(value))
+        eval_metrics[metric.__name__] = float(f"{value:.5f}")
 
     experiment.log(name="eval-results", type=LogType.TABLE, data=eval_metrics)
 
@@ -350,12 +350,9 @@ def shift_x_and_y_coordinates(polygon: np.ndarray) -> np.ndarray:
 
 
 def format_polygons(polygons: list[np.ndarray]) -> list[list[list[int]]]:
-    formatted_polygons = list(
-        map(
-            lambda polygon: list([int(coord[0]), int(coord[1])] for coord in polygon),
-            polygons,
-        )
-    )
+    formatted_polygons = [
+        [[int(coord[0]), int(coord[1])] for coord in polygon] for polygon in polygons
+    ]
     return formatted_polygons
 
 

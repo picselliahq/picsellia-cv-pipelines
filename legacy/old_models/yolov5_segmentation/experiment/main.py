@@ -2,6 +2,7 @@ import json
 import logging
 import os
 
+from core_utils.picsellia_utils import get_experiment
 from picsellia.exceptions import ResourceNotFoundError
 from picsellia_yolov5 import picsellia_utils
 from picsellia_yolov5.yolov5.segment.train import train
@@ -20,7 +21,7 @@ LOCAL_RANK = int(
 )  # https://pytorch.org/docs/stable/elastic/run.html
 RANK = int(os.getenv("RANK", -1))
 
-experiment = picsellia_utils.get_experiment()
+experiment = get_experiment()
 experiment.download_artifacts(with_tree=True)
 current_dir = os.path.join(os.getcwd(), experiment.base_dir)
 base_imgdir = experiment.png_dir
@@ -31,28 +32,28 @@ attached_datasets = experiment.list_attached_dataset_versions()
 if len(attached_datasets) == 3:
     try:
         train_ds = experiment.get_dataset(name="train")
-    except Exception:
+    except Exception as e:
         raise ResourceNotFoundError(
             "Found 3 attached datasets, but can't find any 'train' dataset.\n \
                                             expecting 'train', 'test', ('val' or 'eval')"
-        )
+        ) from e
     try:
         test_ds = experiment.get_dataset(name="test")
-    except Exception:
+    except Exception as e:
         raise ResourceNotFoundError(
             "Found 3 attached datasets, but can't find any 'test' dataset.\n \
                                             expecting 'train', 'test', ('val' or 'eval')"
-        )
+        ) from e
     try:
         val_ds = experiment.get_dataset(name="val")
     except Exception:
         try:
             val_ds = experiment.get_dataset(name="eval")
-        except Exception:
+        except Exception as e:
             raise ResourceNotFoundError(
                 "Found 3 attached datasets, but can't find any 'eval' dataset.\n \
                                                 expecting 'train', 'test', ('val' or 'eval')"
-            )
+            ) from e
     labels = train_ds.list_labels()
     label_names = [label.name for label in labels]
     labelmap = {str(i): label.name for i, label in enumerate(labels)}

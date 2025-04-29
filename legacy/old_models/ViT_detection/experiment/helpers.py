@@ -1,10 +1,9 @@
 import os
 
-import picsellia
 import transformers
+from core_utils.picsellia_utils import get_experiment
 from datasets import DatasetDict, load_dataset
 from picsellia.sdk.dataset import DatasetVersion
-from picsellia.sdk.experiment import Experiment
 from picsellia.types.enums import InferenceType
 from transformers import (
     AutoImageProcessor,
@@ -33,39 +32,11 @@ class TrainingPipeline:
     checkpoint = "facebook/detr-resnet-50"
 
     def __init__(self):
-        self.experiment = self.get_experiment()
+        self.experiment = get_experiment()
         self.annotations = {}
         self.output_model_dir = os.path.join(self.experiment.checkpoint_dir)
         self.data_dir = os.path.join(self.experiment.base_dir, "data")
         self.id2label = {}
-
-    @staticmethod
-    def get_experiment() -> Experiment:
-        if "api_token" not in os.environ:
-            raise Exception("You must set an api_token to run this image")
-        api_token = os.environ["api_token"]
-
-        if "host" not in os.environ:
-            host = "https://app.picsellia.com"
-        else:
-            host = os.environ["host"]
-
-        if "organization_id" not in os.environ:
-            organization_id = None
-        else:
-            organization_id = os.environ["organization_id"]
-
-        client = picsellia.Client(
-            api_token=api_token, host=host, organization_id=organization_id
-        )
-
-        if "experiment_id" in os.environ:
-            experiment_id = os.environ["experiment_id"]
-
-            experiment = client.get_experiment_by_id(experiment_id)
-        else:
-            raise Exception("You must set the experiment_id")
-        return experiment
 
     def prepare_data_for_training(
         self,

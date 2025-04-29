@@ -9,6 +9,7 @@ import tensorflow as tf
 import tqdm
 import utils
 from classification_models.keras import Classifiers
+from core_utils.picsellia_utils import get_experiment
 from picsellia.sdk.experiment import Experiment
 from picsellia.types.enums import AnnotationFileType, InferenceType, LogType
 from pycocotools.coco import COCO
@@ -17,7 +18,6 @@ from sklearn.utils import class_weight
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 from utils import (
     _move_files_in_class_directories,
-    get_experiment,
     get_train_test_eval_datasets_from_experiment,
     order_repartition_according_labelmap,
 )

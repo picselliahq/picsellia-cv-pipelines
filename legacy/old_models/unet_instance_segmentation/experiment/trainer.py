@@ -15,6 +15,7 @@ from skimage.measure import approximate_polygon, find_contours
 
 sys.path.append(os.path.join(os.getcwd(), "unet-instance-segmentation", "experiment"))
 
+from abstract_trainer.trainer import AbstractTrainer
 from mask_to_polygon_converter.custom_converter import CustomConverter
 from utils import (
     Dataloader,
@@ -40,8 +41,6 @@ from utils import (
     shift_x_and_y_coordinates,
     split_train_test_val_filenames,
 )
-
-from abstract_trainer.trainer import AbstractTrainer
 
 
 class UnetSegmentationTrainer(AbstractTrainer):
@@ -141,10 +140,10 @@ class UnetSegmentationTrainer(AbstractTrainer):
             mask_dataset = self.experiment.get_dataset(name="masks")
             image_dataset = self.experiment.get_dataset(name="images")
             return mask_dataset, image_dataset
-        except ResourceNotFoundError:
+        except ResourceNotFoundError as e:
             raise Exception(
                 "You need to have either 'full' containing the annotated images (segmentation dataset), or 'masks' and 'images' to train with 'masks'"
-            )
+            ) from e
 
     def _download_segmentation_dataset(self):
         self.segmentation_dataset.download(target_path=self.image_path)

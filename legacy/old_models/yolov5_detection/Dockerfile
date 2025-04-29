@@ -5,7 +5,7 @@ RUN apt-get update && apt-get install -y \
     git \
     && rm -rf /var/lib/apt/lists/*
 
-COPY ./yolov5-detection/requirements.txt .
+COPY ./yolov5_detection/requirements.txt .
 
 ARG REBUILD_ALL
 ARG REBUILD_PICSELLIA
@@ -16,11 +16,12 @@ WORKDIR /experiment
 
 RUN git clone https://github.com/ultralytics/yolov5
 
-COPY ./yolov5-detection/experiment/yolov5_utils/train.py /experiment/yolov5/train.py
+COPY ./yolov5_detection/experiment/yolov5_utils/train.py /experiment/yolov5/train.py
 
-COPY ./yolov5-detection/experiment ./
+COPY ./yolov5_detection/experiment ./
+COPY ./core_utils ./core_utils
 
-ENV PYTHONPATH="/experiment/yolov5/:/experiment/yolov5/utils:${PYTHONPATH}"
+ENV PYTHONPATH="/experiment/yolov5/:/experiment/yolov5/utils"
 
 RUN chown -R 42420:42420 /experiment
 

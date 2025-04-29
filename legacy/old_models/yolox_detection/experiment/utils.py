@@ -2,24 +2,23 @@ import json
 import logging
 import math
 import os
-from typing import List, Union, Dict
+from typing import Union
 
 import numpy as np
 import picsellia
 import requests
 import torch
 import tqdm
-from PIL import Image, UnidentifiedImageError
-from picsellia import Asset, Job, Label
+from evaluator.type_formatter import TypeFormatter
+from evaluator.utils.general import transpose_if_exif_tags
+from picsellia import Asset, Job
 from picsellia.exceptions import ResourceNotFoundError
 from picsellia.sdk.asset import MultiAsset
 from picsellia.sdk.experiment import Experiment
 from picsellia.types.enums import InferenceType
+from PIL import Image, UnidentifiedImageError
 from pycocotools.coco import COCO
-
 from YOLOX.tools.demo import Predictor
-from evaluator.type_formatter import TypeFormatter
-from evaluator.utils.general import transpose_if_exif_tags
 
 
 class YOLOV8StyleOutput:
@@ -29,7 +28,7 @@ class YOLOV8StyleOutput:
             self.conf = conf
             self.cls = cls
 
-    def __init__(self, yolox_output: list, img_info: dict):
+    def __init__(self, yolox_output: torch.Tensor, img_info: dict):
         self.img_width = img_info.get("width", 1)
         self.img_height = img_info.get("height", 1)
         self.ratio = img_info.get("ratio", 1)
@@ -59,34 +58,6 @@ class YOLOV8StyleOutput:
     @property
     def probs(self):
         return self.boxes.conf
-
-
-def get_experiment() -> Experiment:
-    if "api_token" not in os.environ:
-        raise Exception("You must set an api_token to run this image")
-    api_token = os.environ["api_token"]
-
-    if "host" not in os.environ:
-        host = "https://app.picsellia.com"
-    else:
-        host = os.environ["host"]
-
-    if "organization_id" not in os.environ:
-        organization_id = None
-    else:
-        organization_id = os.environ["organization_id"]
-
-    client = picsellia.Client(
-        api_token=api_token, host=host, organization_id=organization_id
-    )
-
-    if "experiment_id" in os.environ:
-        experiment_id = os.environ["experiment_id"]
-
-        experiment = client.get_experiment_by_id(experiment_id)
-    else:
-        raise Exception("You must set the experiment_id")
-    return experiment
 
 
 def create_yolo_detection_label(
@@ -169,7 +140,7 @@ def evaluate_model(
         for j, asset in enumerate(subset_asset_list):
             prediction, img_info = yolox_predictor.inference(inputs[j])
 
-            evaluations = {"rectangles": []}
+            evaluations: dict[str, list] = {"rectangles": []}
 
             if prediction[0] is not None:
                 yolov8_style_output = YOLOV8StyleOutput(
@@ -195,7 +166,7 @@ def evaluate_model(
         return experiment.compute_evaluations_metrics(inference_type=dataset_type)
 
 
-def preprocess_images(assets: List[Asset]) -> List[np.array]:
+def preprocess_images(assets: list[Asset]) -> list[np.array]:
     images = []
     for asset in assets:
         try:
@@ -216,7 +187,7 @@ def open_asset_as_array(asset: Asset) -> np.array:
 
 
 def send_evaluations_to_platform(
-    experiment: Experiment, asset: Asset, evaluations: Dict
+    experiment: Experiment, asset: Asset, evaluations: dict
 ) -> None:
     try:
         experiment.add_evaluation(asset=asset, **evaluations)
@@ -231,10 +202,10 @@ def send_evaluations_to_platform(
 
 def format_prediction_to_evaluations(
     asset: Asset,
-    prediction: Union[List, dict],
+    prediction: Union[list, dict, YOLOV8StyleOutput],
     type_formatter: TypeFormatter,
     confidence_threshold: float,
-) -> List:
+) -> list:
     picsellia_predictions = type_formatter.format_prediction(
         asset=asset, prediction=prediction
     )
@@ -253,211 +224,234 @@ def format_prediction_to_evaluations(
     return evaluations
 
 
-def extract_dataset_assets(
-    experiment: Experiment, prop_train_split: float
-) -> (MultiAsset, MultiAsset, MultiAsset, list[Label], list[Label], InferenceType):
+def extract_dataset_assets(experiment: Experiment, prop_train_split: float) -> tuple:
     attached_datasets = experiment.list_attached_dataset_versions()
     base_imgdir = experiment.png_dir
 
     if len(attached_datasets) == 3:
-        try:
-            train_ds = experiment.get_dataset(name="train")
-        except Exception:
-            raise ResourceNotFoundError(
-                "Found 3 attached datasets, but can't find any 'train' dataset. Expecting 'train', 'test', 'val'"
-            )
-        try:
-            test_ds = experiment.get_dataset(name="test")
-        except Exception:
-            raise ResourceNotFoundError(
-                "Found 3 attached datasets, but can't find any 'test' dataset. Expecting 'train', 'test', 'val'"
-            )
-        try:
-            val_ds = experiment.get_dataset(name="val")
-        except Exception:
-            raise ResourceNotFoundError(
-                "Found 3 attached datasets, but can't find any 'val' dataset. Expecting 'train', 'test', 'val"
-            )
-
-        label_names = [label.name for label in train_ds.list_labels()]
-
-        for data_type, dataset in {
-            "train": train_ds,
-            "val": val_ds,
-            "test": test_ds,
-        }.items():
-            asset_list = dataset.list_assets()
-            coco_annotation = dataset.build_coco_file_locally(
-                assets=asset_list, enforced_ordered_categories=label_names, use_id=True
-            )
-            annotations_dict = coco_annotation.dict()
-            annotations_path = os.path.join(
-                base_imgdir, f"{data_type}_annotations.json"
-            )
-
-            with open(annotations_path, "w") as f:
-                f.write(json.dumps(annotations_dict))
-
-            dataset_path = os.path.join(base_imgdir, data_type, "images")
-            os.makedirs(dataset_path)
-
-            asset_list.download(target_path=dataset_path, max_workers=8, use_id=True)
-
-        return (
-            train_ds.list_assets(),
-            test_ds.list_assets(),
-            val_ds.list_assets(),
-            train_ds.list_labels(),
-            test_ds.list_labels(),
-            train_ds.type,
+        return _handle_three_attached_datasets(
+            experiment=experiment,
+            base_imgdir=base_imgdir,
         )
+
     elif len(attached_datasets) == 2:
-        try:
-            train_ds = experiment.get_dataset(name="train")
-        except Exception:
-            raise ResourceNotFoundError(
-                "Found 2 attached datasets, but can't find any 'train' dataset.\n \
-                                                expecting 'train', 'test', ('val' or 'eval')"
-            )
-        try:
-            test_ds = experiment.get_dataset(name="test")
-        except Exception:
-            raise ResourceNotFoundError(
-                "Found  attached datasets, but can't find any 'test' dataset.\n \
-                                                expecting 'train', 'test', ('val' or 'eval')"
-            )
-
-        assets, classes_repartition, labels = train_ds.split_into_multi_assets(
-            ratios=[prop_train_split, 1 - prop_train_split]
-        )
-        labelmap = {str(i): label.name for i, label in enumerate(labels)}
-        label_names = [label.name for label in labels]
-
-        experiment.log(
-            "train-split",
-            order_repartition_according_labelmap(labelmap, classes_repartition[0]),
-            "bar",
-            replace=True,
-        )
-        experiment.log(
-            "val-split",
-            order_repartition_according_labelmap(labelmap, classes_repartition[1]),
-            "bar",
-            replace=True,
+        return _handle_two_attached_datasets(
+            experiment=experiment,
+            base_imgdir=base_imgdir,
+            prop_train_split=prop_train_split,
         )
 
-        for data_type, dataset in {
-            "test": test_ds,
-        }.items():
-            asset_list = dataset.list_assets()
-            coco_annotation = dataset.build_coco_file_locally(
-                assets=asset_list, enforced_ordered_categories=label_names, use_id=True
-            )
-            annotations_dict = coco_annotation.dict()
-            annotations_path = os.path.join(
-                base_imgdir, f"{data_type}_annotations.json"
-            )
-
-            with open(annotations_path, "w") as f:
-                f.write(json.dumps(annotations_dict))
-
-            dataset_path = os.path.join(base_imgdir, data_type, "images")
-            os.makedirs(dataset_path)
-
-            asset_list.download(target_path=dataset_path, max_workers=8, use_id=True)
-
-        for split, asset_list in {"train": assets[0], "val": assets[1]}.items():
-            coco_annotation = train_ds.build_coco_file_locally(
-                assets=asset_list, enforced_ordered_categories=label_names, use_id=True
-            )
-            annotations_dict = coco_annotation.dict()
-            annotations_path = os.path.join(base_imgdir, f"{split}_annotations.json")
-
-            with open(annotations_path, "w") as f:
-                f.write(json.dumps(annotations_dict))
-
-            dataset_path = os.path.join(base_imgdir, split, "images")
-            os.makedirs(dataset_path)
-
-            asset_list.download(target_path=dataset_path, max_workers=8, use_id=True)
-
-        return (
-            assets[0],
-            test_ds.list_assets(),
-            assets[1],
-            labels,
-            test_ds.list_labels(),
-            train_ds.type,
-        )
     elif len(attached_datasets) == 1:
-        try:
-            train_ds = experiment.get_dataset(name="train")
-        except Exception:
-            raise ResourceNotFoundError(
-                "Found 2 attached datasets, but can't find any 'train' dataset.\n \
-                                                expecting 'train', 'test', ('val' or 'eval')"
-            )
-
-        assets, classes_repartition, labels = train_ds.split_into_multi_assets(
-            ratios=[
-                prop_train_split,
-                (1.0 - prop_train_split) / 2,
-                (1.0 - prop_train_split) / 2,
-            ]
-        )
-        labelmap = {str(i): label.name for i, label in enumerate(labels)}
-        label_names = [label.name for label in labels]
-
-        experiment.log(
-            "train-split",
-            order_repartition_according_labelmap(labelmap, classes_repartition[0]),
-            "bar",
-            replace=True,
-        )
-        experiment.log(
-            "test-split",
-            order_repartition_according_labelmap(labelmap, classes_repartition[1]),
-            "bar",
-            replace=True,
-        )
-        experiment.log(
-            "val-split",
-            order_repartition_according_labelmap(labelmap, classes_repartition[2]),
-            "bar",
-            replace=True,
-        )
-
-        for split, asset_list in {
-            "train": assets[0],
-            "test": assets[1],
-            "val": assets[2],
-        }.items():
-            coco_annotation = train_ds.build_coco_file_locally(
-                assets=asset_list, enforced_ordered_categories=label_names, use_id=True
-            )
-            annotations_dict = coco_annotation.dict()
-            annotations_path = os.path.join(base_imgdir, f"{split}_annotations.json")
-
-            with open(annotations_path, "w") as f:
-                f.write(json.dumps(annotations_dict))
-
-            dataset_path = os.path.join(base_imgdir, split, "images")
-            os.makedirs(dataset_path)
-
-            asset_list.download(target_path=dataset_path, max_workers=8, use_id=True)
-
-        return (
-            assets[0],
-            assets[1],
-            assets[2],
-            labels,
-            labels,
-            train_ds.type,
+        return _handle_one_attached_dataset(
+            experiment=experiment,
+            base_imgdir=base_imgdir,
+            prop_train_split=prop_train_split,
         )
     else:
         raise picsellia.exceptions.PicselliaError(
             "This model expect 3 datasets: `train`, `test` and `val`."
         )
+
+
+def _handle_three_attached_datasets(experiment: Experiment, base_imgdir: str) -> tuple:
+    try:
+        train_ds = experiment.get_dataset(name="train")
+    except Exception as e:
+        raise ResourceNotFoundError(
+            "Found 3 attached datasets, but can't find any 'train' dataset. Expecting 'train', 'test', 'val'"
+        ) from e
+    try:
+        test_ds = experiment.get_dataset(name="test")
+    except Exception as e:
+        raise ResourceNotFoundError(
+            "Found 3 attached datasets, but can't find any 'test' dataset. Expecting 'train', 'test', 'val'"
+        ) from e
+    try:
+        val_ds = experiment.get_dataset(name="val")
+    except Exception as e:
+        raise ResourceNotFoundError(
+            "Found 3 attached datasets, but can't find any 'val' dataset. Expecting 'train', 'test', 'val"
+        ) from e
+
+    label_names = [label.name for label in train_ds.list_labels()]
+
+    for data_type, dataset in {
+        "train": train_ds,
+        "val": val_ds,
+        "test": test_ds,
+    }.items():
+        asset_list = dataset.list_assets()
+        coco_annotation = dataset.build_coco_file_locally(
+            assets=asset_list, enforced_ordered_categories=label_names, use_id=True
+        )
+        annotations_dict = coco_annotation.dict()
+        annotations_path = os.path.join(base_imgdir, f"{data_type}_annotations.json")
+
+        with open(annotations_path, "w") as f:
+            f.write(json.dumps(annotations_dict))
+
+        dataset_path = os.path.join(base_imgdir, data_type, "images")
+        os.makedirs(dataset_path)
+
+        asset_list.download(target_path=dataset_path, max_workers=8, use_id=True)
+
+    return (
+        train_ds.list_assets(),
+        test_ds.list_assets(),
+        val_ds.list_assets(),
+        train_ds.list_labels(),
+        test_ds.list_labels(),
+        train_ds.type,
+    )
+
+
+def _handle_two_attached_datasets(
+    experiment: Experiment, base_imgdir: str, prop_train_split: float
+) -> tuple:
+    try:
+        train_ds = experiment.get_dataset(name="train")
+    except Exception as e:
+        raise ResourceNotFoundError(
+            "Found 2 attached datasets, but can't find any 'train' dataset.\n \
+                                            expecting 'train', 'test', ('val' or 'eval')"
+        ) from e
+    try:
+        test_ds = experiment.get_dataset(name="test")
+    except Exception as e:
+        raise ResourceNotFoundError(
+            "Found  attached datasets, but can't find any 'test' dataset.\n \
+                                            expecting 'train', 'test', ('val' or 'eval')"
+        ) from e
+
+    assets, classes_repartition, labels = train_ds.split_into_multi_assets(
+        ratios=[prop_train_split, 1 - prop_train_split]
+    )
+    labelmap = {str(i): label.name for i, label in enumerate(labels)}
+    label_names = [label.name for label in labels]
+
+    experiment.log(
+        "train-split",
+        order_repartition_according_labelmap(labelmap, classes_repartition[0]),
+        "bar",
+        replace=True,
+    )
+    experiment.log(
+        "val-split",
+        order_repartition_according_labelmap(labelmap, classes_repartition[1]),
+        "bar",
+        replace=True,
+    )
+
+    for data_type, dataset in {
+        "test": test_ds,
+    }.items():
+        asset_list = dataset.list_assets()
+        coco_annotation = dataset.build_coco_file_locally(
+            assets=asset_list, enforced_ordered_categories=label_names, use_id=True
+        )
+        annotations_dict = coco_annotation.dict()
+        annotations_path = os.path.join(base_imgdir, f"{data_type}_annotations.json")
+
+        with open(annotations_path, "w") as f:
+            f.write(json.dumps(annotations_dict))
+
+        dataset_path = os.path.join(base_imgdir, data_type, "images")
+        os.makedirs(dataset_path)
+
+        asset_list.download(target_path=dataset_path, max_workers=8, use_id=True)
+
+    for split, asset_list in {"train": assets[0], "val": assets[1]}.items():
+        coco_annotation = train_ds.build_coco_file_locally(
+            assets=asset_list, enforced_ordered_categories=label_names, use_id=True
+        )
+        annotations_dict = coco_annotation.dict()
+        annotations_path = os.path.join(base_imgdir, f"{split}_annotations.json")
+
+        with open(annotations_path, "w") as f:
+            f.write(json.dumps(annotations_dict))
+
+        dataset_path = os.path.join(base_imgdir, split, "images")
+        os.makedirs(dataset_path)
+
+        asset_list.download(target_path=dataset_path, max_workers=8, use_id=True)
+
+    return (
+        assets[0],
+        test_ds.list_assets(),
+        assets[1],
+        labels,
+        test_ds.list_labels(),
+        train_ds.type,
+    )
+
+
+def _handle_one_attached_dataset(
+    experiment: Experiment, base_imgdir: str, prop_train_split: float
+) -> tuple:
+    try:
+        train_ds = experiment.get_dataset(name="train")
+    except Exception as e:
+        raise ResourceNotFoundError(
+            "Found 2 attached datasets, but can't find any 'train' dataset.\n \
+                                            expecting 'train', 'test', ('val' or 'eval')"
+        ) from e
+
+    assets, classes_repartition, labels = train_ds.split_into_multi_assets(
+        ratios=[
+            prop_train_split,
+            (1.0 - prop_train_split) / 2,
+            (1.0 - prop_train_split) / 2,
+        ]
+    )
+    labelmap = {str(i): label.name for i, label in enumerate(labels)}
+    label_names = [label.name for label in labels]
+
+    experiment.log(
+        "train-split",
+        order_repartition_according_labelmap(labelmap, classes_repartition[0]),
+        "bar",
+        replace=True,
+    )
+    experiment.log(
+        "test-split",
+        order_repartition_according_labelmap(labelmap, classes_repartition[1]),
+        "bar",
+        replace=True,
+    )
+    experiment.log(
+        "val-split",
+        order_repartition_according_labelmap(labelmap, classes_repartition[2]),
+        "bar",
+        replace=True,
+    )
+
+    for split, asset_list in {
+        "train": assets[0],
+        "test": assets[1],
+        "val": assets[2],
+    }.items():
+        coco_annotation = train_ds.build_coco_file_locally(
+            assets=asset_list, enforced_ordered_categories=label_names, use_id=True
+        )
+        annotations_dict = coco_annotation.dict()
+        annotations_path = os.path.join(base_imgdir, f"{split}_annotations.json")
+
+        with open(annotations_path, "w") as f:
+            f.write(json.dumps(annotations_dict))
+
+        dataset_path = os.path.join(base_imgdir, split, "images")
+        os.makedirs(dataset_path)
+
+        asset_list.download(target_path=dataset_path, max_workers=8, use_id=True)
+
+    return (
+        assets[0],
+        assets[1],
+        assets[2],
+        labels,
+        labels,
+        train_ds.type,
+    )
 
 
 def order_repartition_according_labelmap(labelmap: dict, repartition: dict) -> dict:

@@ -1,6 +1,6 @@
 FROM picsellia/cuda:11.4.3-cudnn8-ubuntu20.04-python3.8
 
-COPY ./yolov5-segmentation/requirements.txt .
+COPY ./yolov5_segmentation/requirements.txt .
 
 ARG REBUILD_ALL
 RUN python3.8 -m pip install -r ./requirements.txt --no-cache-dir
@@ -11,6 +11,7 @@ RUN python3.8 -m pip install picsellia --upgrade
 
 WORKDIR /experiment
 
-COPY ./yolov5-segmentation/experiment ./
+COPY ./yolov5_segmentation/experiment ./
+COPY ./core_utils ./core_utils
 
 ENTRYPOINT ["run", "python3.8", "main.py"]

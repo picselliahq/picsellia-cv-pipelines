@@ -2,6 +2,7 @@ import json
 import logging
 import os
 from collections import OrderedDict
+from typing import Optional
 
 import torch
 import yaml
@@ -22,12 +23,14 @@ def get_train_test_eval_datasets_from_experiment(
     has_two_datasets = False
     if number_of_attached_datasets == 3:
         has_three_datasets = True
-        train_set, test_set, eval_set = _get_three_attached_datasets(experiment)
+        train_set_three, test_set, eval_set = _get_three_attached_datasets(experiment)
+        train_set = train_set_three
     elif number_of_attached_datasets == 1:
         logging.info(
             "We only found one dataset inside your experiment, the train/test/split will be performed automatically."
         )
-        train_set: DatasetVersion = experiment.list_attached_dataset_versions()[0]
+        train_set_one = experiment.list_attached_dataset_versions()[0]
+        train_set = train_set_one
         test_set = None
         eval_set = None
 
@@ -37,7 +40,8 @@ def get_train_test_eval_datasets_from_experiment(
             "dataset, and the eval dataset will be used in the Evaluations tab"
         )
         has_two_datasets = True
-        train_set, test_set = _get_two_attached_datasets(experiment)
+        train_set_two, test_set = _get_two_attached_datasets(experiment)
+        train_set = train_set_two
         eval_set = None
     else:
         raise Exception("We need either 1, 2 or 3 datasets attached to this experiment")
@@ -50,25 +54,25 @@ def _get_three_attached_datasets(
 ) -> tuple[DatasetVersion, DatasetVersion, DatasetVersion]:
     try:
         train_set = experiment.get_dataset(name="train")
-    except Exception:
+    except Exception as e:
         raise ResourceNotFoundError(
             "Found 3 attached datasets, but can't find any 'train' dataset.\n \
                                             expecting 'train', 'test', 'eval')"
-        )
+        ) from e
     try:
         test_set = experiment.get_dataset(name="test")
-    except Exception:
+    except Exception as e:
         raise ResourceNotFoundError(
             "Found 3 attached datasets, but can't find any 'test' dataset.\n \
                                             expecting 'train', 'test', 'eval')"
-        )
+        ) from e
     try:
         eval_set = experiment.get_dataset(name="eval")
-    except Exception:
+    except Exception as e:
         raise ResourceNotFoundError(
             "Found 3 attached datasets, but can't find any 'eval' dataset.\n \
                                                 expecting 'train', 'test', 'eval')"
-        )
+        ) from e
     return train_set, test_set, eval_set
 
 
@@ -77,18 +81,18 @@ def _get_two_attached_datasets(
 ) -> tuple[DatasetVersion, DatasetVersion]:
     try:
         train_set = experiment.get_dataset(name="train")
-    except Exception:
+    except Exception as e:
         raise ResourceNotFoundError(
             "Found 2 attached datasets, but can't find any 'train' dataset.\n \
                                             expecting 'train', 'eval')"
-        )
+        ) from e
     try:
         eval_set = experiment.get_dataset(name="eval")
-    except Exception:
+    except Exception as e:
         raise ResourceNotFoundError(
             "Found 2 attached datasets, but can't find any 'eval' dataset.\n \
                                                 expecting 'train', 'eval')"
-        )
+        ) from e
     return train_set, eval_set
 
 
@@ -330,12 +334,15 @@ def make_annotation_dict_by_dataset(dataset: DatasetVersion, label_names: list) 
 
 
 def setup_hyp(
-    experiment: Experiment = None,
-    data_yaml_path: str = None,
-    params: dict = None,
-    cwd: str = None,
+    experiment: Optional[Experiment] = None,
+    data_yaml_path: Optional[str] = None,
+    params: Optional[dict] = None,
+    cwd: Optional[str] = None,
     task: str = "detect",
 ):
+    if experiment is None:
+        raise ValueError("Experiment cannot be None for setup_hyp")
+
     if params is None:
         params = {}
     tmp = os.listdir(experiment.checkpoint_dir)
@@ -343,8 +350,6 @@ def setup_hyp(
     for f in tmp:
         if f.endswith(".pt"):
             weight_path = os.path.join(experiment.checkpoint_dir, f)
-        if f.endswith(".yaml"):
-            hyp_path = os.path.join(experiment.checkpoint_dir, f)
 
     opt = Opt()
 
@@ -515,7 +520,97 @@ def setup_hyp(
 
 
 class Opt:
-    pass
+    def __init__(self):
+        self.task = ""
+        self.mode = ""
+        self.cwd = ""
+        self.model = ""
+        self.data = ""
+        self.epochs = 0
+        self.patience = 0
+        self.batch = 0
+        self.imgsz = 0
+        self.save = False
+        self.save_period = 0
+        self.cache = False
+        self.device = ""
+        self.workers = 0
+        self.project = ""
+        self.name = ""
+        self.exist_ok = False
+        self.pretrained = True
+        self.optimizer = ""
+        self.verbose = True
+        self.seed = 0
+        self.deterministic = True
+        self.single_cls = False
+        self.image_weights = False
+        self.rect = False
+        self.cos_lr = False
+        self.close_mosaic = 10
+        self.resume = False
+        self.min_memory = False
+        self.overlap_mask = True
+        self.mask_ratio = 4
+        self.dropout = 0.0
+        self.val = True
+        self.split = "val"
+        self.save_json = False
+        self.save_hybrid = False
+        self.conf = 0.25
+        self.iou = 0.7
+        self.max_det = 300
+        self.half = False
+        self.dnn = False
+        self.plots = True
+        self.source = ""
+        self.show = False
+        self.save_txt = False
+        self.save_conf = False
+        self.save_crop = False
+        self.hide_labels = False
+        self.hide_conf = False
+        self.vid_stride = 1
+        self.line_thickness = 3
+        self.visualize = False
+        self.augment = False
+        self.agnostic_nms = False
+        self.retina_masks = False
+        self.boxes = True
+        self.format = "torchscript"
+        self.keras = False
+        self.optimize = False
+        self.int8 = False
+        self.dynamic = False
+        self.simplify = False
+        self.workspace = 4
+        self.nms = False
+        self.lr0 = 0.01
+        self.lrf = 0.01
+        self.momentum = 0.937
+        self.weight_decay = 0.0005
+        self.warmup_epochs = 3.0
+        self.warmup_momentum = 0.8
+        self.warmup_bias_lr = 0.1
+        self.box = 7.5
+        self.cls = 0.5
+        self.dfl = 1.5
+        self.fl_gamma = 0.0
+        self.label_smoothing = 0.0
+        self.nbs = 64
+        self.hsv_h = 0.015
+        self.hsv_s = 0.7
+        self.hsv_v = 0.4
+        self.degrees = 0.0
+        self.translate = 0.1
+        self.scale = 0.5
+        self.shear = 0.0
+        self.perspective = 0.0
+        self.flipud = 0.0
+        self.fliplr = 0.5
+        self.mosaic = 1.0
+        self.mixup = 0.0
+        self.copy_paste = 0.0
 
 
 def store_model_files(
@@ -524,9 +619,14 @@ def store_model_files(
     task: str,
     imgsz: int = 640,
 ):
+    if save_dir is None:
+        logging.warning("Save directory is None. Cannot store model files.")
+        return
+
     final_run_path = save_dir
     best_weights, hyp_yaml = get_weights_and_config(final_run_path)
     model_latest_path = find_model_latest_path(final_run_path, task, imgsz)
+
     if model_latest_path:
         experiment.store("model-latest", model_latest_path)
     if best_weights:
