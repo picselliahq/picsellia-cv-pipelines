@@ -47,13 +47,15 @@ def simple_train_ultralytics_model(
     ] = Pipeline.get_active_context()
 
     model_trainer = UltralyticsModelTrainer(
-        model=model, experiment=context.experiment, callbacks=UltralyticsSimpleCallbacks
+        model=model,
+        experiment=context.experiment,
     )
 
     model = model_trainer.train_model(
         dataset_collection=dataset_collection,
         hyperparameters=context.hyperparameters,
         augmentation_parameters=context.augmentation_parameters,
+        callbacks=UltralyticsSimpleCallbacks,
     )
 
     model.set_latest_run_dir()
@@ -72,26 +74,6 @@ def simple_train_ultralytics_model(
 
 
 class UltralyticsSimpleCallbacks(UltralyticsCallbacks):
-    def on_train_epoch_end(self, trainer: TBaseTrainer):
-        """
-        Logs metrics and learning rate at the end of each training epoch.
-
-        Args:
-            trainer (TBaseTrainer): The trainer instance containing current training state and metrics.
-        """
-        for metric_name, loss_value in trainer.label_loss_items(trainer.tloss).items():
-            if metric_name.startswith("val") or metric_name.startswith("metrics"):
-                self.logger.log_metric(
-                    name=metric_name, value=float(loss_value), phase="val"
-                )
-            else:
-                self.logger.log_metric(
-                    name=metric_name, value=float(loss_value), phase="train"
-                )
-
-        for lr_name, lr_value in trainer.lr.items():
-            self.logger.log_metric(name=lr_name, value=float(lr_value), phase="train")
-
     def on_fit_epoch_end(self, trainer: TBaseTrainer):
         """
         Logs the time and metrics at the end of each epoch.
