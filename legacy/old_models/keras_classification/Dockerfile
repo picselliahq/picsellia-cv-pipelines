@@ -7,8 +7,8 @@ RUN apt-get update && apt-get install -y \
 
 WORKDIR /experiment
 
-COPY ./keras-classification/experiment ./
-COPY ./keras-classification/requirements.txt ./
+COPY ./keras_classification/experiment ./
+COPY ./keras_classification/requirements.txt ./
 COPY ./core_utils ./core_utils
 
 ARG REBUILD_ALL
