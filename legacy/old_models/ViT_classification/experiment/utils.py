@@ -139,25 +139,25 @@ def _get_three_attached_datasets(
 ) -> tuple[DatasetVersion, DatasetVersion, DatasetVersion]:
     try:
         train_set = experiment.get_dataset(name="train")
-    except Exception:
+    except Exception as e:
         raise ResourceNotFoundError(
             "Found 3 attached datasets, but can't find any 'train' dataset.\n \
-                                                expecting 'train', 'test', 'eval')"
-        )
+                                                expecting 'train', 'test', 'val')"
+        ) from e
     try:
         test_set = experiment.get_dataset(name="test")
-    except Exception:
+    except Exception as e:
         raise ResourceNotFoundError(
             "Found 3 attached datasets, but can't find any 'test' dataset.\n \
-                                                expecting 'train', 'test', 'eval')"
-        )
+                                                expecting 'train', 'test', 'val')"
+        ) from e
     try:
-        eval_set = experiment.get_dataset(name="eval")
-    except Exception:
+        eval_set = experiment.get_dataset(name="val")
+    except Exception as e:
         raise ResourceNotFoundError(
             "Found 3 attached datasets, but can't find any 'eval' dataset.\n \
-                                                    expecting 'train', 'test', 'eval')"
-        )
+                                                    expecting 'train', 'test', 'val')"
+        ) from e
     return train_set, test_set, eval_set
 
 
