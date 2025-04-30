@@ -10,7 +10,7 @@ docker push picsellia/training-yolov5-detection:latest
 docker build . -f yolov5_segmentation/Dockerfile -t picsellia/training-yolov5-segmentation:latest
 docker push picsellia/training-yolov5-segmentation:latest
 
-docker build . -f unet_instance-segmentation/Dockerfile -t picsellia/training-unet-segmentation:latest
+docker build . -f unet_instance_segmentation/Dockerfile -t picsellia/training-unet-segmentation:latest
 docker push picsellia/training-unet-segmentation:latest
 
 docker build . -f ViT_classification/Dockerfile -t picsellia/training-vit-classification:latest
