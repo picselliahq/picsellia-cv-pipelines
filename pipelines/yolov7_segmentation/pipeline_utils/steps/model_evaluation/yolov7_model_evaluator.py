@@ -10,9 +10,9 @@ from picsellia_cv_engine.core.parameters.export_parameters import (
 from picsellia_cv_engine.core.services.model.evaluator.model_evaluator import (
     ModelEvaluator,
 )
-from picsellia_cv_engine.core.steps.model.evaluator import evaluate_model_impl
 from picsellia_cv_engine.decorators.pipeline_decorator import Pipeline
 from picsellia_cv_engine.decorators.step_decorator import step
+from picsellia_cv_engine.steps.base.model.evaluator import evaluate_model_impl
 
 from pipelines.yolov7_segmentation.pipeline_utils.model.yolov7_model_context import (
     Yolov7Model,

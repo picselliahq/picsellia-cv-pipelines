@@ -5,7 +5,7 @@ from picsellia_cv_engine.core.contexts import (
 )
 from picsellia_cv_engine.decorators.pipeline_decorator import Pipeline
 from picsellia_cv_engine.decorators.step_decorator import step
-from picsellia_cv_engine.frameworks.ultralytics.steps.model.loader import (
+from picsellia_cv_engine.steps.ultralytics.model.loader import (
     load_yolo_weights,
 )
 

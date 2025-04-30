@@ -7,16 +7,16 @@ from picsellia_cv_engine.frameworks.ultralytics.parameters.augmentation_paramete
 from picsellia_cv_engine.frameworks.ultralytics.parameters.hyper_parameters import (
     UltralyticsHyperParameters,
 )
-from picsellia_cv_engine.frameworks.ultralytics.steps.dataset.preparator import (
+from picsellia_cv_engine.steps.ultralytics.dataset.preparator import (
     prepare_ultralytics_dataset,
 )
-from picsellia_cv_engine.frameworks.ultralytics.steps.model.evaluator import (
+from picsellia_cv_engine.steps.ultralytics.model.evaluator import (
     evaluate_ultralytics_model,
 )
-from picsellia_cv_engine.frameworks.ultralytics.steps.model.exporter import (
+from picsellia_cv_engine.steps.ultralytics.model.exporter import (
     export_ultralytics_model,
 )
-from picsellia_cv_engine.frameworks.ultralytics.steps.model.loader import (
+from picsellia_cv_engine.steps.ultralytics.model.loader import (
     load_ultralytics_model,
 )
 

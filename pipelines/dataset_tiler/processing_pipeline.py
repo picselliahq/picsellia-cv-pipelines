@@ -1,7 +1,7 @@
 from picsellia_cv_engine.core.contexts import PicselliaProcessingContext
-from picsellia_cv_engine.core.steps.dataset.loader import load_coco_datasets
-from picsellia_cv_engine.core.steps.dataset.uploader import upload_full_dataset
 from picsellia_cv_engine.decorators.pipeline_decorator import pipeline
+from picsellia_cv_engine.steps.base.dataset.loader import load_coco_datasets
+from picsellia_cv_engine.steps.base.dataset.uploader import upload_full_dataset
 
 from pipelines.dataset_tiler.pipeline_utils.parameters.processing_tiler_parameters import (
     ProcessingTilerParameters,

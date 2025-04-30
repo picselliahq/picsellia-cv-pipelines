@@ -3,9 +3,9 @@
 from picsellia_cv_engine.core.contexts.processing.dataset.picsellia_processing_context import (
     PicselliaProcessingContext,
 )
-from picsellia_cv_engine.core.steps.dataset.loader import load_coco_datasets
-from picsellia_cv_engine.core.steps.dataset.uploader import upload_dataset_annotations
 from picsellia_cv_engine.decorators.pipeline_decorator import pipeline
+from picsellia_cv_engine.steps.base.dataset.loader import load_coco_datasets
+from picsellia_cv_engine.steps.base.dataset.uploader import upload_dataset_annotations
 
 from pipelines.yolov8.pre_annotation.pipeline_utils.parameters.processing_yolov8_preannotation_parameters import (
     ProcessingYOLOV8PreannotationParameters,
