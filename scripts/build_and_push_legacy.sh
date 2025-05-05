@@ -30,7 +30,7 @@ for model_path in "$LEGACY_DIR"/*/; do
     normalized_name="training-$(echo "$model_dir" | tr '[:upper:]' '[:lower:]' | tr '_' '-')"
 
     echo "Building $model_dir..."
-    docker build "$model_path" -f "$dockerfile_path" -t "picsellia/${normalized_name}:${TAG}"
+    docker build "$LEGACY_DIR" -f "$dockerfile_path" -t "picsellia/${normalized_name}:${TAG}"
     if [[ $? -eq 0 ]]; then
         echo "Pushing $model_dir..."
         docker push "picsellia/${normalized_name}:${TAG}"

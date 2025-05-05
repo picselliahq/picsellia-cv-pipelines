@@ -41,7 +41,7 @@ for pipeline_dir in "$PIPELINES_DIR"/*/; do
     fi
 
     echo "Building $pipeline_name..."
-    docker build "$pipeline_dir" -f "$dockerfile_path" -t "picsellia/${prefix}${docker_image_name}:${TAG}"
+    docker build . -f "$dockerfile_path" -t "picsellia/${prefix}${docker_image_name}:${TAG}"
     if [[ $? -eq 0 ]]; then
         echo "Pushing $pipeline_name..."
         docker push "picsellia/${prefix}${docker_image_name}:${TAG}"
