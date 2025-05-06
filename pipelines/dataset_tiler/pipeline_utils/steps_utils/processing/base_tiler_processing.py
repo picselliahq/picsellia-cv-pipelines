@@ -181,7 +181,9 @@ class BaseTilerProcessing(ABC):
             raise ValueError("No images directory found in the dataset.")
 
         if not dataset_collection["output"].coco_file_path:
-            raise ValueError("No COCO file found in the dataset.")
+            dataset_collection["output"].coco_file_path = os.path.join(
+                dataset_collection["output"].annotations_dir, "annotations.json"
+            )
 
         self._process_dataset(
             dataset=dataset_collection["input"],
