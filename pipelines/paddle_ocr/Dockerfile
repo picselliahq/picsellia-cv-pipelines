@@ -16,7 +16,7 @@ RUN python3.10 -m pip install --upgrade pip && \
     python3.10 -m pip install -U setuptools
 
 # --- Python deps ---
-RUN python3.10 -m pip install git+https://github.com/picselliahq/picsellia-cv-engine.git@feat/add-utils-for-training-template
+RUN python3.10 -m pip install git+https://github.com/picselliahq/picsellia-cv-engine.git@main
 
 # --- Shared run script ---
 ADD https://raw.githubusercontent.com/picselliahq/picsellia-cv-base-docker/main/base/run.sh /experiment/run.sh

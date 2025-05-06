@@ -4,7 +4,7 @@ RUN apt-get update && apt-get install -y \
     libgl1-mesa-glx \
     && rm -rf /var/lib/apt/lists/*
 
-RUN uv pip install --python=$(which python3.10) git+https://github.com/picselliahq/picsellia-cv-engine.git@feat/add-utils-for-training-template
+RUN uv pip install --python=$(which python3.10) git+https://github.com/picselliahq/picsellia-cv-engine.git@main
 
 ARG REBUILD_ALL
 COPY ./pipelines/dataset_tiler/requirements.txt ./pipelines/dataset_tiler/requirements.txt

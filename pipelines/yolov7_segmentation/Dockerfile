@@ -6,7 +6,7 @@ RUN apt-get update && apt-get install -y \
     git \
     && rm -rf /var/lib/apt/lists/*
 
-RUN uv pip install --python=$(which python3.10) git+https://github.com/picselliahq/picsellia-cv-engine.git@feat/add-utils-for-training-template
+RUN uv pip install --python=$(which python3.10) git+https://github.com/picselliahq/picsellia-cv-engine.git@main
 
 ARG REBUILD_ALL
 COPY ./pipelines/yolov7_segmentation/requirements.txt ./pipelines/yolov7_segmentation/requirements.txt
