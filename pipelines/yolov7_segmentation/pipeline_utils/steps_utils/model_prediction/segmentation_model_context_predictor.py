@@ -76,7 +76,7 @@ class Yolov7SegmentationModelPredictor:
             os.makedirs(project_dir, exist_ok=True)
 
             detect_file_path = os.path.abspath(
-                "src/pipelines/yolov7_segmentation/yolov7/seg/segment/predict.py"
+                "pipelines/yolov7_segmentation/yolov7/seg/segment/predict.py"
             )
 
             print(f"Running inference with weights: {self.model.trained_weights_path}")

@@ -73,7 +73,7 @@ class Yolov7ModelTrainer:
         os.makedirs(project_dir, exist_ok=True)
 
         train_file_path = os.path.abspath(
-            "src/pipelines/yolov7_segmentation/yolov7/seg/segment/train.py"
+            "pipelines/yolov7_segmentation/yolov7/seg/segment/train.py"
         )
 
         command = [
