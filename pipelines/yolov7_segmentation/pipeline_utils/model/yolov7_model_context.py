@@ -3,7 +3,7 @@ from typing import Any
 
 import yaml
 from picsellia import Label, ModelVersion
-from picsellia_cv_engine.models.model.model import Model
+from picsellia_cv_engine.core.models import Model
 
 
 def find_latest_run_dir(dir):

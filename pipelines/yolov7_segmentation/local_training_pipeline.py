@@ -1,13 +1,13 @@
 from argparse import ArgumentParser
 
-from picsellia_cv_engine.decorators.pipeline_decorator import pipeline
-from picsellia_cv_engine.models.contexts.training.local_picsellia_training_context import (
+from picsellia_cv_engine.core.contexts import (
     LocalTrainingContext,
 )
-from picsellia_cv_engine.models.parameters.export_parameters import (
+from picsellia_cv_engine.core.parameters.export_parameters import (
     ExportParameters,
 )
-from picsellia_cv_engine.steps.dataset.validator import validate_dataset
+from picsellia_cv_engine.decorators.pipeline_decorator import pipeline
+from picsellia_cv_engine.steps.base.dataset.validator import validate_dataset
 
 from pipelines.yolov7_segmentation.pipeline_utils.parameters.yolov7_augmentation_parameters import (
     Yolov7AugmentationParameters,

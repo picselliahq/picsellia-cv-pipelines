@@ -1,16 +1,13 @@
 import os.path
 
-from picsellia_cv_engine.decorators.pipeline_decorator import Pipeline
-from picsellia_cv_engine.decorators.step_decorator import step
-from picsellia_cv_engine.models.contexts.processing.dataset.picsellia_processing_context import (
+from picsellia_cv_engine.core.contexts.processing.dataset.picsellia_processing_context import (
     PicselliaProcessingContext,
 )
-
-from pipelines.yolov8.training.classification.pipeline_utils.model.ultralytics_model import (
-    UltralyticsModel,
-)
-from pipelines.yolov8.training.classification.pipeline_utils.steps_utils.model_loading.ultralytics_model_loader import (
-    ultralytics_load_model,
+from picsellia_cv_engine.decorators.pipeline_decorator import Pipeline
+from picsellia_cv_engine.decorators.step_decorator import step
+from picsellia_cv_engine.frameworks.ultralytics.model.model import UltralyticsModel
+from picsellia_cv_engine.steps.ultralytics.model.loader import (
+    load_yolo_weights,
 )
 
 
@@ -27,7 +24,7 @@ def load_processing_ultralytics_model(
                     "Cannot use ONNX model for preannotation, please use a .pt model"
                 )
             )
-        loaded_model = ultralytics_load_model(
+        loaded_model = load_yolo_weights(
             weights_path_to_load=weights_path_to_load,
             device=context.processing_parameters.device,
         )

@@ -1,46 +1,47 @@
 #!/bin/bash
 
-PIPELINES_DIR="src/pipelines"
-EXCLUDE_DIRS=("kie")
-TAG="test"
+PIPELINES_DIR="pipelines"
+EXCLUDE_DIRS=("kie" "augmentations_pipeline")
+TAG=${1:-"test"} # Default to "test" if no argument is provided
 
-for pipeline_dir in "$PIPELINES_DIR"/*/; do
+find "$PIPELINES_DIR" -type f -name "Dockerfile" | while read -r dockerfile_path; do
+    pipeline_dir=$(dirname "$dockerfile_path")
     pipeline_name=$(basename "$pipeline_dir")
+    parent_name=$(basename "$(dirname "$pipeline_dir")")
 
-    if [[ " ${EXCLUDE_DIRS[@]} " =~ " ${pipeline_name} " ]]; then
+    # Exclude
+    should_skip=false
+    for excluded in "${EXCLUDE_DIRS[@]}"; do
+        if [[ "$excluded" == "$pipeline_name" ]]; then
+            should_skip=true
+            break
+        fi
+    done
+    if $should_skip; then
         echo "Skipping $pipeline_name (excluded)"
         continue
     fi
 
-    dockerfile_path="$pipeline_dir/Dockerfile"
-
-    if [[ ! -f "$dockerfile_path" ]]; then
-        echo "Skipping $pipeline_name (no Dockerfile)"
-        continue
+    entrypoint=$(grep "ENTRYPOINT" "$dockerfile_path" || echo "")
+    if [[ $entrypoint =~ training_pipeline.py ]] || [[ -f "$pipeline_dir/training_pipeline.py" ]]; then
+        prefix="training-"
+    elif [[ $entrypoint =~ processing_pipeline.py ]] || [[ -f "$pipeline_dir/processing_pipeline.py" ]]; then
+        prefix="processing-"
+    else
+        prefix=""
     fi
 
     docker_image_name=$(echo "$pipeline_name" | tr '_' '-')
-
-    prefix=""
-    entrypoint=$(grep "ENTRYPOINT" "$dockerfile_path" || echo "")
-
-    if [[ "$entrypoint" =~ "training_pipeline.py" ]] || [[ -f "$pipeline_dir/training_pipeline.py" ]]; then
-        prefix="training-"
-    elif [[ "$entrypoint" =~ "processing_pipeline.py" ]] || [[ -f "$pipeline_dir/processing_pipeline.py" ]]; then
-        prefix="processing-"
-    else
-        echo "Skipping $pipeline_name (unknown pipeline type)"
-        continue
+    if [[ "$parent_name" != "$(basename $PIPELINES_DIR)" ]]; then
+        docker_image_name="${docker_image_name}-$(echo "$parent_name" | tr '_' '-')"
     fi
 
-    echo "Building $pipeline_name..."
+    echo "Building $pipeline_dir..."
     docker build . -f "$dockerfile_path" -t "picsellia/${prefix}${docker_image_name}:${TAG}"
-    build_status=$?
-
-    if [[ $build_status -eq 0 ]]; then
-        echo "Pushing $pipeline_name..."
+    if [[ $? -eq 0 ]]; then
+        echo "Pushing ${prefix}${docker_image_name}..."
         docker push "picsellia/${prefix}${docker_image_name}:${TAG}"
     else
-        echo "Build failed for $pipeline_name, skipping push"
+        echo "Build failed for $pipeline_dir, skipping push"
     fi
 done

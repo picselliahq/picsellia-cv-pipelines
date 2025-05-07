@@ -13,12 +13,10 @@ from picsellia.sdk.asset import Asset
 from picsellia.sdk.dataset import DatasetVersion
 from picsellia.sdk.label import Label
 from picsellia.types.enums import InferenceType
+from picsellia_cv_engine.frameworks.ultralytics.model.model import UltralyticsModel
 
 from pipelines.yolov8.pre_annotation.pipeline_utils.parameters.processing_yolov8_preannotation_parameters import (
     ProcessingYOLOV8PreannotationParameters,
-)
-from pipelines.yolov8.training.classification.pipeline_utils.model.ultralytics_model import (
-    UltralyticsModel,
 )
 
 
@@ -277,6 +275,11 @@ class AnnotationProcessor:
         scores = predictions.boxes.conf.cpu().numpy()
         labels = predictions.boxes.cls.cpu().numpy().astype(np.int16)
         masks = GeometryUtils.format_polygons(predictions=predictions)
+        if len(masks) == 0:
+            logging.warning(
+                f"Segmentation prediction for {asset.filename} returned no masks."
+            )
+            return
 
         # Limit the number of polygons to reduce processing time
         nb_polygons_limit = min(100, len(masks))
@@ -289,6 +292,8 @@ class AnnotationProcessor:
                     self.label_manager.get_label_by_name(label_name)
 
                     segmentation = masks[i]
+                    if len(segmentation) == 0:
+                        continue
                     segmentation_list = [list(point) for point in segmentation]
                     bbox = GeometryUtils.polygon_bbox(segmentation_list)
                     area = GeometryUtils.polygon_area(segmentation_list)
@@ -388,7 +393,9 @@ class PreAnnotator:
         # Verify label compatibility
         self.label_manager.check_labels_coherence(self.model_labels_name)
 
-    def preannotate(self, confidence_threshold: float) -> dict:
+    def preannotate(
+        self, confidence_threshold: float, agnostic_nms: bool = False
+    ) -> dict:
         """Run pre-annotation on the dataset"""
         dataset_size = self.dataset_version.sync()["size"]
         batch_size = min(self.parameters.batch_size, dataset_size)
@@ -403,7 +410,9 @@ class PreAnnotator:
             url_list = [asset.sync()["data"]["presigned_url"] for asset in assets]
 
             # Get predictions for batch
-            predictions = self.model.loaded_model(url_list, imgsz=image_size)
+            predictions = self.model.loaded_model(
+                url_list, imgsz=image_size, agnostic_nms=agnostic_nms
+            )
 
             # Process each asset and prediction
             for asset, prediction in list(zip(assets, predictions, strict=False)):

@@ -3,7 +3,7 @@ import logging
 import os
 
 from picsellia.types.enums import InferenceType
-from picsellia_cv_engine.models.data.dataset.dataset_collection import DatasetCollection
+from picsellia_cv_engine.core import DatasetCollection
 from PIL import Image, ImageOps
 
 

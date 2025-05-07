@@ -1,18 +1,16 @@
 import os
 
-from picsellia_cv_engine.decorators.pipeline_decorator import Pipeline
-from picsellia_cv_engine.decorators.step_decorator import step
-from picsellia_cv_engine.models.data.dataset.coco_dataset import (
+from picsellia_cv_engine.core import (
     CocoDataset,
-)
-from picsellia_cv_engine.models.data.dataset.dataset_collection import (
     DatasetCollection,
 )
+from picsellia_cv_engine.decorators.pipeline_decorator import Pipeline
+from picsellia_cv_engine.decorators.step_decorator import step
 
-from pipelines.paddle_ocr.pipeline_utils.dataset.paddle_ocr_dataset import (
+from pipelines.paddle_ocr.pipeline_utils.dataset.paddle_ocr_dataset_context import (
     PaddleOCRDataset,
 )
-from pipelines.paddle_ocr.pipeline_utils.steps_utils.data_preparation.paddle_ocr_dataset_preparator import (
+from pipelines.paddle_ocr.pipeline_utils.steps_utils.data_preparation.paddle_ocr_dataset_context_preparator import (
     PaddleOCRDatasetPreparator,
 )
 

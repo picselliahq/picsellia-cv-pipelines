@@ -1,11 +1,11 @@
 # type: ignore
 
-from picsellia_cv_engine.decorators.pipeline_decorator import pipeline
-from picsellia_cv_engine.models.contexts.processing.dataset.picsellia_processing_context import (
+from picsellia_cv_engine.core.contexts.processing.dataset.picsellia_processing_context import (
     PicselliaProcessingContext,
 )
-from picsellia_cv_engine.steps.dataset.loader import load_coco_datasets
-from picsellia_cv_engine.steps.dataset.uploader import upload_full_dataset
+from picsellia_cv_engine.decorators.pipeline_decorator import pipeline
+from picsellia_cv_engine.steps.base.dataset.loader import load_coco_datasets
+from picsellia_cv_engine.steps.base.dataset.uploader import upload_full_dataset
 
 from pipelines.bounding_box_cropper.pipeline_utils.parameters.processing_bounding_box_cropper_parameters import (
     ProcessingBoundingBoxCropperParameters,

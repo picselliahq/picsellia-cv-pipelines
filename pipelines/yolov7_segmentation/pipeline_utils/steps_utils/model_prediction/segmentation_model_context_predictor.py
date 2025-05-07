@@ -3,17 +3,17 @@ import shutil
 import subprocess
 
 import cv2
-from picsellia_cv_engine.models.data.dataset.base_dataset import (
+from picsellia_cv_engine.core.data import (
     TBaseDataset,
 )
-from picsellia_cv_engine.models.model.picsellia_prediction import (
+from picsellia_cv_engine.core.models import (
     PicselliaConfidence,
     PicselliaLabel,
     PicselliaPolygon,
     PicselliaPolygonPrediction,
 )
 
-from pipelines.yolov7_segmentation.pipeline_utils.model.yolov7_model import (
+from pipelines.yolov7_segmentation.pipeline_utils.model.yolov7_model_context import (
     Yolov7Model,
     find_latest_run_dir,
 )
@@ -76,7 +76,7 @@ class Yolov7SegmentationModelPredictor:
             os.makedirs(project_dir, exist_ok=True)
 
             detect_file_path = os.path.abspath(
-                "src/pipelines/yolov7_segmentation/yolov7/seg/segment/predict.py"
+                "pipelines/yolov7_segmentation/yolov7/seg/segment/predict.py"
             )
 
             print(f"Running inference with weights: {self.model.trained_weights_path}")

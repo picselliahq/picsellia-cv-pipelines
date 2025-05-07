@@ -6,7 +6,7 @@ from picsellia import Experiment
 from pipelines.yolov7_segmentation.pipeline_utils.dataset.yolov7_dataset_collection import (
     Yolov7DatasetCollection,
 )
-from pipelines.yolov7_segmentation.pipeline_utils.model.yolov7_model import (
+from pipelines.yolov7_segmentation.pipeline_utils.model.yolov7_model_context import (
     Yolov7Model,
 )
 from pipelines.yolov7_segmentation.pipeline_utils.parameters.yolov7_hyper_parameters import (
@@ -73,7 +73,7 @@ class Yolov7ModelTrainer:
         os.makedirs(project_dir, exist_ok=True)
 
         train_file_path = os.path.abspath(
-            "src/pipelines/yolov7_segmentation/yolov7/seg/segment/train.py"
+            "pipelines/yolov7_segmentation/yolov7/seg/segment/train.py"
         )
 
         command = [

@@ -1,11 +1,11 @@
 import os
 
 import yaml
-from picsellia_cv_engine.models.data.dataset.base_dataset import (
-    TBaseDataset,
-)
-from picsellia_cv_engine.models.data.dataset.dataset_collection import (
+from picsellia_cv_engine.core import (
     DatasetCollection,
+)
+from picsellia_cv_engine.core.data import (
+    TBaseDataset,
 )
 
 

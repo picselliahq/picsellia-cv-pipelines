@@ -4,10 +4,8 @@ import subprocess
 from typing import Any
 
 import yaml
-from picsellia_cv_engine.models.model.model import Model
-from picsellia_cv_engine.models.steps.model.export.model_exporter import (
-    ModelExporter,
-)
+from picsellia_cv_engine.core.models import Model
+from picsellia_cv_engine.core.services.model.export.model_exporter import ModelExporter
 
 logger = logging.getLogger(__name__)
 

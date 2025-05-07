@@ -2,3 +2,4 @@ opencv-python>=4.0.0, <5.0.0
 picsellia>=6.10.0, <7.0.0
 tabulate>=0.9.0, <0.10.0
 ultralytics
+onnx

@@ -1,13 +1,13 @@
 # type: ignore
 
-from picsellia_cv_engine.decorators.pipeline_decorator import pipeline
-from picsellia_cv_engine.models.contexts.training.picsellia_training_context import (
+from picsellia_cv_engine.core.contexts import (
     PicselliaTrainingContext,
 )
-from picsellia_cv_engine.models.parameters.export_parameters import (
+from picsellia_cv_engine.core.parameters.export_parameters import (
     ExportParameters,
 )
-from picsellia_cv_engine.steps.dataset.loader import load_coco_datasets
+from picsellia_cv_engine.decorators.pipeline_decorator import pipeline
+from picsellia_cv_engine.steps.base.dataset.loader import load_coco_datasets
 
 from pipelines.paddle_ocr.pipeline_utils.parameters.paddle_ocr_augmentation_parameters import (
     PaddleOCRAugmentationParameters,

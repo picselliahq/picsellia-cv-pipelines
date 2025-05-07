@@ -1,12 +1,12 @@
 import os
 
 import yaml
-from picsellia_cv_engine.models.data.dataset.dataset_collection import (
+from picsellia_cv_engine.core import (
     DatasetCollection,
 )
-from picsellia_cv_engine.models.model.model import Model
+from picsellia_cv_engine.core.models import Model
 
-from pipelines.paddle_ocr.pipeline_utils.dataset.paddle_ocr_dataset import (
+from pipelines.paddle_ocr.pipeline_utils.dataset.paddle_ocr_dataset_context import (
     PaddleOCRDataset,
 )
 from pipelines.paddle_ocr.pipeline_utils.model.paddle_ocr_model_collection import (

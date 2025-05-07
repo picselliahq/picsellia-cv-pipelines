@@ -4,11 +4,11 @@ import os
 import cv2
 import numpy as np
 from imutils import perspective
-from picsellia_cv_engine.models.data.dataset.coco_dataset import (
+from picsellia_cv_engine.core import (
     CocoDataset,
 )
 
-from pipelines.paddle_ocr.pipeline_utils.dataset.paddle_ocr_dataset import (
+from pipelines.paddle_ocr.pipeline_utils.dataset.paddle_ocr_dataset_context import (
     PaddleOCRDataset,
 )
 

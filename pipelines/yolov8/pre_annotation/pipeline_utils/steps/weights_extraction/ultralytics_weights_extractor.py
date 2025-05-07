@@ -1,14 +1,11 @@
 import os
 
-from picsellia_cv_engine.decorators.pipeline_decorator import Pipeline
-from picsellia_cv_engine.decorators.step_decorator import step
-from picsellia_cv_engine.models.contexts.processing.dataset.picsellia_processing_context import (
+from picsellia_cv_engine.core.contexts.processing.dataset.picsellia_processing_context import (
     PicselliaProcessingContext,
 )
-
-from pipelines.yolov8.training.classification.pipeline_utils.model.ultralytics_model import (
-    UltralyticsModel,
-)
+from picsellia_cv_engine.decorators.pipeline_decorator import Pipeline
+from picsellia_cv_engine.decorators.step_decorator import step
+from picsellia_cv_engine.frameworks.ultralytics.model.model import UltralyticsModel
 
 
 @step
@@ -17,7 +14,7 @@ def get_processing_ultralytics_model() -> UltralyticsModel:
 
     model_version = context.model_version
     model = UltralyticsModel(
-        model_name=model_version.name,
+        name=model_version.name,
         model_version=model_version,
         trained_weights_name=context.processing_parameters.model_file_name,
     )

@@ -10,10 +10,8 @@ from typing import Any
 import numpy as np
 from picsellia import DatasetVersion
 from picsellia.types.enums import InferenceType
-from picsellia_cv_engine.models.data.dataset.coco_dataset import (
+from picsellia_cv_engine.core import (
     CocoDataset,
-)
-from picsellia_cv_engine.models.data.dataset.dataset_collection import (
     DatasetCollection,
 )
 from PIL import Image
@@ -183,7 +181,9 @@ class BaseTilerProcessing(ABC):
             raise ValueError("No images directory found in the dataset.")
 
         if not dataset_collection["output"].coco_file_path:
-            raise ValueError("No COCO file found in the dataset.")
+            dataset_collection["output"].coco_file_path = os.path.join(
+                dataset_collection["output"].annotations_dir, "annotations.json"
+            )
 
         self._process_dataset(
             dataset=dataset_collection["input"],

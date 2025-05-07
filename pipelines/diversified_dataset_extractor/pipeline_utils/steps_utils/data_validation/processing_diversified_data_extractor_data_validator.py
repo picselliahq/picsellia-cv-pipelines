@@ -1,9 +1,5 @@
-from picsellia_cv_engine.models.data.dataset.base_dataset import (
-    TBaseDataset,
-)
-from picsellia_cv_engine.models.steps.data.dataset.validator.common.dataset_validator import (
-    DatasetValidator,
-)
+from picsellia_cv_engine.core.data import TBaseDataset
+from picsellia_cv_engine.core.services.data.dataset.validator import DatasetValidator
 
 
 class ProcessingDiversifiedDataExtractorDataValidator(DatasetValidator):

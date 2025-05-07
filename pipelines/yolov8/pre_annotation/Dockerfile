@@ -5,18 +5,16 @@ RUN apt-get update && apt-get install -y \
     git \
     && rm -rf /var/lib/apt/lists/*
 
-RUN git clone -b feat/add-base-scripts https://github.com/picselliahq/picsellia-cv-engine.git /picsellia-cv-engine
-RUN pip install -e /picsellia-cv-engine
+RUN uv pip install --python=$(which python3.10) git+https://github.com/picselliahq/picsellia-cv-engine.git@main
 
 WORKDIR /experiment
 
 ARG REBUILD_ALL
-COPY ./pipelines/yolov8_preannotation ./pipelines/yolov8_preannotation
-COPY ./pipelines/yolov8_classification ./pipelines/yolov8_classification
+COPY ./pipelines/yolov8 ./pipelines/yolov8
 ARG REBUILD_PICSELLIA
 
-RUN uv pip install --python=$(which python3.10) --no-cache -r ./pipelines/yolov8_preannotation/requirements.txt
+RUN uv pip install --python=$(which python3.10) --no-cache -r ./pipelines/yolov8/pre_annotation/requirements.txt
 
 ENV PYTHONPATH=":/experiment"
 
-ENTRYPOINT ["run", "python3.10", "pipelines/yolov8_preannotation/processing_pipeline.py"]
+ENTRYPOINT ["run", "python3.10", "pipelines/yolov8/pre_annotation/processing_pipeline.py"]
