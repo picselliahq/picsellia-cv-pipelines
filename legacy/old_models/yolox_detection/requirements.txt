@@ -8,9 +8,8 @@ psutil==5.9.7
 tensorboard==2.15.1
 packaging==23.2
 pycocotools==2.0.7
-tqdm==4.66.1
 thop==0.1.1.post2209072238
 ninja==1.11.1.1
-picsellia==6.16.0
+picsellia==6.21.7
 onnx==1.15.0
 git+https://github.com/marcown/imgaug.git@5eb7adda6aa2ea1628e7e3a7d64d32a3335d38f5
