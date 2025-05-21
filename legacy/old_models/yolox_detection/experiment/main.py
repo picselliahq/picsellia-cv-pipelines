@@ -25,17 +25,28 @@ model_architecture = os.environ.get("architecture", None)
 if model_architecture is None:
     raise ValueError(
         "The environment variable `architecture` is mandatory."
-        "You can choose between `yolox-s`, `yolox-m`, `yolox-l` or `yolox-x`"
+        "You can choose between `yolox-s`, `yolox-m`, `yolox-l` or `yolox-x`",
+        "yolox-tiny",
+        "yolox-nano",
     )
-elif model_architecture not in ("yolox-s", "yolox-m", "yolox-l", "yolox-x"):
+elif model_architecture not in (
+    "yolox-s",
+    "yolox-m",
+    "yolox-l",
+    "yolox-x",
+    "yolox-tiny",
+    "yolox-nano",
+):
     raise ValueError(
         f"The provided model architecture {model_architecture} is not supported."
-        "You can choose between `yolox-s`, `yolox-m`, `yolox-l` or `yolox-x`"
+        "You can choose between `yolox-s`, `yolox-m`, `yolox-l`, `yolox-x`",
+        "yolox-tiny",
+        "yolox-nano",
     )
 
 logging.getLogger("picsellia").setLevel(logging.INFO)
 
-# 1 - Get Experiment and its parameters
+# 1 - Get Experiment and its parameters+
 experiment = get_experiment()
 parameters = experiment.get_log("parameters").data
 
