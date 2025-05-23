@@ -29,30 +29,25 @@ class YOLOV8StyleOutput:
             self.cls = cls
 
     def __init__(self, yolox_output: torch.Tensor, img_info: dict):
-        self.img_width = img_info.get("width", 1)
-        self.img_height = img_info.get("height", 1)
-        self.ratio = img_info.get("ratio", 1)
-        if self.img_width >= self.img_height:
-            ratio = self.img_width / self.img_height
-            target_width = 640
-            target_height = int(target_width / ratio)
-        else:
-            ratio = self.img_height / self.img_width
-            target_height = 640
-            target_width = int(target_height / ratio)
-        # Extract and normalize boxes
-        boxes = yolox_output[:, 0:4]
-        normalized_boxes = torch.zeros_like(boxes)
-        normalized_boxes[:, 0] = boxes[:, 0] / target_width
-        normalized_boxes[:, 1] = boxes[:, 1] / target_height
-        normalized_boxes[:, 2] = boxes[:, 2] / target_width
-        normalized_boxes[:, 3] = boxes[:, 3] / target_height
+        self.img_width = img_info["width"]
+        self.img_height = img_info["height"]
+        self.ratio = img_info["ratio"]
 
-        # Extract confidences and classes
+        # Step 1: Unscale to original image size
+        boxes = yolox_output[:, 0:4].clone()  # (x1, y1, x2, y2)
+
+        boxes /= self.ratio  # reproject to original image size
+
+        # Step 2: Normalize coordinates between 0 and 1
+        normalized_boxes = torch.zeros_like(boxes)
+        normalized_boxes[:, 0] = boxes[:, 0] / self.img_width
+        normalized_boxes[:, 1] = boxes[:, 1] / self.img_height
+        normalized_boxes[:, 2] = boxes[:, 2] / self.img_width
+        normalized_boxes[:, 3] = boxes[:, 3] / self.img_height
+
         conf = yolox_output[:, 4] * yolox_output[:, 5]
         cls = yolox_output[:, 6]
 
-        # Create Boxes object
         self.boxes = self.Boxes(normalized_boxes, conf, cls)
 
     @property

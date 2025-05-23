@@ -1,8 +1,8 @@
 #!/bin/bash
 
 LEGACY_DIR="legacy/old_models"
-TAG=${1:-"latest"}  # Default tag: "latest"
 EXCLUDE_DIRS=("abstract_trainer" "core_utils" "evaluator" "ViT_detection")
+TAG=${1:-"test"} # Default to "test" if no argument is provided
 
 for model_path in "$LEGACY_DIR"/*/; do
     model_dir=$(basename "$model_path")

@@ -3,6 +3,7 @@
 
 import os
 import random
+from typing import Optional
 
 import torch
 import torch.distributed as dist
@@ -103,7 +104,7 @@ class Exp(BaseExp):
 
         # -----------------  testing config ------------------ #
         # output image size during evaluation/test
-        self.test_size = (640, 640)
+        self.test_size = args.image_size
         # confidence threshold during evaluation/test,
         # boxes whose scores are less than test_conf will be filtered
         self.test_conf = 0.01
@@ -134,7 +135,7 @@ class Exp(BaseExp):
         self.model.train()
         return self.model
 
-    def get_dataset(self, cache: bool = False, cache_type: str = "ram"):
+    def get_dataset(self, cache: bool = False, cache_type: Optional[str] = "ram"):
         """
         Get dataset according to cache and cache_type parameters.
         Args:
@@ -157,7 +158,7 @@ class Exp(BaseExp):
         )
 
     def get_data_loader(
-        self, batch_size, is_distributed, no_aug=False, cache_img: str = None
+        self, batch_size, is_distributed, no_aug=False, cache_img: Optional[str] = None
     ):
         """
         Get dataloader according to cache_img parameter.
