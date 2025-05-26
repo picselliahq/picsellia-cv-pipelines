@@ -20,9 +20,10 @@ from picsellia_cv_engine.steps.ultralytics.model.loader import (
     load_ultralytics_model,
 )
 
-from pipelines.yolov8.training.utils.training_steps import (
+from pipelines.yolov8.training.steps import (
     simple_train_ultralytics_model,
 )
+
 
 
 def get_context() -> PicselliaTrainingContext[
