@@ -211,7 +211,7 @@ wheels = [
 ]
 
 [[package]]
-name = "grounding-dino-2"
+name = "grounding-dino"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
