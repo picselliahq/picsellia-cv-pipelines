@@ -1,24 +1,27 @@
-FROM picsellia/cpu:python3.10
+FROM nvcr.io/nvidia/pytorch:24.05-py3
 
 RUN apt-get update && apt-get install -y \
-    libgl1-mesa-glx \
-    git \
-    && rm -rf /var/lib/apt/lists/*
+    libgl1-mesa-glx git wget curl unzip libglib2.0-0 && \
+    rm -rf /var/lib/apt/lists/* \
 
-RUN uv pip install --python=$(which python3.10) git+https://github.com/picselliahq/picsellia-cv-engine.git@main
-RUN uv pip install --python=$(which python3.10) torch==2.0.1 torchvision==0.15.2 torchaudio==2.0.2 --index-url https://download.pytorch.org/whl/cu118
+RUN pip install -U pip setuptools uv
 
 WORKDIR /experiment
+
+ADD https://raw.githubusercontent.com/picselliahq/picsellia-cv-base-docker/main/base/run.sh /experiment/run.sh
+RUN ln -s /experiment/run.sh /usr/bin/run && \
+    chmod +x /experiment/run.sh && \
+    chown -R 42420:42420 /experiment
 
 ARG REBUILD_ALL
 COPY ./ ./pipelines/grounding_dino
 ARG REBUILD_PICSELLIA
 
-RUN uv pip install --python=$(which python3.10) --no-cache -r ./pipelines/grounding_dino/requirements.txt
-
-RUN git clone https://github.com/IDEA-Research/GroundingDINO.git && \
-    cd GroundingDINO && uv pip install --python=$(which python3.10) -e . --no-build-isolation
+# Sync from uv.lock (assumes uv lock has already been created)
+RUN uv sync --python=$(which python3) --project pipelines/grounding_dino
 
 ENV PYTHONPATH="/experiment"
+ENV PATH="/usr/local/cuda/bin:$PATH"
+ENV LD_LIBRARY_PATH="/usr/local/cuda/lib64:/usr/lib/x86_64-linux-gnu:$LD_LIBRARY_PATH"
 
-ENTRYPOINT ["run", "python3.10", "pipelines/grounding_dino/picsellia_pipeline.py"]
+ENTRYPOINT ["run", "python3", "pipelines/grounding_dino/picsellia_pipeline.py"]
