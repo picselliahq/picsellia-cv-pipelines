@@ -7,13 +7,10 @@ from picsellia_cv_engine.steps.base.dataset.uploader import upload_dataset_annot
 from picsellia_cv_engine.steps.base.model.builder import build_model
 
 from pipelines.grounding_dino.steps import process
+from pipelines.grounding_dino.utils.parameters import GroundingDinoProcessingParameters
 
 processing_context = create_picsellia_processing_context(
-    processing_parameters={
-        "box_threshold": 0.35,
-        "text_threshold": 0.25,
-        "device": "cuda",
-    },
+    processing_parameters_cls=GroundingDinoProcessingParameters,
 )
 
 
