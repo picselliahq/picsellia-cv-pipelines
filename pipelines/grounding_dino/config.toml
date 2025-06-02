@@ -1,0 +1,15 @@
+[metadata]
+name = "grounding_dino"
+version = "1.0"
+description = "This pipeline processes data for X."
+type = "DATASET_VERSION_CREATION"
+
+[execution]
+picsellia_pipeline_script = "picsellia_pipeline.py"
+local_pipeline_script = "local_pipeline.py"
+requirements_file = "pyproject.toml"
+parameters_class = "utils/parameters.py:GroundingDinoProcessingParameters"
+
+[docker]
+image_name = "soniagrh/grounding-dino"
+image_tag = "latest"
