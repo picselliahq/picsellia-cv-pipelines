@@ -13,3 +13,5 @@ parameters_class = "utils/parameters.py:GroundingDinoProcessingParameters"
 [docker]
 image_name = "soniagrh/grounding-dino"
 image_tag = "latest"
+cpu = "4"
+gpu = "1"
