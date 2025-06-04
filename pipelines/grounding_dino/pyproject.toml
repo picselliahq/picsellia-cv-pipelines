@@ -5,19 +5,18 @@ description = "Picsellia processing pipeline"
 requires-python = ">=3.10,<3.12"
 
 dependencies = [
-    "groundingdino",
+    "poetry",
     "picsellia-cv-engine",
-    "picsellia-pipelines-cli",
     "setuptools>=70.2.0",
     "timm<=1.0.10",
     "torch==2.5.1",
     "torchaudio==2.5.1",
     "torchvision==0.20.1",
+    "picsellia-pipelines-cli",
 ]
 
 [tool.uv.sources]
 picsellia-cv-engine = { git = "https://github.com/picselliahq/picsellia-cv-engine.git", rev = "fix/processing-parameters" }
-groundingdino = { git = "https://github.com/IDEA-Research/GroundingDINO.git" }
 picsellia-pipelines-cli = { git = "https://github.com/picselliahq/picsellia-pipelines-cli.git", rev = "fix/logs" }
 
 [[tool.uv.index]]
