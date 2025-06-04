@@ -42,7 +42,7 @@ def process(picsellia_model: Model, picsellia_dataset: CocoDataset):
         coco=picsellia_dataset.coco_data,
         parameters=parameters,
     )
-    print(f"output_coco: {output_coco}")
+    
     # Assign processed data to output dataset
     picsellia_dataset.coco_data = output_coco
 
