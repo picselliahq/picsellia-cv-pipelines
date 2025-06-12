@@ -431,8 +431,8 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
-    { name = "picsellia-cv-engine", git = "https://github.com/picselliahq/picsellia-cv-engine.git?rev=fix%2Fprocessing-parameters" },
-    { name = "picsellia-pipelines-cli", git = "https://github.com/picselliahq/picsellia-pipelines-cli.git?rev=fix%2Flogs" },
+    { name = "picsellia-cv-engine", git = "https://github.com/picselliahq/picsellia-cv-engine.git?rev=fix%2Fpython-version" },
+    { name = "picsellia-pipelines-cli", git = "https://github.com/picselliahq/picsellia-pipelines-cli.git?rev=feat%2Fpre-annotation-template" },
     { name = "poetry" },
     { name = "setuptools", specifier = ">=70.2.0" },
     { name = "timm", specifier = "<=1.0.10" },
@@ -1083,7 +1083,7 @@ wheels = [
 [[package]]
 name = "picsellia-cv-engine"
 version = "0.1.0"
-source = { git = "https://github.com/picselliahq/picsellia-cv-engine.git?rev=fix%2Fprocessing-parameters#e3ca567292501e40b3144b350e7b6a6a1ecbf635" }
+source = { git = "https://github.com/picselliahq/picsellia-cv-engine.git?rev=fix%2Fpython-version#5281382b699e6da20e02a91f0f22dbebe3893c73" }
 dependencies = [
     { name = "numpy" },
     { name = "pandas" },
@@ -1096,7 +1096,7 @@ dependencies = [
 [[package]]
 name = "picsellia-pipelines-cli"
 version = "0.1.0"
-source = { git = "https://github.com/picselliahq/picsellia-pipelines-cli.git?rev=fix%2Flogs#1805be48f6d8c48edebba749de2440ed4ab64c8b" }
+source = { git = "https://github.com/picselliahq/picsellia-pipelines-cli.git?rev=feat%2Fpre-annotation-template#0b789012f89f25d4ff65b39a392e09765d7b7e8b" }
 dependencies = [
     { name = "dotenv" },
     { name = "picsellia" },
