@@ -38,14 +38,6 @@ def process_images(
             text_threshold=parameters.get("text_threshold", 0.5),
         )
 
-        output_vis_dir = parameters.get("output_vis_dir", "annotated_images")
-        os.makedirs(output_vis_dir, exist_ok=True)
-
-        box_annotator = sv.BoxAnnotator()
-        annotated_image = box_annotator.annotate(scene=image_bgr, detections=detections)
-        output_path = os.path.join(output_vis_dir, image_filename)
-        cv2.imwrite(output_path, annotated_image)
-
         for ann_id, box in enumerate(detections.xyxy):
             category_id = (
                 int(detections.class_id[ann_id])
