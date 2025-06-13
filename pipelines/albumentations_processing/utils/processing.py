@@ -57,18 +57,16 @@ def get_augmentation_pipeline(
             )
         )
 
-    # Configuration selon le type de dataset
     compose_kwargs = {}
 
     if inference_type == InferenceType.OBJECT_DETECTION:
         compose_kwargs["bbox_params"] = A.BboxParams(
-            format="coco", label_fields=["bbox_ids"]
+            format="coco", label_fields=["bbox_labels"]
         )
     elif inference_type == InferenceType.SEGMENTATION:
         compose_kwargs["keypoint_params"] = A.KeypointParams(
             format="xy", label_fields=["keypoint_ids"], remove_invisible=False
         )
-    # Pour CLASSIFICATION, pas besoin de paramètres supplémentaires
 
     return A.Compose(augmentations, **compose_kwargs)
 
@@ -151,15 +149,15 @@ def apply_bbox_augmentation(
 
     # Prepare bboxes for transformation
     bboxes = []
-    bbox_ids = []
+    bbox_labels = []
 
     for ann in annotations:
         if "bbox" in ann:
             bboxes.append(ann["bbox"])
-            bbox_ids.append(ann["id"])
+            bbox_labels.append(ann["category_id"])
 
     # Apply transformation
-    transformed = transform(image=img_np, bboxes=bboxes, bbox_ids=bbox_ids)
+    transformed = transform(image=img_np, bboxes=bboxes, bbox_labels=bbox_labels)
 
     processed_img = numpy_to_pil(transformed["image"])
     transformed_annotations = []
