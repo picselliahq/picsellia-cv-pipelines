@@ -4,14 +4,11 @@ from picsellia_cv_engine.core import CocoDataset
 from picsellia_cv_engine.core.contexts import PicselliaProcessingContext
 from picsellia_cv_engine.decorators.pipeline_decorator import Pipeline
 from picsellia_cv_engine.decorators.step_decorator import step
-
-from albumentations_processing.utils.processing import process_images
+from utils.processing import process_images
 
 
 @step
-def process(
-    input_dataset: CocoDataset, output_dataset: CocoDataset
-):
+def process(input_dataset: CocoDataset, output_dataset: CocoDataset):
     """
     🚀 This function processes the dataset using `process_images()`.
 
@@ -43,9 +40,10 @@ def process(
         parameters=parameters,
         output_images_dir=output_dataset.images_dir,
         output_coco=output_coco,
+        inference_type=input_dataset.dataset_version.type,
     )
     # Assign processed data to output dataset
     output_dataset.coco_data = output_coco
 
-    print(f"✅ Dataset processing complete!")
+    print("✅ Dataset processing complete!")
     return output_dataset
