@@ -62,7 +62,24 @@ def albumentations_processing_pipeline():
     dataset_collection["output"] = process(
         dataset_collection["input"], dataset_collection["output"]
     )
-    upload_full_dataset(dataset_collection["output"], use_id=False)
+    datalake_id = context.input_dataset_version.list_assets(limit=1)[0].get_data().datalake_id
+    datalake = context.client.get_datalake(id=datalake_id)
+    context.processing_parameters.datalake = datalake.name
+
+    dataset = initialize_coco_data(dataset=dataset_collection["output"])
+    annotations = dataset.coco_data.get("annotations", [])
+    configure_dataset_type(dataset=dataset, annotations=annotations)
+    data_tags: list[str] = [context.processing_parameters.data_tag]
+    data = datalake.upload_data(
+        filepaths=[
+            os.path.join(dataset.images_dir, image_filename)
+            for image_filename in os.listdir(dataset.images_dir)
+        ],
+        tags=data_tags,
+    )
+    job = dataset.dataset_version.add_data(data=data, wait=False)
+    job.wait_for_done(blocking_time_increment=5.0, attempts=40)
+    upload_annotations(dataset, False, True, True)
     return dataset_collection
 
 
