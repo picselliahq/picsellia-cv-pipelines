@@ -17,26 +17,19 @@ def train(picsellia_model: Model, picsellia_datasets: DatasetCollection[CocoData
     os.makedirs(odvg_dir, exist_ok=True)
 
     train_dir = val_dir = None
-    train_jsonl = val_json = None
+    train_jsonl = val_jsonl = None
     label_map_path = odvg_dir / "label_map.json"
 
-    # Générer les fichiers ODVG + label map
     for dataset in picsellia_datasets:
         if dataset.name.lower() not in {"train", "val"}:
             continue
         name = dataset.name.lower()
-        dataset_dir = odvg_dir / name
-        os.makedirs(dataset_dir / "images", exist_ok=True)
-        os.makedirs(dataset_dir / "annotations", exist_ok=True)
-
-        dataset.download_assets(destination_dir=str(dataset_dir / "images"))
-        dataset.download_annotations(destination_dir=str(dataset_dir / "annotations"))
-
         coco_file = os.path.join(dataset.annotations_dir, "coco_annotations.json")
-        jsonl_file = os.path.join(dataset_dir, f"{name}.odvg.jsonl")
+        jsonl_file = odvg_dir / name / f"{name}.odvg.jsonl"
+        jsonl_file.parent.mkdir(parents=True, exist_ok=True)
 
         if name == "train":
-            train_dir = dataset_dir / "images"
+            train_dir = dataset.images_dir
             train_jsonl = jsonl_file
             coco_to_odvg(
                 coco_path=coco_file,
@@ -46,35 +39,47 @@ def train(picsellia_model: Model, picsellia_datasets: DatasetCollection[CocoData
             )
 
         elif name == "val":
-            val_dir = dataset_dir / "images"
-            val_json = coco_file  # COCO val reste en COCO
+            val_dir = dataset.images_dir
+            val_jsonl = jsonl_file
+            coco_to_odvg(
+                coco_path=coco_file,
+                images_dir=val_dir,
+                output_path=jsonl_file,
+                label_map_path=label_map_path,
+            )
 
-    # Générer le fichier de config ODVG pour Open-GroundingDino
     generate_odvg_config(
         root_dir=root_dir,
         train_root=str(train_dir),
         jsonl_path=str(train_jsonl),
         label_map_path=str(label_map_path),
         val_root=str(val_dir),
-        val_ann=str(val_json),
+        val_jsonl=str(val_jsonl),
     )
 
     repo_path = Path(__file__).parent / "Open-GroundingDino"
 
+    py_config_path = repo_path / "config/cfg_odvg.py"
+    append_odvg_eval_config(config_path=py_config_path, label_map_path=label_map_path)
+
+    pipeline_root = Path(__file__).parent
+    train_script = pipeline_root / "train.sh"
+
     subprocess.run(
         [
             "bash",
-            str(repo_path / "train_dist.sh"),
+            train_script,
             "1",
             str(repo_path / "config/cfg_odvg.py"),
             str(root_dir / "datasets_mixed_odvg.json"),
             str(root_dir / "grounding_dino_logs"),
+            picsellia_model.pretrained_weights_path,
         ],
         check=True,
         cwd=str(repo_path),
     )
 
-    # Sauvegarde du modèle (à adapter selon où est le .pth final)
+    # Chemin final du checkpoint
     trained_model_path = (
         root_dir / "grounding_dino_logs" / "GroundingDINO" / "checkpoint.pth"
     )
@@ -92,30 +97,33 @@ def coco_to_odvg(coco_path, images_dir, output_path, label_map_path):
 
     images = {img["id"]: img for img in coco["images"]}
     categories = {cat["id"]: cat["name"] for cat in coco["categories"]}
-    label_map = {str(i): cat for i, cat in enumerate(sorted(set(categories.values())))}
-    category_to_id = {v: int(k) for k, v in label_map.items()}
+
+    category_ids = sorted(categories.keys())
+    coco_id_to_index = {coco_id: i for i, coco_id in enumerate(category_ids)}
+    index_to_name = {i: categories[coco_id] for coco_id, i in coco_id_to_index.items()}
 
     with open(label_map_path, "w") as lm_file:
-        json.dump(label_map, lm_file, indent=2)
+        json.dump(index_to_name, lm_file, indent=2)
 
     annotations_by_image = {}
     for ann in coco["annotations"]:
         img_id = ann["image_id"]
-        if img_id not in annotations_by_image:
-            annotations_by_image[img_id] = []
-        annotations_by_image[img_id].append(ann)
+        annotations_by_image.setdefault(img_id, []).append(ann)
 
     with open(output_path, "w") as out_file:
         for img_id, anns in tqdm(annotations_by_image.items()):
             img = images[img_id]
             detection = {"instances": []}
             for ann in anns:
-                category = categories[ann["category_id"]]
+                coco_cat_id = ann["category_id"]
+                index_id = coco_id_to_index[coco_cat_id]
+                category_name = categories[coco_cat_id]
+
                 detection["instances"].append(
                     {
                         "bbox": ann["bbox"],
-                        "label": category_to_id[category],
-                        "category": category,
+                        "label": index_id,
+                        "category": category_name,
                     }
                 )
 
@@ -129,7 +137,7 @@ def coco_to_odvg(coco_path, images_dir, output_path, label_map_path):
 
 
 def generate_odvg_config(
-    root_dir, train_root, jsonl_path, label_map_path, val_root, val_ann
+    root_dir, train_root, jsonl_path, label_map_path, val_root, val_jsonl
 ):
     config = {
         "train": [
@@ -143,12 +151,24 @@ def generate_odvg_config(
         "val": [
             {
                 "root": val_root,
-                "anno": val_ann,
-                "label_map": None,
-                "dataset_mode": "coco",
+                "anno": val_jsonl,
+                "label_map": label_map_path,
+                "dataset_mode": "odvg",
             }
         ],
     }
     config_path = root_dir / "datasets_mixed_odvg.json"
     with open(config_path, "w") as f:
         json.dump(config, f, indent=2)
+
+
+def append_odvg_eval_config(config_path: Path, label_map_path: Path):
+    with open(label_map_path) as f:
+        label_map = json.load(f)
+
+    label_list = [label_map[str(i)] for i in range(len(label_map))]
+
+    with open(config_path, "a") as f:  # append mode
+        f.write("\n\n# Auto-appended for ODVG training\n")
+        f.write("use_coco_eval = False\n")
+        f.write(f"label_list = {label_list}\n")
