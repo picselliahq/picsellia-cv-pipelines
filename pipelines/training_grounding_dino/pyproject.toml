@@ -1,0 +1,34 @@
+[project]
+name = "training_grounding_dino"
+version = "0.1.0"
+description = "YoloV8 training pipeline"
+requires-python = ">=3.10"
+
+dependencies = [
+    "colorlog",
+    "picsellia-pipelines-cli",
+    "torch",
+    "torchvision",
+    "addict",
+    "yapf==0.40.1",
+    "cython",
+    "submitit",
+    "scipy",
+    "termcolor",
+    "timm",
+    "transformers",
+    "numpy",
+    "opencv-python",
+    "supervision==0.6.0",
+    "pycocotools",
+    "pyyaml>3.10",
+]
+
+[dependency-groups]
+dev = [
+    "picsellia-cv-engine",
+]
+
+[tool.uv.sources]
+picsellia-cv-engine = { git = "https://github.com/picselliahq/picsellia-cv-engine.git", rev = "main" }
+picsellia-pipelines-cli = { git = "https://github.com/picselliahq/picsellia-pipelines-cli.git", rev = "feat/pre-annotation-template" }
