@@ -79,7 +79,6 @@ def train(picsellia_model: Model, picsellia_datasets: DatasetCollection[CocoData
         cwd=str(repo_path),
     )
 
-    # Chemin final du checkpoint
     trained_model_path = (
         root_dir / "grounding_dino_logs" / "GroundingDINO" / "checkpoint.pth"
     )
