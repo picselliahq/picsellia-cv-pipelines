@@ -11,8 +11,8 @@ requirements_file = "pyproject.toml"
 parameters_class = "utils/parameters.py:TrainingHyperParameters"
 
 [docker]
-image_name = ""
-image_tag = ""
+image_name = "soniagrh/training-grounding-dino"
+image_tag = "test"
 
 [model]
 model_name = "GroundingDINO"
