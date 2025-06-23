@@ -16,8 +16,8 @@ dependencies = [
 ]
 
 [tool.uv.sources]
-picsellia-cv-engine = { git = "https://github.com/picselliahq/picsellia-cv-engine.git", rev = "fix/python-version" }
-picsellia-pipelines-cli = { git = "https://github.com/picselliahq/picsellia-pipelines-cli.git", rev = "feat/pre-annotation-template" }
+picsellia-cv-engine = { git = "https://github.com/picselliahq/picsellia-cv-engine.git", rev = "main" }
+picsellia-pipelines-cli = { git = "https://github.com/picselliahq/picsellia-pipelines-cli.git", rev = "main" }
 
 [[tool.uv.index]]
 url = "https://download.pytorch.org/whl/cu124"
