@@ -7,16 +7,17 @@ requires-python = ">=3.10,<3.12"
 dependencies = [
     "poetry",
     "picsellia-cv-engine",
+    "picsellia-pipelines-cli",
     "setuptools>=70.2.0",
     "timm<=1.0.10",
     "torch==2.5.1",
     "torchaudio==2.5.1",
     "torchvision==0.20.1",
-    "picsellia-pipelines-cli",
+    "opencv-python",
 ]
 
 [tool.uv.sources]
-picsellia-cv-engine = { git = "https://github.com/picselliahq/picsellia-cv-engine.git", rev = "main" }
+picsellia-cv-engine = { git = "https://github.com/picselliahq/picsellia-cv-engine.git", rev = "feat/add-grounding-dino-inference" }
 picsellia-pipelines-cli = { git = "https://github.com/picselliahq/picsellia-pipelines-cli.git", rev = "main" }
 
 [[tool.uv.index]]
