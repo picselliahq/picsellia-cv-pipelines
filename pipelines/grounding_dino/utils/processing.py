@@ -2,7 +2,6 @@ import os
 from typing import Any
 
 import cv2
-import supervision as sv
 from groundingdino.util.inference import Model
 from picsellia_cv_engine.core import Model as PicselliaModel
 
