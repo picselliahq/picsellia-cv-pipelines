@@ -36,7 +36,7 @@ def grounding_dino_pipeline():
     )
     picsellia_dataset = convert_predictions_to_coco(
         predictions=predictions,
-        picsellia_dataset=picsellia_dataset,
+        dataset=picsellia_dataset,
     )
     upload_dataset_annotations(dataset=picsellia_dataset, use_id=True)
 
