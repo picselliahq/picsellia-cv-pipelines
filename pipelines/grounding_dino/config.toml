@@ -1,14 +1,14 @@
 [metadata]
 name = "grounding_dino"
 version = "1.0"
-description = "This pipeline processes data for X."
-type = "DATASET_VERSION_CREATION"
+description = "This pipeline uses the Grounding DINO model to automatically generate bounding box pre-annotations based on the dataset's label list."
+type = "PRE_ANNOTATION"
 
 [execution]
 picsellia_pipeline_script = "picsellia_pipeline.py"
 local_pipeline_script = "local_pipeline.py"
 requirements_file = "pyproject.toml"
-parameters_class = "utils/parameters.py:GroundingDinoProcessingParameters"
+parameters_class = "utils/parameters.py:ProcessingParameters"
 
 [docker]
 image_name = "picsellia/processing-grounding-dino"
