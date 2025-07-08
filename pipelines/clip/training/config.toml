@@ -1,0 +1,20 @@
+[metadata]
+name = "training"
+version = "1.0"
+description = "Training pipeline using YOLO and Ultralytics."
+type = "TRAINING"
+
+[execution]
+picsellia_pipeline_script = "picsellia_pipeline.py"
+local_pipeline_script = "local_pipeline.py"
+requirements_file = "pyproject.toml"
+parameters_class = "utils/parameters.py:TrainingHyperParameters"
+
+[docker]
+image_name = ""
+image_tag = ""
+
+[model]
+model_name = "CLIP"
+model_version_id = "0197e93d-11bf-7faa-af3f-a9a1940e0de9"
+model_version_name = "v1"

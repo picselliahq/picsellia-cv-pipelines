@@ -1,0 +1,22 @@
+[project]
+name = "training"
+version = "0.1.0"
+description = "CLIP fine-tuning pipeline"
+requires-python = ">=3.10"
+
+dependencies = [
+    "picsellia-pipelines-cli",
+    "torchvision>=0.16.0",
+    "datasets>=2.18.0",
+    "Pillow",
+    "transformers",
+    "accelerate>=0.26.0"
+]
+
+[dependency-groups]
+dev = [
+    "picsellia-cv-engine",
+]
+
+[tool.uv.sources]
+transformers = { git = "https://github.com/huggingface/transformers" }
