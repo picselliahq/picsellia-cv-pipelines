@@ -9,6 +9,6 @@ class TrainingHyperParameters(HyperParameters):
         self.batch_size = self.extract_parameter(
             ["batch_size"], expected_type=int, default=8
         )
-        self.image_size = self.extract_parameter(
-            ["image_size"], expected_type=int, default=640
+        self.caption_prompt = self.extract_parameter(
+            ["caption_prompt"], expected_type=str, default="Describe the image"
         )
