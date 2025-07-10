@@ -1,0 +1,6 @@
+Pillow>=9.0.0
+picsellia==6.18.2
+safetensors
+tabulate
+torch>=2.0.0
+transformers>=4.40.0
