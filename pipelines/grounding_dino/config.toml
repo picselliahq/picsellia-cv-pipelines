@@ -12,6 +12,6 @@ parameters_class = "utils/parameters.py:ProcessingParameters"
 
 [docker]
 image_name = "picsellia/processing-grounding-dino"
-image_tag = "test"
+image_tag = "latest"
 cpu = "4"
 gpu = "1"
