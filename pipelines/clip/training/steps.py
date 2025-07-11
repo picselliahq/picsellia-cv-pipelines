@@ -88,13 +88,17 @@ def prepare_caption_model(device: str):
 
 
 def build_clip_command(
+    model_name: str,
     script_path: str,
     output_dir: str,
     train_file: str,
     val_file: str,
     test_file: str,
-    batch_size: int,
     epochs: int,
+    batch_size: int,
+    learning_rate: float,
+    warmup_steps: int,
+    weight_decay: float,
 ) -> list[str]:
     """Builds the CLI command to run the CLIP training script."""
     return [
@@ -103,7 +107,7 @@ def build_clip_command(
         "--output_dir",
         output_dir,
         "--model_name_or_path",
-        "openai/clip-vit-large-patch14-336",
+        model_name,
         "--do_train",
         "--do_eval",
         "--do_predict",
@@ -126,11 +130,11 @@ def build_clip_command(
         "--num_train_epochs",
         str(epochs),
         "--learning_rate",
-        "5e-5",
+        str(learning_rate),
         "--warmup_steps",
-        "0",
+        str(warmup_steps),
         "--weight_decay",
-        "0.1",
+        str(weight_decay),
         "--overwrite_output_dir",
         "--logging_strategy",
         "epoch",
@@ -199,13 +203,22 @@ def run_clip_training(
     train_json: str,
     val_json: str,
     test_json: str,
-    batch_size: int,
-    epochs: int,
     context: PicselliaTrainingContext | LocalTrainingContext,
 ) -> None:
     """Executes CLIP training script and logs results."""
+
     command = build_clip_command(
-        run_script_path, output_dir, train_json, val_json, test_json, batch_size, epochs
+        model_name=context.hyperparameters.model_name,
+        script_path=run_script_path,
+        output_dir=output_dir,
+        train_file=train_json,
+        val_file=val_json,
+        test_file=test_json,
+        epochs=context.hyperparameters.epochs,
+        batch_size=context.hyperparameters.batch_size,
+        learning_rate=context.hyperparameters.learning_rate,
+        warmup_steps=context.hyperparameters.warmup_steps,
+        weight_decay=context.hyperparameters.weight_decay,
     )
 
     process = subprocess.Popen(
@@ -271,14 +284,12 @@ def train(picsellia_model: Model, picsellia_datasets: DatasetCollection[CocoData
     )
 
     run_clip_training(
-        run_script_path,
-        output_dir,
-        train_json,
-        val_json,
-        test_json,
-        batch_size=context.hyperparameters.batch_size,
-        epochs=context.hyperparameters.epochs,
+        run_script_path=run_script_path,
+        output_dir=output_dir,
+        train_json=train_json,
+        val_json=val_json,
+        test_json=test_json,
         context=context,
     )
 
-    save_best_checkpoint(output_dir, context)
+    save_best_checkpoint(output_dir=output_dir, context=context)
