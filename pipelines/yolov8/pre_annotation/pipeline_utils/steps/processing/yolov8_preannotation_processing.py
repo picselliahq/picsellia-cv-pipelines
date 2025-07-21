@@ -10,8 +10,7 @@ from picsellia_cv_engine.core.contexts.processing.dataset.picsellia_processing_c
 from picsellia_cv_engine.decorators.pipeline_decorator import Pipeline
 from picsellia_cv_engine.decorators.step_decorator import step
 from picsellia_cv_engine.frameworks.ultralytics.model.model import UltralyticsModel
-
-from yolov8.pre_annotation.pipeline_utils.steps_utils.processing.yolov8_preannotation_processing import (
+from pre_annotation.pipeline_utils.steps_utils.processing.yolov8_preannotation_processing import (
     PreAnnotator,
     _check_model_type_sanity,
     _get_model_labels_name,
