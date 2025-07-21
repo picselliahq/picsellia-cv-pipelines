@@ -18,7 +18,5 @@ def get_processing_ultralytics_model() -> UltralyticsModel:
         model_version=model_version,
         trained_weights_name=context.processing_parameters.model_file_name,
     )
-    model.download_weights(
-        destination_dir=os.path.join(os.getcwd(), context.job_id, "model")
-    )
+    model.download_weights(destination_dir=os.path.join(context.working_dir, "model"))
     return model
