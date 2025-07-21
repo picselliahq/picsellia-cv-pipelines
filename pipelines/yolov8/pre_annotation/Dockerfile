@@ -5,15 +5,14 @@ RUN apt-get update && apt-get install -y \
     git \
     && rm -rf /var/lib/apt/lists/*
 
-RUN uv pip install --python=$(which python3.10) git+https://github.com/picselliahq/picsellia-cv-engine.git@main
-
 WORKDIR /experiment
 
 ARG REBUILD_ALL
 COPY ./ ./pre_annotation
 ARG REBUILD_PICSELLIA
 
-RUN uv pip install --python=$(which python3.10) --no-cache -r ./pre_annotation/requirements.txt
+RUN uv pip install --python=$(which python3.10) git+https://github.com/picselliahq/picsellia-cv-engine.git@main --project pre_annotation
+RUN uv pip install --python=$(which python3.10) --no-cache -r ./pre_annotation/requirements.txt --project pre_annotation
 
 ENV PYTHONPATH=":/experiment"
 
