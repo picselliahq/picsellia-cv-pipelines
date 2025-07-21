@@ -10,11 +10,11 @@ RUN uv pip install --python=$(which python3.10) git+https://github.com/picsellia
 WORKDIR /experiment
 
 ARG REBUILD_ALL
-COPY ./pipelines/yolov8 ./pipelines/yolov8
+COPY ./ ./pre_annotation
 ARG REBUILD_PICSELLIA
 
-RUN uv pip install --python=$(which python3.10) --no-cache -r ./pipelines/yolov8/pre_annotation/requirements.txt
+RUN uv pip install --python=$(which python3.10) --no-cache -r ./pre_annotation/requirements.txt
 
 ENV PYTHONPATH=":/experiment"
 
-ENTRYPOINT ["run", "python3.10", "pipelines/yolov8/pre_annotation/processing_pipeline.py"]
+ENTRYPOINT ["run", "python3.10", "./pre_annotation/picsellia_pipeline.py"]

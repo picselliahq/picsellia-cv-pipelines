@@ -14,16 +14,16 @@ from picsellia_cv_engine.core.services.model.evaluator.model_evaluator import (
 from picsellia_cv_engine.decorators.pipeline_decorator import Pipeline
 from picsellia_cv_engine.decorators.step_decorator import step
 
-from pipelines.paddle_ocr.pipeline_utils.model.paddle_ocr_model_collection import (
+from paddle_ocr.pipeline_utils.model.paddle_ocr_model_collection import (
     PaddleOCRModelCollection,
 )
-from pipelines.paddle_ocr.pipeline_utils.parameters.paddle_ocr_augmentation_parameters import (
+from paddle_ocr.pipeline_utils.parameters.paddle_ocr_augmentation_parameters import (
     PaddleOCRAugmentationParameters,
 )
-from pipelines.paddle_ocr.pipeline_utils.parameters.paddle_ocr_hyper_parameters import (
+from paddle_ocr.pipeline_utils.parameters.paddle_ocr_hyper_parameters import (
     PaddleOCRHyperParameters,
 )
-from pipelines.paddle_ocr.pipeline_utils.steps_utils.model_prediction.paddle_ocr_model_collection_predictor import (
+from paddle_ocr.pipeline_utils.steps_utils.model_prediction.paddle_ocr_model_collection_predictor import (
     PaddleOCRModelCollectionPredictor,
 )
 

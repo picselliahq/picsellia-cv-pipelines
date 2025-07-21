@@ -6,13 +6,13 @@ from picsellia_cv_engine.core import (
 )
 from picsellia_cv_engine.core.models import Model
 
-from pipelines.paddle_ocr.pipeline_utils.dataset.paddle_ocr_dataset_context import (
+from paddle_ocr.pipeline_utils.dataset.paddle_ocr_dataset_context import (
     PaddleOCRDataset,
 )
-from pipelines.paddle_ocr.pipeline_utils.model.paddle_ocr_model_collection import (
+from paddle_ocr.pipeline_utils.model.paddle_ocr_model_collection import (
     PaddleOCRModelCollection,
 )
-from pipelines.paddle_ocr.pipeline_utils.parameters.paddle_ocr_hyper_parameters import (
+from paddle_ocr.pipeline_utils.parameters.paddle_ocr_hyper_parameters import (
     PaddleOCRHyperParameters,
 )
 

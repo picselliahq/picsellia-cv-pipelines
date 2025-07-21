@@ -20,7 +20,7 @@ from picsellia_cv_engine.steps.ultralytics.model.loader import (
     load_ultralytics_model,
 )
 
-from pipelines.yolov8.training.steps import (
+from yolov8.training.steps import (
     simple_train_ultralytics_model,
 )
 

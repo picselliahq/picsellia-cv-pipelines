@@ -15,7 +15,7 @@ from PIL import Image
 from torch._C._te import Tensor
 from torchvision.transforms import transforms
 
-from pipelines.diversified_dataset_extractor.pipeline_utils.parameters.processing_diversified_data_extractor_parameters import (
+from diversified_dataset_extractor.pipeline_utils.parameters.processing_diversified_data_extractor_parameters import (
     ProcessingDiversifiedDataExtractorParameters,
 )
 

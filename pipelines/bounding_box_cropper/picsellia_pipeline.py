@@ -7,13 +7,13 @@ from picsellia_cv_engine.decorators.pipeline_decorator import pipeline
 from picsellia_cv_engine.steps.base.dataset.loader import load_coco_datasets
 from picsellia_cv_engine.steps.base.dataset.uploader import upload_full_dataset
 
-from pipelines.bounding_box_cropper.pipeline_utils.parameters.processing_bounding_box_cropper_parameters import (
+from bounding_box_cropper.pipeline_utils.parameters.processing_bounding_box_cropper_parameters import (
     ProcessingBoundingBoxCropperParameters,
 )
-from pipelines.bounding_box_cropper.pipeline_utils.steps.data_validation.processing_bounding_box_cropper_data_validator import (
+from bounding_box_cropper.pipeline_utils.steps.data_validation.processing_bounding_box_cropper_data_validator import (
     validate_bounding_box_cropper_data,
 )
-from pipelines.bounding_box_cropper.pipeline_utils.steps.processing.bounding_box_cropper_processing import (
+from bounding_box_cropper.pipeline_utils.steps.processing.bounding_box_cropper_processing import (
     process,
 )
 

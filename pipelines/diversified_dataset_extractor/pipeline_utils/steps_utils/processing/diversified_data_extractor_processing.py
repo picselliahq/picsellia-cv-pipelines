@@ -18,7 +18,7 @@ from PIL import Image, ImageOps
 from scipy.spatial import KDTree
 from tqdm import tqdm
 
-from pipelines.diversified_dataset_extractor.pipeline_utils.steps.model_loading.processing_diversified_data_extractor_model_loader import (
+from diversified_dataset_extractor.pipeline_utils.steps.model_loading.processing_diversified_data_extractor_model_loader import (
     EmbeddingModel,
 )
 

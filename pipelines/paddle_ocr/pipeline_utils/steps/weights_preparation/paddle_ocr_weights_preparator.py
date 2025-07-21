@@ -11,19 +11,19 @@ from picsellia_cv_engine.core.parameters.export_parameters import (
 from picsellia_cv_engine.decorators.pipeline_decorator import Pipeline
 from picsellia_cv_engine.decorators.step_decorator import step
 
-from pipelines.paddle_ocr.pipeline_utils.dataset.paddle_ocr_dataset_context import (
+from paddle_ocr.pipeline_utils.dataset.paddle_ocr_dataset_context import (
     PaddleOCRDataset,
 )
-from pipelines.paddle_ocr.pipeline_utils.model.paddle_ocr_model_collection import (
+from paddle_ocr.pipeline_utils.model.paddle_ocr_model_collection import (
     PaddleOCRModelCollection,
 )
-from pipelines.paddle_ocr.pipeline_utils.parameters.paddle_ocr_augmentation_parameters import (
+from paddle_ocr.pipeline_utils.parameters.paddle_ocr_augmentation_parameters import (
     PaddleOCRAugmentationParameters,
 )
-from pipelines.paddle_ocr.pipeline_utils.parameters.paddle_ocr_hyper_parameters import (
+from paddle_ocr.pipeline_utils.parameters.paddle_ocr_hyper_parameters import (
     PaddleOCRHyperParameters,
 )
-from pipelines.paddle_ocr.pipeline_utils.steps_utils.weights_preparation.paddle_ocr_model_collection_preparator import (
+from paddle_ocr.pipeline_utils.steps_utils.weights_preparation.paddle_ocr_model_collection_preparator import (
     PaddleOCRModelCollectionPreparator,
 )
 

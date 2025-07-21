@@ -8,13 +8,13 @@ from picsellia_cv_engine.decorators.pipeline_decorator import pipeline
 from picsellia_cv_engine.steps.base.dataset.loader import load_coco_datasets
 from picsellia_cv_engine.steps.base.dataset.uploader import upload_full_dataset
 
-from pipelines.dataset_tiler.pipeline_utils.steps.data_validation.processing_tiler_data_validator import (
+from dataset_tiler.pipeline_utils.steps.data_validation.processing_tiler_data_validator import (
     validate_tiler_data,
 )
-from pipelines.dataset_tiler.pipeline_utils.steps.processing.tiler_processing import (
+from dataset_tiler.pipeline_utils.steps.processing.tiler_processing import (
     process,
 )
-from pipelines.dataset_tiler.pipeline_utils.steps_utils.processing.base_tiler_processing import (
+from dataset_tiler.pipeline_utils.steps_utils.processing.base_tiler_processing import (
     TileMode,
 )
 

@@ -14,7 +14,7 @@ from picsellia_cv_engine.core.services.model.predictor.model_collection_predicto
     ModelCollectionPredictor,
 )
 
-from pipelines.paddle_ocr.pipeline_utils.model.paddle_ocr_model_collection import (
+from paddle_ocr.pipeline_utils.model.paddle_ocr_model_collection import (
     PaddleOCRModelCollection,
 )
 

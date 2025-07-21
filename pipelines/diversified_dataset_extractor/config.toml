@@ -1,0 +1,17 @@
+[metadata]
+name = "dataset-diversifier"
+version = "1.0"
+description = "This pipeline processes data for X."
+type = "DATASET_VERSION_CREATION"
+
+[execution]
+picsellia_pipeline_script = "picsellia_pipeline.py"
+local_pipeline_script = "local_pipeline.py"
+requirements_file = "requirements.txt"
+parameters_class = "pipeline_utils/parameters/processing_diversified_data_extractor_parameters.py:ProcessingDiversifiedDataExtractorParameters"
+
+[docker]
+image_name = "picsellia/processing-dataset-diversifier"
+image_tag = "latest"
+cpu = "8"
+gpu = "0"

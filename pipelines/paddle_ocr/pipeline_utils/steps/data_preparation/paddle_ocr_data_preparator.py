@@ -7,10 +7,10 @@ from picsellia_cv_engine.core import (
 from picsellia_cv_engine.decorators.pipeline_decorator import Pipeline
 from picsellia_cv_engine.decorators.step_decorator import step
 
-from pipelines.paddle_ocr.pipeline_utils.dataset.paddle_ocr_dataset_context import (
+from paddle_ocr.pipeline_utils.dataset.paddle_ocr_dataset_context import (
     PaddleOCRDataset,
 )
-from pipelines.paddle_ocr.pipeline_utils.steps_utils.data_preparation.paddle_ocr_dataset_context_preparator import (
+from paddle_ocr.pipeline_utils.steps_utils.data_preparation.paddle_ocr_dataset_context_preparator import (
     PaddleOCRDatasetPreparator,
 )
 
