@@ -98,7 +98,7 @@ class PaddleOCRModelTrainer:
 
         command = [
             "python3.10",
-            "src/pipelines/paddle_ocr/PaddleOCR/tools/train.py",
+            "paddle_ocr/PaddleOCR/tools/train.py",
             "-c",
             config_path,
         ]

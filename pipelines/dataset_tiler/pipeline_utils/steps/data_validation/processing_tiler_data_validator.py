@@ -18,10 +18,10 @@ from picsellia_cv_engine.core.services.data.dataset.validator.segmentation.coco_
 from picsellia_cv_engine.decorators.pipeline_decorator import Pipeline
 from picsellia_cv_engine.decorators.step_decorator import step
 
-from pipelines.dataset_tiler.pipeline_utils.parameters.processing_tiler_parameters import (
+from dataset_tiler.pipeline_utils.parameters.processing_tiler_parameters import (
     ProcessingTilerParameters,
 )
-from pipelines.dataset_tiler.pipeline_utils.steps_utils.data_validation.processing_tiler_data_validator import (
+from dataset_tiler.pipeline_utils.steps_utils.data_validation.processing_tiler_data_validator import (
     ProcessingTilerDataValidator,
 )
 

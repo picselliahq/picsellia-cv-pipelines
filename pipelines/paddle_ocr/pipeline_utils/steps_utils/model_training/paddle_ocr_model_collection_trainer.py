@@ -1,9 +1,9 @@
 from picsellia import Experiment
 
-from pipelines.paddle_ocr.pipeline_utils.model.paddle_ocr_model_collection import (
+from paddle_ocr.pipeline_utils.model.paddle_ocr_model_collection import (
     PaddleOCRModelCollection,
 )
-from pipelines.paddle_ocr.pipeline_utils.steps_utils.model_training.paddle_ocr_model_context_trainer import (
+from paddle_ocr.pipeline_utils.steps_utils.model_training.paddle_ocr_model_context_trainer import (
     PaddleOCRModelTrainer,
 )
 

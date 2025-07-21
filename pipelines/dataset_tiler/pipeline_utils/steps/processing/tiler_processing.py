@@ -8,10 +8,10 @@ from picsellia_cv_engine.core.contexts.processing.dataset.picsellia_processing_c
 from picsellia_cv_engine.decorators.pipeline_decorator import Pipeline
 from picsellia_cv_engine.decorators.step_decorator import step
 
-from pipelines.dataset_tiler.pipeline_utils.parameters.processing_tiler_parameters import (
+from dataset_tiler.pipeline_utils.parameters.processing_tiler_parameters import (
     ProcessingTilerParameters,
 )
-from pipelines.dataset_tiler.pipeline_utils.steps_utils.processing.tiler_processing_factory import (
+from dataset_tiler.pipeline_utils.steps_utils.processing.tiler_processing_factory import (
     TilerProcessingFactory,
 )
 

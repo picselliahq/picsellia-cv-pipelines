@@ -8,7 +8,7 @@ from picsellia_cv_engine.core import (
     CocoDataset,
 )
 
-from pipelines.paddle_ocr.pipeline_utils.dataset.paddle_ocr_dataset_context import (
+from paddle_ocr.pipeline_utils.dataset.paddle_ocr_dataset_context import (
     PaddleOCRDataset,
 )
 

@@ -27,13 +27,13 @@ RUN ln -s /experiment/run.sh /usr/bin/run && \
 
 # --- Requirements & source ---
 ARG REBUILD_ALL
-COPY ./pipelines/paddle_ocr/ ./pipelines/paddle_ocr/
+COPY ./ ./paddle_ocr
 ARG REBUILD_PICSELLIA
 
-RUN python3.10 -m pip install --no-cache -r pipelines/paddle_ocr/requirements.txt
+RUN python3.10 -m pip install --no-cache -r ./paddle_ocr/requirements.txt
 
 # --- External clone ---
-RUN git clone https://github.com/PaddlePaddle/PaddleOCR.git --branch release/2.8 /pipelines/paddle_ocr/PaddleOCR
+RUN git clone https://github.com/PaddlePaddle/PaddleOCR.git --branch release/2.8 ./paddle_ocr/PaddleOCR
 
 # --- Workspace and env ---
 RUN mkdir -p /workspace /root && chmod -R 777 /workspace /root
@@ -42,4 +42,4 @@ ENV PYTHONPATH=":/experiment" \
     PATH="/usr/local/cuda/bin:${PATH}" \
     LD_LIBRARY_PATH="/usr/local/cuda/lib64:/usr/local/cuda/lib:/usr/lib/x86_64-linux-gnu:${LD_LIBRARY_PATH}"
 
-ENTRYPOINT ["run", "python3.10", "pipelines/paddle_ocr/training_pipeline.py"]
+ENTRYPOINT ["run", "python3.10", "./paddle_ocr/picsellia_pipeline.py"]

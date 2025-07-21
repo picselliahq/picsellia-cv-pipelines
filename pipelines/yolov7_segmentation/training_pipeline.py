@@ -7,28 +7,28 @@ from picsellia_cv_engine.core.parameters.export_parameters import (
 from picsellia_cv_engine.decorators.pipeline_decorator import pipeline
 from picsellia_cv_engine.steps.base.dataset.validator import validate_dataset
 
-from pipelines.yolov7_segmentation.pipeline_utils.parameters.yolov7_augmentation_parameters import (
+from yolov7_segmentation.pipeline_utils.parameters.yolov7_augmentation_parameters import (
     Yolov7AugmentationParameters,
 )
-from pipelines.yolov7_segmentation.pipeline_utils.parameters.yolov7_hyper_parameters import (
+from yolov7_segmentation.pipeline_utils.parameters.yolov7_hyper_parameters import (
     Yolov7HyperParameters,
 )
-from pipelines.yolov7_segmentation.pipeline_utils.steps.data_extraction.yolov7_data_extractor import (
+from yolov7_segmentation.pipeline_utils.steps.data_extraction.yolov7_data_extractor import (
     yolov7_dataset_collection_extractor,
 )
-from pipelines.yolov7_segmentation.pipeline_utils.steps.data_preparation.yolov7_data_preparator import (
+from yolov7_segmentation.pipeline_utils.steps.data_preparation.yolov7_data_preparator import (
     yolov7_dataset_collection_preparator,
 )
-from pipelines.yolov7_segmentation.pipeline_utils.steps.model_evaluation.yolov7_model_evaluator import (
+from yolov7_segmentation.pipeline_utils.steps.model_evaluation.yolov7_model_evaluator import (
     yolov7_model_evaluator,
 )
-from pipelines.yolov7_segmentation.pipeline_utils.steps.model_training.yolov7_trainer import (
+from yolov7_segmentation.pipeline_utils.steps.model_training.yolov7_trainer import (
     yolov7_model_trainer,
 )
-from pipelines.yolov7_segmentation.pipeline_utils.steps.weights_extraction.yolov7_weights_extractor import (
+from yolov7_segmentation.pipeline_utils.steps.weights_extraction.yolov7_weights_extractor import (
     yolov7_model_extractor,
 )
-from pipelines.yolov7_segmentation.pipeline_utils.steps.weights_preparation.yolov7_weights_preparator import (
+from yolov7_segmentation.pipeline_utils.steps.weights_preparation.yolov7_weights_preparator import (
     yolov7_model_preparator,
 )
 
