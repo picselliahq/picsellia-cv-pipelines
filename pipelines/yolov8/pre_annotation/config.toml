@@ -12,3 +12,5 @@ requirements_file = "requirements.txt"
 [docker]
 image_name = "picsellia/preannotation-yolov8"
 image_tag = "latest"
+cpu = "8"
+gpu = "1"
