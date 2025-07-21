@@ -8,13 +8,13 @@ from picsellia_cv_engine.core.services.utils.local_context import (
 from picsellia_cv_engine.steps.base.dataset.loader import load_coco_datasets
 from picsellia_cv_engine.steps.base.dataset.uploader import upload_dataset_annotations
 
-from pipelines.yolov8.pre_annotation.pipeline_utils.steps.model_loading.processing_ultralytics_model_loader import (
+from yolov8.pre_annotation.pipeline_utils.steps.model_loading.processing_ultralytics_model_loader import (
     load_processing_ultralytics_model,
 )
-from pipelines.yolov8.pre_annotation.pipeline_utils.steps.processing.yolov8_preannotation_processing import (
+from yolov8.pre_annotation.pipeline_utils.steps.processing.yolov8_preannotation_processing import (
     process,
 )
-from pipelines.yolov8.pre_annotation.pipeline_utils.steps.weights_extraction.ultralytics_weights_extractor import (
+from yolov8.pre_annotation.pipeline_utils.steps.weights_extraction.ultralytics_weights_extractor import (
     get_processing_ultralytics_model,
 )
 

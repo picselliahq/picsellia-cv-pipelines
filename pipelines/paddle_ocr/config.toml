@@ -1,0 +1,15 @@
+[metadata]
+name = "paddle_ocr"
+version = "1.0"
+description = "This pipeline processes data for X."
+type = "TRAINING"
+
+[execution]
+picsellia_pipeline_script = "picsellia_pipeline.py"
+local_pipeline_script = "local_pipeline.py"
+requirements_file = "requirements.txt"
+parameters_class = "pipeline_utils/parameters/paddle_ocr_hyper_parameters.py:PaddleOCRHyperParameters"
+
+[docker]
+image_name = "picsellia/training-paddle-ocr"
+image_tag = "latest"

@@ -16,7 +16,7 @@ from picsellia_cv_engine.frameworks.ultralytics.services.model.trainer import (
     UltralyticsModelTrainer,
 )
 
-from pipelines.yolov8.training.utils.callbacks import UltralyticsSimpleCallbacks
+from yolov8.training.utils.callbacks import UltralyticsSimpleCallbacks
 
 
 @step

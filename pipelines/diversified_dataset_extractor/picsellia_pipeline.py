@@ -2,19 +2,19 @@ from picsellia_cv_engine.core.contexts import PicselliaProcessingContext
 from picsellia_cv_engine.decorators.pipeline_decorator import pipeline
 from picsellia_cv_engine.steps.base.dataset.loader import load_coco_datasets
 
-from pipelines.diversified_dataset_extractor.pipeline_utils.parameters.processing_diversified_data_extractor_parameters import (
+from diversified_dataset_extractor.pipeline_utils.parameters.processing_diversified_data_extractor_parameters import (
     ProcessingDiversifiedDataExtractorParameters,
 )
-from pipelines.diversified_dataset_extractor.pipeline_utils.steps.data_validation.processing_diversified_data_extractor_data_validator import (
+from diversified_dataset_extractor.pipeline_utils.steps.data_validation.processing_diversified_data_extractor_data_validator import (
     validate_diversified_data_extractor_data,
 )
-from pipelines.diversified_dataset_extractor.pipeline_utils.steps.model_loading.processing_diversified_data_extractor_model_loader import (
+from diversified_dataset_extractor.pipeline_utils.steps.model_loading.processing_diversified_data_extractor_model_loader import (
     load_diversified_data_extractor_model,
 )
-from pipelines.diversified_dataset_extractor.pipeline_utils.steps.processing.diversified_data_extractor_processing import (
+from diversified_dataset_extractor.pipeline_utils.steps.processing.diversified_data_extractor_processing import (
     process,
 )
-from pipelines.diversified_dataset_extractor.pipeline_utils.steps.weights_validation.processing_diversified_data_extractor_weights_validator import (
+from diversified_dataset_extractor.pipeline_utils.steps.weights_validation.processing_diversified_data_extractor_weights_validator import (
     validate_diversified_data_extractor_weights,
 )
 

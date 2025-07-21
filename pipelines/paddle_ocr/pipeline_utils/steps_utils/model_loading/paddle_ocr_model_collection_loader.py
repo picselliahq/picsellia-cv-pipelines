@@ -1,4 +1,4 @@
-from pipelines.paddle_ocr.PaddleOCR.paddleocr import PaddleOCR
+from paddle_ocr.PaddleOCR.paddleocr import PaddleOCR
 
 
 def paddle_ocr_load_model(

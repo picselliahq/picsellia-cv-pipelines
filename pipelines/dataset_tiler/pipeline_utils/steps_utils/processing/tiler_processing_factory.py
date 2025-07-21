@@ -2,17 +2,17 @@ from typing import Optional
 
 from picsellia.types.enums import InferenceType
 
-from pipelines.dataset_tiler.pipeline_utils.steps_utils.processing.base_tiler_processing import (
+from dataset_tiler.pipeline_utils.steps_utils.processing.base_tiler_processing import (
     BaseTilerProcessing,
     TileMode,
 )
-from pipelines.dataset_tiler.pipeline_utils.steps_utils.processing.classification_tiler_processing import (
+from dataset_tiler.pipeline_utils.steps_utils.processing.classification_tiler_processing import (
     ClassificationTilerProcessing,
 )
-from pipelines.dataset_tiler.pipeline_utils.steps_utils.processing.object_detection_tiler_processing import (
+from dataset_tiler.pipeline_utils.steps_utils.processing.object_detection_tiler_processing import (
     ObjectDetectionTilerProcessing,
 )
-from pipelines.dataset_tiler.pipeline_utils.steps_utils.processing.segmentation_tiler_processing import (
+from dataset_tiler.pipeline_utils.steps_utils.processing.segmentation_tiler_processing import (
     SegmentationTilerProcessing,
 )
 

@@ -9,11 +9,11 @@ RUN uv pip install --python=$(which python3.10) git+https://github.com/picsellia
 WORKDIR /experiment
 
 ARG REBUILD_ALL
-COPY ./pipelines/bounding_box_cropper ./pipelines/bounding_box_cropper
+COPY ./ ./bounding_box_cropper
 ARG REBUILD_PICSELLIA
 
-RUN uv pip install --python=$(which python3.10) --no-cache -r ./pipelines/bounding_box_cropper/requirements.txt
+RUN uv pip install --python=$(which python3.10) --no-cache -r ./bounding_box_cropper/requirements.txt
 
 ENV PYTHONPATH=":/experiment"
 
-ENTRYPOINT ["run", "python3.10", "pipelines/bounding_box_cropper/processing_pipeline.py"]
+ENTRYPOINT ["run", "python3.10", "./bounding_box_cropper/picsellia_pipeline.py"]
