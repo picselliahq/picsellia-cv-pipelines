@@ -6,17 +6,16 @@ from picsellia_cv_engine.core.contexts.processing.dataset.picsellia_processing_c
 from picsellia_cv_engine.decorators.pipeline_decorator import pipeline
 from picsellia_cv_engine.steps.base.dataset.loader import load_coco_datasets
 from picsellia_cv_engine.steps.base.dataset.uploader import upload_dataset_annotations
-
-from yolov8.pre_annotation.pipeline_utils.parameters.processing_yolov8_preannotation_parameters import (
+from pre_annotation.pipeline_utils.parameters.processing_yolov8_preannotation_parameters import (
     ProcessingYOLOV8PreannotationParameters,
 )
-from yolov8.pre_annotation.pipeline_utils.steps.model_loading.processing_ultralytics_model_loader import (
+from pre_annotation.pipeline_utils.steps.model_loading.processing_ultralytics_model_loader import (
     load_processing_ultralytics_model,
 )
-from yolov8.pre_annotation.pipeline_utils.steps.processing.yolov8_preannotation_processing import (
+from pre_annotation.pipeline_utils.steps.processing.yolov8_preannotation_processing import (
     process,
 )
-from yolov8.pre_annotation.pipeline_utils.steps.weights_extraction.ultralytics_weights_extractor import (
+from pre_annotation.pipeline_utils.steps.weights_extraction.ultralytics_weights_extractor import (
     get_processing_ultralytics_model,
 )
 

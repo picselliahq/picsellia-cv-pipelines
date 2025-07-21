@@ -1,61 +1,73 @@
 from argparse import ArgumentParser
 
-from picsellia.types.enums import ProcessingType
 from picsellia_cv_engine import pipeline
 from picsellia_cv_engine.core.services.utils.local_context import (
     create_local_processing_context,
 )
 from picsellia_cv_engine.steps.base.dataset.loader import load_coco_datasets
 from picsellia_cv_engine.steps.base.dataset.uploader import upload_dataset_annotations
-
-from yolov8.pre_annotation.pipeline_utils.steps.model_loading.processing_ultralytics_model_loader import (
+from pre_annotation.pipeline_utils.parameters.processing_yolov8_preannotation_parameters import (
+    ProcessingYOLOV8PreannotationParameters,
+)
+from pre_annotation.pipeline_utils.steps.model_loading.processing_ultralytics_model_loader import (
     load_processing_ultralytics_model,
 )
-from yolov8.pre_annotation.pipeline_utils.steps.processing.yolov8_preannotation_processing import (
+from pre_annotation.pipeline_utils.steps.processing.yolov8_preannotation_processing import (
     process,
 )
-from yolov8.pre_annotation.pipeline_utils.steps.weights_extraction.ultralytics_weights_extractor import (
+from pre_annotation.pipeline_utils.steps.weights_extraction.ultralytics_weights_extractor import (
     get_processing_ultralytics_model,
 )
 
 parser = ArgumentParser()
-parser.add_argument("--api_token", type=str)
-parser.add_argument("--organization_name", type=str)
-parser.add_argument("--input_dataset_version_id", type=str)
-parser.add_argument("--model_version_id", type=str)
+parser.add_argument("--api_token", required=True, type=str, help="Picsellia API token")
+parser.add_argument(
+    "--organization_name", required=True, type=str, help="Picsellia organization name"
+)
+parser.add_argument(
+    "--job_type",
+    required=True,
+    type=str,
+    choices=["DATASET_VERSION_CREATION", "PRE_ANNOTATION", "TRAINING"],
+    help="Job type",
+)
+parser.add_argument(
+    "--input_dataset_version_id",
+    required=True,
+    type=str,
+    help="Input dataset version ID",
+)
+parser.add_argument(
+    "--model_version_id", required=True, type=str, help="Model version ID"
+)
 parser.add_argument("--model_file_name", type=str)
 parser.add_argument("--confidence_threshold", type=float, default=0.1)
 parser.add_argument("--batch_size", type=int, default=8)
 parser.add_argument("--image_size", type=int, default=640)
 parser.add_argument("--label_matching_strategy", type=str, default="add")
 parser.add_argument("--device", type=str, default="cuda")
+parser.add_argument(
+    "--working_dir", required=False, type=str, help="Working directory", default=None
+)
 
 args = parser.parse_args()
 
-local_context = create_local_processing_context(
+context = create_local_processing_context(
+    processing_parameters_cls=ProcessingYOLOV8PreannotationParameters,
     api_token=args.api_token,
     organization_name=args.organization_name,
-    job_type=ProcessingType.PRE_ANNOTATION,
+    job_type=args.job_type,
     input_dataset_version_id=args.input_dataset_version_id,
     model_version_id=args.model_version_id,
-    processing_parameters={
-        "model_file_name": args.model_file_name,
-        "confidence_threshold": args.confidence_threshold,
-        "batch_size": args.batch_size,
-        "image_size": args.image_size,
-        "label_matching_strategy": args.label_matching_strategy,
-        "device": "cuda",
-        "agnostic_nms": True,
-        "replace_annotations": False,
-    },
+    working_dir=args.working_dir,
 )
 # local_context.model_version = local_context.client.get_public_model(name="YoloV8-Segmentation").get_version(version="YoloV8-m-segmentation")
-local_context.processing_parameters.agnostic_nms = True
-local_context.processing_parameters.replace_annotations = False
+context.processing_parameters.agnostic_nms = True
+context.processing_parameters.replace_annotations = False
 
 
 @pipeline(
-    context=local_context,
+    context=context,
     log_folder_path="logs/",
     remove_logs_on_completion=False,
 )
