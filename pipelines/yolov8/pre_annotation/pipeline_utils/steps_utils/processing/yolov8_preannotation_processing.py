@@ -14,8 +14,7 @@ from picsellia.sdk.dataset import DatasetVersion
 from picsellia.sdk.label import Label
 from picsellia.types.enums import InferenceType
 from picsellia_cv_engine.frameworks.ultralytics.model.model import UltralyticsModel
-
-from yolov8.pre_annotation.pipeline_utils.parameters.processing_yolov8_preannotation_parameters import (
+from pre_annotation.pipeline_utils.parameters.processing_yolov8_preannotation_parameters import (
     ProcessingYOLOV8PreannotationParameters,
 )
 
