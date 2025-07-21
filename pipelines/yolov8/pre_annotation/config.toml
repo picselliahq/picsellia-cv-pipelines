@@ -1,8 +1,8 @@
 [metadata]
-name = "Fast-Training-YoloV8"
+name = "yolov8-pre-annotation"
 version = "1.0"
 description = "This pipeline processes data for X."
-type = "TRAINING"
+type = "PRE_ANNOTATION"
 
 [execution]
 picsellia_pipeline_script = "picsellia_pipeline.py"
@@ -10,5 +10,5 @@ local_pipeline_script = "local_pipeline.py"
 requirements_file = "requirements.txt"
 
 [docker]
-image_name = "picsellia/fast-training-yolov8"
+image_name = "picsellia/preannotation-yolov8"
 image_tag = "latest"
