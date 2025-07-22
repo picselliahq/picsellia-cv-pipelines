@@ -88,7 +88,7 @@ def prepare_caption_model(device: str):
 
 
 def build_clip_command(
-    model_name: str,
+    model_name_or_path: str,
     script_path: str,
     output_dir: str,
     train_file: str,
@@ -107,7 +107,7 @@ def build_clip_command(
         "--output_dir",
         output_dir,
         "--model_name_or_path",
-        model_name,
+        model_name_or_path,
         "--do_train",
         "--do_eval",
         "--do_predict",
@@ -198,6 +198,7 @@ def parse_and_log_training_output(process, context, log_file_path):
 
 
 def run_clip_training(
+    model_name_or_path: str,
     run_script_path: str,
     output_dir: str,
     train_json: str,
@@ -208,7 +209,7 @@ def run_clip_training(
     """Executes CLIP training script and logs results."""
 
     command = build_clip_command(
-        model_name=context.hyperparameters.model_name,
+        model_name_or_path=model_name_or_path,
         script_path=run_script_path,
         output_dir=output_dir,
         train_file=train_json,
@@ -284,6 +285,7 @@ def train(picsellia_model: Model, picsellia_datasets: DatasetCollection[CocoData
     )
 
     run_clip_training(
+        model_name_or_path=picsellia_model.pretrained_weights_dir,
         run_script_path=run_script_path,
         output_dir=output_dir,
         train_json=train_json,
