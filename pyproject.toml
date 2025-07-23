@@ -3,26 +3,15 @@ name = "picsellia-cv-pipelines"
 version = "0.1.0"
 description = ""
 authors = [
-    {name = "SoniaGrh",email = "sonia.garrouch@hotmail.fr"}
+    {name = "SoniaGrh", email = "sonia.garrouch@hotmail.fr"}
 ]
+dependencies = [
+    "picsellia>=6.21.0,<7.0.0",
+    "picsellia-pipelines-cli",
+    "picsellia-cv-engine",
+]
+requires-python = ">=3.10,<3.14"
 readme = "README.md"
-
-
-[tool.poetry.dependencies]
-python = ">=3.10,<3.13"
-numpy = "<2.0"
-opencv-python = ">=4.11.0.86,<5.0.0.0"
-picsellia = ">=6.21.0,<7.0.0"
-picsellia-pipelines-cli = {git = "https://github.com/picselliahq/picsellia-pipelines-cli.git", rev = "main"}
-picsellia-cv-engine = {git = "https://github.com/picselliahq/picsellia-cv-engine.git", rev = "main"}
-
-[tool.poetry]
-package-mode = false
-
-
-[build-system]
-requires = ["poetry-core>=2.0.0,<3.0.0"]
-build-backend = "poetry.core.masonry.api"
 
 
 [tool.ruff.lint]
