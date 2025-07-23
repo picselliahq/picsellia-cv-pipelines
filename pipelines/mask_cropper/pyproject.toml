@@ -1,0 +1,16 @@
+[project]
+name = "mask_cropper"
+version = "0.1.0"
+description = "Picsellia processing pipeline"
+requires-python = ">=3.10"
+
+dependencies = [
+    "numpy>=1.26.4",
+    "opencv-python>=4.11.0.86",
+    "picsellia-pipelines-cli",
+]
+
+[dependency-groups]
+dev = [
+    "picsellia-cv-engine",
+]
