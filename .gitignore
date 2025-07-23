@@ -172,4 +172,4 @@ cython_debug/
 
 # Folders specific to processing or training runs
 
-pipelines/mask_cropper/runs
+pipelines/*/runs
