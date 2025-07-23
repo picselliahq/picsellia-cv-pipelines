@@ -9,8 +9,6 @@ dependencies = [
     "picsellia>=6.21.0,<7.0.0",
     "picsellia-pipelines-cli",
     "picsellia-cv-engine",
-    "numpy>=1.26.4",
-    "opencv-python>=4.11.0.86",
 ]
 requires-python = ">=3.10,<3.14"
 readme = "README.md"
