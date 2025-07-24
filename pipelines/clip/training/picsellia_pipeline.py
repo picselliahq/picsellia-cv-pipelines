@@ -8,7 +8,7 @@ from picsellia_cv_engine.core.services.utils.picsellia_context import (
 )
 from picsellia_cv_engine.steps.base.dataset.loader import load_yolo_datasets
 from picsellia_cv_engine.steps.base.model.builder import build_model
-from steps import train
+from steps import evaluate_clip_embeddings, train
 from utils.parameters import TrainingHyperParameters
 
 context = create_picsellia_training_context(
@@ -23,6 +23,9 @@ def training_pipeline():
     picsellia_datasets = load_yolo_datasets()
     picsellia_model = build_model(pretrained_weights_name="pretrained-weights")
     train(picsellia_model=picsellia_model, picsellia_datasets=picsellia_datasets)
+    evaluate_clip_embeddings(
+        picsellia_model=picsellia_model, dataset=picsellia_datasets["test"]
+    )
 
 
 if __name__ == "__main__":

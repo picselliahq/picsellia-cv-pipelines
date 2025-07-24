@@ -10,7 +10,7 @@ from picsellia_cv_engine.core.services.utils.local_context import (
 )
 from picsellia_cv_engine.steps.base.dataset.loader import load_coco_datasets
 from picsellia_cv_engine.steps.base.model.builder import build_model
-from steps import train
+from steps import evaluate_clip_embeddings, train
 from utils.parameters import TrainingHyperParameters
 
 parser = argparse.ArgumentParser()
@@ -36,6 +36,9 @@ def training_pipeline():
     picsellia_datasets = load_coco_datasets()
     picsellia_model = build_model(pretrained_weights_name="pretrained-weights")
     train(picsellia_model=picsellia_model, picsellia_datasets=picsellia_datasets)
+    evaluate_clip_embeddings(
+        picsellia_model=picsellia_model, dataset=picsellia_datasets["test"]
+    )
 
 
 if __name__ == "__main__":
