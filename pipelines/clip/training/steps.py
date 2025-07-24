@@ -20,7 +20,7 @@ from picsellia_cv_engine.core.contexts.training.picsellia_training_context impor
 from PIL import Image
 from transformers import InstructBlipForConditionalGeneration, InstructBlipProcessor
 
-from pipelines.clip.training.utils.evaluation import (
+from utils.evaluation import (
     apply_dbscan_clustering,
     generate_embeddings,
     load_stored_embeddings,
@@ -70,7 +70,7 @@ def train(picsellia_model: Model, picsellia_datasets: DatasetCollection[CocoData
     )
 
     run_clip_training(
-        model_name_or_path=picsellia_model.pretrained_weights_dir,
+        model_name_or_path=picsellia_model.pretrained_weights_path,
         run_script_path=run_script_path,
         output_dir=output_dir,
         train_json=train_json,
@@ -88,11 +88,14 @@ def train(picsellia_model: Model, picsellia_datasets: DatasetCollection[CocoData
 
 @step()
 def evaluate_clip_embeddings(
-    picsellia_model: Model, dataset: CocoDataset, experiment: Experiment
+    picsellia_model: Model, dataset: CocoDataset
 ):
     """
     Step d’évaluation CLIP : embeddings, UMAP, clustering DBSCAN, logging des visualisations.
     """
+    context = Pipeline.get_active_context()
+    experiment = context.experiment
+    
     # Génération ou chargement des embeddings
     evaluation_results = os.path.join(picsellia_model.results_dir, "evaluation")
     embeddings_file = os.path.join(evaluation_results, "embeddings.npz")
@@ -358,22 +361,11 @@ def save_best_checkpoint(
     best_ckpt = max(checkpoint_dirs, key=lambda p: int(p.split("-")[-1]))
     artifact_name = os.path.basename(best_ckpt)
 
-    # Destination pour le modèle exporté
-    export_dir = picsellia_model.exported_weights_dir
-    os.makedirs(export_dir, exist_ok=True)
-
-    # Copie du contenu du checkpoint dans exported_weights_dir
-    print(f"📁 Copying best checkpoint {artifact_name} to {export_dir}")
-    for item in os.listdir(best_ckpt):
-        src = os.path.join(best_ckpt, item)
-        dst = os.path.join(export_dir, item)
-        if os.path.isdir(src):
-            shutil.copytree(src, dst, dirs_exist_ok=True)
-        else:
-            shutil.copy2(src, dst)
-
+    
+    picsellia_model.exported_weights_path = best_ckpt
+    
     # Logging sur l’expérience
     print(f"📦 Logging best checkpoint: {artifact_name}")
     experiment.store(
-        name=artifact_name, path=picsellia_model.exported_weights_dir, do_zip=True
+        name=artifact_name, path=picsellia_model.exported_weights_path, do_zip=True
     )
