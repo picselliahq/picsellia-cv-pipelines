@@ -2,10 +2,12 @@ import glob
 import json
 import os
 import re
+import shutil
 import subprocess
 import sys
 
 import torch
+from picsellia import Experiment
 from picsellia.types.enums import LogType
 from picsellia_cv_engine import Pipeline, step
 from picsellia_cv_engine.core import CocoDataset, DatasetCollection, Model
@@ -18,8 +20,116 @@ from picsellia_cv_engine.core.contexts.training.picsellia_training_context impor
 from PIL import Image
 from transformers import InstructBlipForConditionalGeneration, InstructBlipProcessor
 
+from pipelines.clip.training.utils.evaluation import (
+    apply_dbscan_clustering,
+    generate_embeddings,
+    load_stored_embeddings,
+    reduce_dimensionality_umap,
+    save_cluster_images_plot,
+    save_clustering_plots,
+    save_outliers_images,
+)
+
 TRAIN_METRICS = ["loss", "grad_norm", "learning_rate"]
 EVAL_METRICS = ["eval_loss"]
+
+
+@step()
+def train(picsellia_model: Model, picsellia_datasets: DatasetCollection[CocoDataset]):
+    """Main training step for the CLIP fine-tuning pipeline."""
+    context = Pipeline.get_active_context()
+    working_dir = context.working_dir
+    os.makedirs(json_dir := os.path.join(working_dir, "json"), exist_ok=True)
+
+    train_json = os.path.join(json_dir, "train.json")
+    val_json = os.path.join(json_dir, "val.json")
+    test_json = os.path.join(json_dir, "test.json")
+
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+    model, processor = prepare_caption_model(device)
+
+    for split_name, output_path in zip(
+        ["train", "val", "test"], [train_json, val_json, test_json], strict=False
+    ):
+        export_dataset_to_clip_json(
+            model=model,
+            processor=processor,
+            dataset=picsellia_datasets[split_name],
+            output_path=output_path,
+            device=device,
+            prompt=context.hyperparameters.caption_prompt,
+        )
+
+    del model
+    torch.cuda.empty_cache()
+
+    output_dir = os.path.join(picsellia_model.results_dir, "clip_finetuned")
+    os.makedirs(output_dir, exist_ok=True)
+    run_script_path = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)), "run_clip.py"
+    )
+
+    run_clip_training(
+        model_name_or_path=picsellia_model.pretrained_weights_dir,
+        run_script_path=run_script_path,
+        output_dir=output_dir,
+        train_json=train_json,
+        val_json=val_json,
+        test_json=test_json,
+        context=context,
+    )
+
+    save_best_checkpoint(
+        output_dir=output_dir,
+        picsellia_model=picsellia_model,
+        experiment=context.experiment,
+    )
+
+
+@step()
+def evaluate_clip_embeddings(
+    picsellia_model: Model, dataset: CocoDataset, experiment: Experiment
+):
+    """
+    Step d’évaluation CLIP : embeddings, UMAP, clustering DBSCAN, logging des visualisations.
+    """
+    # Génération ou chargement des embeddings
+    evaluation_results = os.path.join(picsellia_model.results_dir, "evaluation")
+    embeddings_file = os.path.join(evaluation_results, "embeddings.npz")
+    os.makedirs(evaluation_results, exist_ok=True)
+    generate_embeddings(
+        model_path=picsellia_model.exported_weights_path,
+        images_dir=dataset.images_dir,
+        embeddings_file_path=embeddings_file,
+    )
+    embeddings, image_paths = load_stored_embeddings(file_path=embeddings_file)
+
+    # UMAP
+    reduced = reduce_dimensionality_umap(embeddings=embeddings, n_components=2)
+
+    # DBSCAN clustering
+    eps = 0.3
+    min_samples = 5
+    labels = apply_dbscan_clustering(
+        reduced, dbscan_eps=eps, dbscan_min_samples=min_samples
+    )
+
+    # Logging
+    cluster_dir = os.path.join(evaluation_results, f"clusters_eps{eps}")
+    os.makedirs(cluster_dir, exist_ok=True)
+
+    save_clustering_plots(reduced, labels, results_dir=cluster_dir)
+    save_cluster_images_plot(image_paths, labels, results_dir=cluster_dir)
+    save_outliers_images(image_paths, labels, results_dir=cluster_dir)
+
+    for filename in os.listdir(cluster_dir):
+        if filename.endswith(".png"):
+            experiment.log(
+                name=f"clip-eval/{filename}",
+                asset_path=os.path.join(cluster_dir, filename),
+            )
+
+    print("✅ CLIP evaluation done, plots logged under 'clip-eval/*'")
 
 
 def generate_caption(
@@ -234,64 +344,36 @@ def run_clip_training(
 
 
 def save_best_checkpoint(
-    output_dir: str, context: PicselliaTrainingContext | LocalTrainingContext
+    output_dir: str, picsellia_model: Model, experiment: Experiment
 ):
-    """Finds and saves the highest-indexed checkpoint directory as an experiment artifact."""
+    """
+    Trouve le meilleur checkpoint, le copie dans exported_weights_dir, et le loggue dans l'expérience.
+    """
     checkpoint_dirs = glob.glob(os.path.join(output_dir, "checkpoint-*"))
     if not checkpoint_dirs:
-        print("No checkpoint directory found.")
+        print("❌ No checkpoint directory found.")
         return
 
+    # On prend le checkpoint avec le plus haut numéro
     best_ckpt = max(checkpoint_dirs, key=lambda p: int(p.split("-")[-1]))
     artifact_name = os.path.basename(best_ckpt)
 
-    print(f"📦 Saving best checkpoint: {artifact_name}")
-    context.experiment.store(name=artifact_name, path=best_ckpt, do_zip=True)
+    # Destination pour le modèle exporté
+    export_dir = picsellia_model.exported_weights_dir
+    os.makedirs(export_dir, exist_ok=True)
 
+    # Copie du contenu du checkpoint dans exported_weights_dir
+    print(f"📁 Copying best checkpoint {artifact_name} to {export_dir}")
+    for item in os.listdir(best_ckpt):
+        src = os.path.join(best_ckpt, item)
+        dst = os.path.join(export_dir, item)
+        if os.path.isdir(src):
+            shutil.copytree(src, dst, dirs_exist_ok=True)
+        else:
+            shutil.copy2(src, dst)
 
-@step()
-def train(picsellia_model: Model, picsellia_datasets: DatasetCollection[CocoDataset]):
-    """Main training step for the CLIP fine-tuning pipeline."""
-    context = Pipeline.get_active_context()
-    working_dir = context.working_dir
-    os.makedirs(json_dir := os.path.join(working_dir, "json"), exist_ok=True)
-
-    train_json = os.path.join(json_dir, "train.json")
-    val_json = os.path.join(json_dir, "val.json")
-    test_json = os.path.join(json_dir, "test.json")
-
-    device = "cuda" if torch.cuda.is_available() else "cpu"
-    model, processor = prepare_caption_model(device)
-
-    for split_name, output_path in zip(
-        ["train", "val", "test"], [train_json, val_json, test_json]
-    ):
-        export_dataset_to_clip_json(
-            model=model,
-            processor=processor,
-            dataset=picsellia_datasets[split_name],
-            output_path=output_path,
-            device=device,
-            prompt=context.hyperparameters.caption_prompt,
-        )
-
-    del model
-    torch.cuda.empty_cache()
-
-    output_dir = os.path.join(picsellia_model.results_dir, "clip_finetuned")
-    os.makedirs(output_dir, exist_ok=True)
-    run_script_path = os.path.join(
-        os.path.dirname(os.path.abspath(__file__)), "run_clip.py"
+    # Logging sur l’expérience
+    print(f"📦 Logging best checkpoint: {artifact_name}")
+    experiment.store(
+        name=artifact_name, path=picsellia_model.exported_weights_dir, do_zip=True
     )
-
-    run_clip_training(
-        model_name_or_path=picsellia_model.pretrained_weights_dir,
-        run_script_path=run_script_path,
-        output_dir=output_dir,
-        train_json=train_json,
-        val_json=val_json,
-        test_json=test_json,
-        context=context,
-    )
-
-    save_best_checkpoint(output_dir=output_dir, context=context)
