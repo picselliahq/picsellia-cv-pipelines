@@ -11,7 +11,11 @@ dependencies = [
     "Pillow",
     "transformers",
     "accelerate>=0.26.0",
-    "protobuf"
+    "protobuf",
+    "opencv-python",
+    "matplotlib",
+    "umap-learn",
+    "hdbscan"
 ]
 
 [dependency-groups]
