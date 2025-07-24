@@ -10,7 +10,8 @@ dependencies = [
     "datasets>=2.18.0",
     "Pillow",
     "transformers",
-    "accelerate>=0.26.0"
+    "accelerate>=0.26.0",
+    "protobuf"
 ]
 
 [dependency-groups]
