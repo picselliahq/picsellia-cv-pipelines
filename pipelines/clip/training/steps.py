@@ -147,13 +147,14 @@ def generate_caption(
 
     caption = processor.decode(output[0], skip_special_tokens=True)
 
-    # Remove incomplete final sentence if missing punctuation
-    if not caption.strip().endswith("."):
-        sentences = re.split(r"(?<=[.!?])\s+", caption.strip())
+    caption = caption.strip()
+
+    # Remove incomplete sentence only if punctuation-based sentence split is possible
+    if not caption.endswith((".", "!", "?")):
+        sentences = re.split(r"(?<=[.!?])\s+", caption)
         if len(sentences) > 1:
             caption = " ".join(sentences[:-1])
-        else:
-            caption = ""
+        # else: don't delete single-word captions like "men", "woman", etc.
 
     return caption
 
