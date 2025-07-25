@@ -352,20 +352,21 @@ def save_best_checkpoint(
     """
     Trouve le meilleur checkpoint, le copie dans exported_weights_dir, et le loggue dans l'expérience.
     """
-    checkpoint_dirs = glob.glob(os.path.join(output_dir, "checkpoint-*"))
+    checkpoint_dirs = [
+        d for d in glob.glob(os.path.join(output_dir, "checkpoint-*"))
+        if os.path.isdir(d)
+    ]
     if not checkpoint_dirs:
         print("❌ No checkpoint directory found.")
         return
 
     # On prend le checkpoint avec le plus haut numéro
     best_ckpt = max(checkpoint_dirs, key=lambda p: int(p.split("-")[-1]))
-    artifact_name = os.path.basename(best_ckpt)
 
-    
     picsellia_model.exported_weights_path = best_ckpt
     
     # Logging sur l’expérience
-    print(f"📦 Logging best checkpoint: {artifact_name}")
+    print(f"📦 Logging best checkpoint: model-latest")
     experiment.store(
-        name=artifact_name, path=picsellia_model.exported_weights_path, do_zip=True
+        name="model-latest", path=picsellia_model.exported_weights_path, do_zip=True
     )
