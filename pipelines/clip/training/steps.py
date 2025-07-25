@@ -2,7 +2,6 @@ import glob
 import json
 import os
 import re
-import shutil
 import subprocess
 import sys
 
@@ -19,7 +18,6 @@ from picsellia_cv_engine.core.contexts.training.picsellia_training_context impor
 )
 from PIL import Image
 from transformers import InstructBlipForConditionalGeneration, InstructBlipProcessor
-
 from utils.evaluation import (
     apply_dbscan_clustering,
     generate_embeddings,
@@ -87,15 +85,13 @@ def train(picsellia_model: Model, picsellia_datasets: DatasetCollection[CocoData
 
 
 @step()
-def evaluate_clip_embeddings(
-    picsellia_model: Model, dataset: CocoDataset
-):
+def evaluate_clip_embeddings(picsellia_model: Model, dataset: CocoDataset):
     """
     Step d’évaluation CLIP : embeddings, UMAP, clustering DBSCAN, logging des visualisations.
     """
     context = Pipeline.get_active_context()
-    experiment = context.experiment
-    
+    experiment: Experiment = context.experiment
+
     # Génération ou chargement des embeddings
     evaluation_results = os.path.join(picsellia_model.results_dir, "evaluation")
     embeddings_file = os.path.join(evaluation_results, "embeddings.npz")
@@ -129,7 +125,8 @@ def evaluate_clip_embeddings(
         if filename.endswith(".png"):
             experiment.log(
                 name=f"clip-eval/{filename}",
-                asset_path=os.path.join(cluster_dir, filename),
+                data=os.path.join(cluster_dir, filename),
+                type=LogType.IMAGE,
             )
 
     print("✅ CLIP evaluation done, plots logged under 'clip-eval/*'")
@@ -353,7 +350,8 @@ def save_best_checkpoint(
     Trouve le meilleur checkpoint, le copie dans exported_weights_dir, et le loggue dans l'expérience.
     """
     checkpoint_dirs = [
-        d for d in glob.glob(os.path.join(output_dir, "checkpoint-*"))
+        d
+        for d in glob.glob(os.path.join(output_dir, "checkpoint-*"))
         if os.path.isdir(d)
     ]
     if not checkpoint_dirs:
@@ -364,9 +362,9 @@ def save_best_checkpoint(
     best_ckpt = max(checkpoint_dirs, key=lambda p: int(p.split("-")[-1]))
 
     picsellia_model.exported_weights_path = best_ckpt
-    
+
     # Logging sur l’expérience
-    print(f"📦 Logging best checkpoint: model-latest")
+    print("📦 Logging best checkpoint: model-latest")
     experiment.store(
         name="model-latest", path=picsellia_model.exported_weights_path, do_zip=True
     )
