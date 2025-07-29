@@ -15,7 +15,8 @@ dependencies = [
     "opencv-python",
     "matplotlib",
     "umap-learn",
-    "hdbscan"
+    "hdbscan",
+    "scikit-learn"
 ]
 
 [dependency-groups]
