@@ -10,8 +10,11 @@ WORKDIR /experiment
 ENV HF_HOME=/tmp/huggingface
 ENV MPLCONFIGDIR=/tmp/matplotlib
 ENV NUMBA_DISABLE_CACHE=1
+ENV NUMBA_CACHE_DIR=/tmp/numba_cache
+ENV NUMBA_DISABLE_JIT=0
+ENV NUMBA_DISABLE_INTEL_SVML=1
 
-RUN mkdir -p $HF_HOME $MPLCONFIGDIR
+RUN mkdir -p $HF_HOME $MPLCONFIGDIR $NUMBA_CACHE_DIR && chmod -R 777 $HF_HOME $MPLCONFIGDIR $NUMBA_CACHE_DIR
 
 RUN git clone --depth 1 https://github.com/picselliahq/picsellia-cv-base-docker.git /tmp/base-docker &&     cp -r /tmp/base-docker/base/. /experiment
 RUN sed -i '1 a source /experiment/training/.venv/bin/activate' /experiment/run.sh
