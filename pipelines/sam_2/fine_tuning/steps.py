@@ -5,7 +5,7 @@ import sys
 
 from picsellia_cv_engine import Pipeline, step
 from picsellia_cv_engine.core import CocoDataset, DatasetCollection, Model
-from sam2_utils import (
+from utils.sam2_utils import (
     convert_coco_to_png_masks,
     load_coco_annotations,
     normalize_filenames,
