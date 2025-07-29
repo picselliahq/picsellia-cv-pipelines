@@ -26,8 +26,10 @@ from utils.evaluation import (
     save_cluster_images_plot,
     save_clustering_plots,
     save_outliers_images,
+    find_best_eps
 )
 
+    
 TRAIN_METRICS = ["loss", "grad_norm", "learning_rate"]
 EVAL_METRICS = ["eval_loss"]
 
@@ -106,15 +108,26 @@ def evaluate_clip_embeddings(picsellia_model: Model, dataset: CocoDataset):
     # UMAP
     reduced = reduce_dimensionality_umap(embeddings=embeddings, n_components=2)
 
-    # DBSCAN clustering
-    eps = 0.3
     min_samples = 5
+    candidate_eps = [0.1, 0.2, 0.3, 0.5, 0.8]
+    best_eps = find_best_eps(reduced, candidate_eps)
+
+    if best_eps is None:
+        print("⚠️ Aucun cluster trouvé dans la 1ère passe. Retrying with extended eps range...")
+        best_eps = find_best_eps(reduced, [0.05, 0.15, 0.25, 0.35, 0.6, 1.0])
+
+    if best_eps is None:
+        print("⚠️ Aucun cluster trouvé. Fallback à eps=0.3")
+        best_eps = 0.3
+
+
+
     labels = apply_dbscan_clustering(
-        reduced, dbscan_eps=eps, dbscan_min_samples=min_samples
+        reduced, dbscan_eps=best_eps, dbscan_min_samples=min_samples
     )
 
     # Logging
-    cluster_dir = os.path.join(evaluation_results, f"clusters_eps{eps}")
+    cluster_dir = os.path.join(evaluation_results, f"clusters_eps{best_eps}")
     os.makedirs(cluster_dir, exist_ok=True)
 
     save_clustering_plots(reduced, labels, results_dir=cluster_dir)
