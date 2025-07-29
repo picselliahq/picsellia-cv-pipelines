@@ -20,16 +20,15 @@ from PIL import Image
 from transformers import InstructBlipForConditionalGeneration, InstructBlipProcessor
 from utils.evaluation import (
     apply_dbscan_clustering,
+    find_best_eps,
     generate_embeddings,
     load_stored_embeddings,
     reduce_dimensionality_umap,
     save_cluster_images_plot,
     save_clustering_plots,
     save_outliers_images,
-    find_best_eps
 )
 
-    
 TRAIN_METRICS = ["loss", "grad_norm", "learning_rate"]
 EVAL_METRICS = ["eval_loss"]
 
@@ -113,14 +112,14 @@ def evaluate_clip_embeddings(picsellia_model: Model, dataset: CocoDataset):
     best_eps = find_best_eps(reduced, candidate_eps)
 
     if best_eps is None:
-        print("⚠️ Aucun cluster trouvé dans la 1ère passe. Retrying with extended eps range...")
+        print(
+            "⚠️ Aucun cluster trouvé dans la 1ère passe. Retrying with extended eps range..."
+        )
         best_eps = find_best_eps(reduced, [0.05, 0.15, 0.25, 0.35, 0.6, 1.0])
 
     if best_eps is None:
         print("⚠️ Aucun cluster trouvé. Fallback à eps=0.3")
         best_eps = 0.3
-
-
 
     labels = apply_dbscan_clustering(
         reduced, dbscan_eps=best_eps, dbscan_min_samples=min_samples

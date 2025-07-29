@@ -30,7 +30,6 @@ import logging
 import os
 import sys
 from dataclasses import dataclass, field
-from typing import Optional
 
 import torch
 import transformers
@@ -74,22 +73,22 @@ class ModelArguments:
             "help": "Path to pretrained model or model identifier from huggingface.co/models"
         },
     )
-    config_name: Optional[str] = field(
+    config_name: str | None = field(
         default=None,
         metadata={
             "help": "Pretrained config name or path if not the same as model_name"
         },
     )
-    tokenizer_name: Optional[str] = field(
+    tokenizer_name: str | None = field(
         default=None,
         metadata={
             "help": "Pretrained tokenizer name or path if not the same as model_name"
         },
     )
-    feature_extractor_name: Optional[str] = field(
+    feature_extractor_name: str | None = field(
         default=None, metadata={"help": "Name or path of preprocessor config."}
     )
-    cache_dir: Optional[str] = field(
+    cache_dir: str | None = field(
         default=None,
         metadata={
             "help": "Where do you want to store the pretrained models downloaded from s3"
@@ -132,44 +131,44 @@ class DataTrainingArguments:
     Arguments pertaining to what data we are going to input our model for training and eval.
     """
 
-    dataset_name: Optional[str] = field(
+    dataset_name: str | None = field(
         default=None,
         metadata={"help": "The name of the dataset to use (via the datasets library)."},
     )
-    dataset_config_name: Optional[str] = field(
+    dataset_config_name: str | None = field(
         default=None,
         metadata={
             "help": "The configuration name of the dataset to use (via the datasets library)."
         },
     )
-    data_dir: Optional[str] = field(
+    data_dir: str | None = field(
         default=None, metadata={"help": "The data directory containing input files."}
     )
-    image_column: Optional[str] = field(
+    image_column: str | None = field(
         default="image_path",
         metadata={
             "help": "The name of the column in the datasets containing the full image file paths."
         },
     )
-    caption_column: Optional[str] = field(
+    caption_column: str | None = field(
         default="caption",
         metadata={
             "help": "The name of the column in the datasets containing the image captions."
         },
     )
-    train_file: Optional[str] = field(
+    train_file: str | None = field(
         default=None,
         metadata={"help": "The input training data file (a jsonlines file)."},
     )
-    validation_file: Optional[str] = field(
+    validation_file: str | None = field(
         default=None,
         metadata={"help": "An optional input evaluation data file (a jsonlines file)."},
     )
-    test_file: Optional[str] = field(
+    test_file: str | None = field(
         default=None,
         metadata={"help": "An optional input test data file (a jsonlines file)."},
     )
-    max_seq_length: Optional[int] = field(
+    max_seq_length: int | None = field(
         default=128,
         metadata={
             "help": (
@@ -178,7 +177,7 @@ class DataTrainingArguments:
             )
         },
     )
-    max_train_samples: Optional[int] = field(
+    max_train_samples: int | None = field(
         default=None,
         metadata={
             "help": (
@@ -187,7 +186,7 @@ class DataTrainingArguments:
             )
         },
     )
-    max_eval_samples: Optional[int] = field(
+    max_eval_samples: int | None = field(
         default=None,
         metadata={
             "help": (
@@ -200,7 +199,7 @@ class DataTrainingArguments:
         default=False,
         metadata={"help": "Overwrite the cached training and evaluation sets"},
     )
-    preprocessing_num_workers: Optional[int] = field(
+    preprocessing_num_workers: int | None = field(
         default=None,
         metadata={"help": "The number of processes to use for the preprocessing."},
     )
