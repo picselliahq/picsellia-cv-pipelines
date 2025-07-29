@@ -11,6 +11,7 @@ import umap
 from PIL import Image
 from tqdm import tqdm
 from transformers import CLIPModel, CLIPProcessor
+from sklearn.metrics import silhouette_score
 
 
 def generate_embeddings(model_path: str, images_dir: str, embeddings_file_path: str):
@@ -59,33 +60,6 @@ def apply_dbscan_clustering(
     dbscan = sklearn.cluster.DBSCAN(eps=dbscan_eps, min_samples=dbscan_min_samples)
     labels = dbscan.fit_predict(embeddings)
     return labels
-
-
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="")
-    parser.add_argument(
-        "--embeddings_file", type=str, required=True, help="File containing embeddings"
-    )
-    parser.add_argument(
-        "--dbscan_eps",
-        type=float,
-        required=True,
-        help="DBSCAN epsilon parameter",
-        default=0.5,
-    )
-    parser.add_argument(
-        "--dbscan_min_samples",
-        type=int,
-        required=True,
-        help="DBSCAN min_samples parameter",
-        default=5,
-    )
-    args = parser.parse_args()
-
-    embeddings = load_stored_embeddings(args.embeddings_file)
-    labels = apply_dbscan_clustering(
-        embeddings, args.dbscan_eps, args.dbscan_min_samples
-    )
 
 
 def save_clustering_plots(
@@ -239,3 +213,18 @@ def save_outliers_images(
     plt.close()
 
     print(f"📸 Visualisation des outliers sauvegardée dans {outliers_path}")
+
+
+def find_best_eps(reduced, eps_list):
+    best_eps = None
+    best_score = -1
+    for eps in eps_list:
+        db = sklearn.cluster.DBSCAN(eps=eps, min_samples=5).fit(reduced)
+        labels = db.labels_
+        n_clusters = len(set(labels)) - (1 if -1 in labels else 0)
+        if n_clusters >= 2:
+            score = silhouette_score(reduced, labels)
+            if score > best_score:
+                best_score = score
+                best_eps = eps
+    return best_eps
