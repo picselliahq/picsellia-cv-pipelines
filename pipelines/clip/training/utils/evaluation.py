@@ -1,4 +1,3 @@
-import argparse
 import os
 import random
 
@@ -9,9 +8,9 @@ import sklearn
 import torch
 import umap
 from PIL import Image
+from sklearn.metrics import silhouette_score
 from tqdm import tqdm
 from transformers import CLIPModel, CLIPProcessor
-from sklearn.metrics import silhouette_score
 
 
 def generate_embeddings(model_path: str, images_dir: str, embeddings_file_path: str):
