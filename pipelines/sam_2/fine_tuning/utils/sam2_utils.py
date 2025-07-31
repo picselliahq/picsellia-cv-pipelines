@@ -1,8 +1,10 @@
-import os
 import json
-import shutil
+import os
 import re
+import shutil
 from typing import Any
+
+from picsellia.types.enums import LogType
 from PIL import Image, ImageDraw
 
 
@@ -12,7 +14,7 @@ def prepare_directories(img_root: str, ann_root: str):
 
 
 def load_coco_annotations(coco_path: str) -> dict[str, Any]:
-    with open(coco_path, "r") as f:
+    with open(coco_path) as f:
         return json.load(f)
 
 
@@ -65,3 +67,53 @@ def normalize_filenames(root_dirs: list[str]):
                 if not re.search(r"_\d+\.\w+$", new_name):
                     new_name = new_name.replace(".", "_1.")
                 os.rename(os.path.join(subdir, name), os.path.join(subdir, new_name))
+
+
+def parse_and_log_sam2_output(process, context, log_file_path):
+    """
+    Parse les sorties du training SAM2 et logge dynamiquement les métriques Picsellia
+    avec des noms nettoyés.
+    """
+
+    meter_pattern = re.compile(r"Losses and meters:\s+({.*})")
+
+    METRIC_NAME_MAPPING = {
+        "Losses/train_all_loss": "train/total_loss",
+        "Losses/train_all_loss_mask": "train/loss_mask",
+        "Losses/train_all_loss_dice": "train/loss_dice",
+        "Losses/train_all_loss_iou": "train/loss_iou",
+        "Losses/train_all_loss_class": "train/loss_class",
+        "Losses/train_all_core_loss": "train/loss_core",
+        "Trainer/epoch": "train/epoch",
+        "Trainer/steps_train": "train/step",
+    }
+
+    SKIPPED_METRICS = {"Trainer/where"}
+
+    with open(log_file_path, "w") as log_file:
+        for line in process.stdout:
+            print(line, end="")  # stdout live
+            log_file.write(line)
+
+            match = meter_pattern.search(line)
+            if match:
+                try:
+                    metrics_str = match.group(1)
+                    metrics = json.loads(metrics_str.replace("'", '"'))  # JSON-safe
+
+                    for name, value in metrics.items():
+                        if name in SKIPPED_METRICS or not isinstance(
+                            value, float | int
+                        ):
+                            continue
+
+                        log_name = METRIC_NAME_MAPPING.get(
+                            name, f"train/{name.replace('/', '_')}"
+                        )
+                        context.experiment.log(
+                            name=log_name,
+                            data=value,
+                            type=LogType.LINE,
+                        )
+                except Exception as e:
+                    print(f"⚠️ Erreur parsing métriques SAM2 : {e}")
