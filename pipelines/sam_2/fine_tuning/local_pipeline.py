@@ -12,7 +12,7 @@ from picsellia_cv_engine.steps.base.dataset.loader import (
     load_coco_datasets,
 )
 from picsellia_cv_engine.steps.base.model.builder import build_model
-from steps import train
+from steps import evaluate, train
 from utils.parameters import TrainingHyperParameters
 
 parser = argparse.ArgumentParser()
@@ -38,6 +38,7 @@ def fine_tuning_pipeline():
     picsellia_datasets = load_coco_datasets()
     picsellia_model = build_model(pretrained_weights_name="pretrained-weights")
     train(picsellia_model=picsellia_model, picsellia_datasets=picsellia_datasets)
+    evaluate(picsellia_model=picsellia_model, dataset=picsellia_datasets["test"])
 
 
 if __name__ == "__main__":
