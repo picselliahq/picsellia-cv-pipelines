@@ -16,7 +16,8 @@ dependencies = [
     "matplotlib",
     "umap-learn",
     "hdbscan",
-    "scikit-learn"
+    "scikit-learn",
+    "picsellia-cv-engine",
 ]
 
 [dependency-groups]
@@ -26,3 +27,4 @@ dev = [
 
 [tool.uv.sources]
 transformers = { git = "https://github.com/huggingface/transformers" }
+picsellia-cv-engine = { git = "https://github.com/picselliahq/picsellia-cv-engine.git", rev = "feat/add-clip-steps"}
