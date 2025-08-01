@@ -6,9 +6,11 @@ from picsellia_cv_engine.core.parameters import (
 from picsellia_cv_engine.core.services.utils.picsellia_context import (
     create_picsellia_training_context,
 )
+from picsellia_cv_engine.frameworks.clip.model.model import CLIPModel
 from picsellia_cv_engine.steps.base.dataset.loader import load_coco_datasets
 from picsellia_cv_engine.steps.base.model.builder import build_model
-from steps import evaluate_clip_embeddings, train
+from picsellia_cv_engine.steps.clip.model.evaluator import evaluate
+from picsellia_cv_engine.steps.clip.model.trainer import train
 from utils.parameters import TrainingHyperParameters
 
 context = create_picsellia_training_context(
@@ -21,11 +23,11 @@ context = create_picsellia_training_context(
 @pipeline(context=context, log_folder_path="logs/", remove_logs_on_completion=False)
 def training_pipeline():
     picsellia_datasets = load_coco_datasets()
-    picsellia_model = build_model(pretrained_weights_name="pretrained-weights")
-    train(picsellia_model=picsellia_model, picsellia_datasets=picsellia_datasets)
-    evaluate_clip_embeddings(
-        picsellia_model=picsellia_model, dataset=picsellia_datasets["test"]
+    picsellia_model = build_model(
+        model_cls=CLIPModel, pretrained_weights_name="pretrained-weights"
     )
+    train(model=picsellia_model, dataset_collection=picsellia_datasets)
+    evaluate(model=picsellia_model, dataset=picsellia_datasets["test"])
 
 
 if __name__ == "__main__":
