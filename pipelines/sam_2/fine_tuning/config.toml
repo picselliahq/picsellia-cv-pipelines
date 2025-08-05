@@ -12,7 +12,7 @@ parameters_class = "utils/parameters.py:TrainingHyperParameters"
 
 [docker]
 image_name = "picsellia/training-sam2"
-image_tag = "test"
+image_tag = "latest"
 
 [model]
 model_name = "SAM2"
