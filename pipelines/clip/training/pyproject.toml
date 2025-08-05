@@ -6,25 +6,11 @@ requires-python = ">=3.10"
 
 dependencies = [
     "picsellia-pipelines-cli",
-    "torchvision>=0.16.0",
-    "datasets>=2.18.0",
-    "Pillow",
-    "transformers",
-    "accelerate>=0.26.0",
-    "protobuf",
-    "opencv-python",
-    "matplotlib",
-    "umap-learn",
-    "hdbscan",
-    "scikit-learn",
-    "picsellia-cv-engine",
+    "picsellia-cv-engine[clip]"
 ]
 
-[dependency-groups]
-dev = [
-    "picsellia-cv-engine",
-]
+[project.optional-dependencies]
+clip = ["picsellia-cv-engine[clip]"]
 
 [tool.uv.sources]
-transformers = { git = "https://github.com/huggingface/transformers" }
-picsellia-cv-engine = { git = "https://github.com/picselliahq/picsellia-cv-engine.git", rev = "feat/add-clip-steps"}
+picsellia-cv-engine = { git = "https://github.com/picselliahq/picsellia-cv-engine.git", rev = "feat/add-clip-steps", extra = "clip"}
