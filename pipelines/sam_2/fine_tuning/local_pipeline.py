@@ -9,6 +9,7 @@ from picsellia_cv_engine.core.parameters import (
 from picsellia_cv_engine.core.services.utils.local_context import (
     create_local_training_context,
 )
+from picsellia_cv_engine.frameworks.sam2.model.model import SAM2Model
 from picsellia_cv_engine.steps.base.dataset.loader import (
     load_coco_datasets,
 )
@@ -39,7 +40,9 @@ context = create_local_training_context(
 def fine_tuning_pipeline():
     picsellia_datasets = load_coco_datasets()
     picsellia_model = build_model(
-        pretrained_weights_name="pretrained-weights", config_name="config"
+        model_cls=SAM2Model,
+        pretrained_weights_name="pretrained-weights",
+        config_name="config",
     )
     train(
         model=picsellia_model,
