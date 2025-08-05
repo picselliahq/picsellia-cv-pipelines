@@ -26,7 +26,9 @@ context = create_picsellia_training_context(
 @pipeline(context=context, log_folder_path="logs/", remove_logs_on_completion=False)
 def fine_tuning_pipeline():
     picsellia_datasets = load_coco_datasets()
-    picsellia_model = build_model(pretrained_weights_name="pretrained-weights")
+    picsellia_model = build_model(
+        pretrained_weights_name="pretrained-weights", config_name="config"
+    )
     train(
         model=picsellia_model,
         dataset_collection=picsellia_datasets,
