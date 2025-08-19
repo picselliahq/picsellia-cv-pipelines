@@ -1,20 +1,17 @@
-from typing import Optional
-
-from picsellia.types.enums import InferenceType
-
-from dataset_tiler.pipeline_utils.steps_utils.processing.base_tiler_processing import (
+from pipeline_utils.steps_utils.processing.base_tiler_processing import (
     BaseTilerProcessing,
     TileMode,
 )
-from dataset_tiler.pipeline_utils.steps_utils.processing.classification_tiler_processing import (
+from pipeline_utils.steps_utils.processing.classification_tiler_processing import (
     ClassificationTilerProcessing,
 )
-from dataset_tiler.pipeline_utils.steps_utils.processing.object_detection_tiler_processing import (
+from pipeline_utils.steps_utils.processing.object_detection_tiler_processing import (
     ObjectDetectionTilerProcessing,
 )
-from dataset_tiler.pipeline_utils.steps_utils.processing.segmentation_tiler_processing import (
+from pipeline_utils.steps_utils.processing.segmentation_tiler_processing import (
     SegmentationTilerProcessing,
 )
+from picsellia.types.enums import InferenceType
 
 
 class TilerProcessingFactory:
@@ -27,9 +24,9 @@ class TilerProcessingFactory:
         tile_width: int,
         overlap_height_ratio: float,
         overlap_width_ratio: float,
-        min_annotation_area_ratio: Optional[float],
-        min_annotation_width: Optional[int],
-        min_annotation_height: Optional[int],
+        min_annotation_area_ratio: float | None,
+        min_annotation_width: int | None,
+        min_annotation_height: int | None,
         tiling_mode: TileMode = TileMode.CONSTANT,
         padding_color_value: int = 114,
     ) -> BaseTilerProcessing:

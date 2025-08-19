@@ -1,7 +1,13 @@
+from pipeline_utils.parameters.processing_tiler_parameters import (
+    ProcessingTilerParameters,
+)
+from pipeline_utils.steps_utils.data_validation.processing_tiler_data_validator import (
+    ProcessingTilerDataValidator,
+)
 from picsellia.types.enums import InferenceType
 from picsellia_cv_engine.core import CocoDataset
-from picsellia_cv_engine.core.contexts.processing.dataset.picsellia_processing_context import (
-    PicselliaProcessingContext,
+from picsellia_cv_engine.core.contexts.processing.dataset import (
+    PicselliaDatasetProcessingContext,
 )
 from picsellia_cv_engine.core.services.data.dataset.validator import (
     NotConfiguredDatasetValidator,
@@ -18,19 +24,12 @@ from picsellia_cv_engine.core.services.data.dataset.validator.segmentation.coco_
 from picsellia_cv_engine.decorators.pipeline_decorator import Pipeline
 from picsellia_cv_engine.decorators.step_decorator import step
 
-from dataset_tiler.pipeline_utils.parameters.processing_tiler_parameters import (
-    ProcessingTilerParameters,
-)
-from dataset_tiler.pipeline_utils.steps_utils.data_validation.processing_tiler_data_validator import (
-    ProcessingTilerDataValidator,
-)
-
 
 @step
 def validate_tiler_data(
     dataset: CocoDataset,
 ) -> CocoDataset:
-    context: PicselliaProcessingContext[ProcessingTilerParameters] = (
+    context: PicselliaDatasetProcessingContext[ProcessingTilerParameters] = (
         Pipeline.get_active_context()
     )
 

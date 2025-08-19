@@ -1,26 +1,25 @@
+from pipeline_utils.parameters.processing_tiler_parameters import (
+    ProcessingTilerParameters,
+)
+from pipeline_utils.steps_utils.processing.tiler_processing_factory import (
+    TilerProcessingFactory,
+)
 from picsellia_cv_engine.core import (
     CocoDataset,
     DatasetCollection,
 )
-from picsellia_cv_engine.core.contexts.processing.dataset.picsellia_processing_context import (
-    PicselliaProcessingContext,
+from picsellia_cv_engine.core.contexts.processing.dataset import (
+    PicselliaDatasetProcessingContext,
 )
 from picsellia_cv_engine.decorators.pipeline_decorator import Pipeline
 from picsellia_cv_engine.decorators.step_decorator import step
-
-from dataset_tiler.pipeline_utils.parameters.processing_tiler_parameters import (
-    ProcessingTilerParameters,
-)
-from dataset_tiler.pipeline_utils.steps_utils.processing.tiler_processing_factory import (
-    TilerProcessingFactory,
-)
 
 
 @step
 def process(
     dataset_collection: DatasetCollection[CocoDataset],
 ) -> CocoDataset:
-    context: PicselliaProcessingContext[ProcessingTilerParameters] = (
+    context: PicselliaDatasetProcessingContext[ProcessingTilerParameters] = (
         Pipeline.get_active_context()
     )
 

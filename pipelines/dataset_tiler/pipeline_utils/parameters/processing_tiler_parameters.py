@@ -1,9 +1,9 @@
 from typing import Optional
-from picsellia_cv_engine.core.parameters import Parameters
 
-from dataset_tiler.pipeline_utils.steps_utils.processing.base_tiler_processing import (
+from pipeline_utils.steps_utils.processing.base_tiler_processing import (
     TileMode,
 )
+from picsellia_cv_engine.core.parameters import Parameters
 
 
 class ProcessingTilerParameters(Parameters):
@@ -13,12 +13,20 @@ class ProcessingTilerParameters(Parameters):
         self.datalake = self.extract_parameter(
             keys=["datalake"], expected_type=str, default="default"
         )
-        self.data_tag = self.extract_parameter(keys=["data_tag"], expected_type=str)
+        self.data_tag = self.extract_parameter(
+            keys=["data_tag"], expected_type=str, default="tiled_data"
+        )
         self.tile_height = self.extract_parameter(
-            keys=["tile_height"], expected_type=int, range_value=(0, float("inf"))
+            keys=["tile_height"],
+            expected_type=int,
+            range_value=(0, float("inf")),
+            default=640,
         )
         self.tile_width = self.extract_parameter(
-            keys=["tile_width"], expected_type=int, range_value=(0, float("inf"))
+            keys=["tile_width"],
+            expected_type=int,
+            range_value=(0, float("inf")),
+            default=640,
         )
         self.overlap_height_ratio = self.extract_parameter(
             keys=["overlap_height_ratio"],
@@ -35,19 +43,19 @@ class ProcessingTilerParameters(Parameters):
         self.min_annotation_area_ratio = self.extract_parameter(
             keys=["min_annotation_area_ratio", "min_area_ratio"],
             expected_type=Optional[float],
-            default=None,
+            default=0.,
             range_value=(0, 0.99),
         )
         self.min_annotation_width = self.extract_parameter(
             keys=["min_annotation_width"],
             expected_type=Optional[int],
-            default=None,
+            default=0,
             range_value=(0, float("inf")),
         )
         self.min_annotation_height = self.extract_parameter(
             keys=["min_annotation_height"],
             expected_type=Optional[int],
-            default=None,
+            default=0,
             range_value=(0, float("inf")),
         )
         self.tiling_mode = self.extract_parameter(
