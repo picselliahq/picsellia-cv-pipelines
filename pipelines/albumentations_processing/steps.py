@@ -1,7 +1,7 @@
 from copy import deepcopy
 
 from picsellia_cv_engine.core import CocoDataset
-from picsellia_cv_engine.core.contexts import PicselliaProcessingContext
+from picsellia_cv_engine.core.contexts import PicselliaDatasetProcessingContext
 from picsellia_cv_engine.decorators.pipeline_decorator import Pipeline
 from picsellia_cv_engine.decorators.step_decorator import step
 from utils.processing import process_images
@@ -25,7 +25,7 @@ def process(input_dataset: CocoDataset, output_dataset: CocoDataset):
     """
 
     # Get processing parameters from the user-defined configuration
-    context: PicselliaProcessingContext = Pipeline.get_active_context()
+    context: PicselliaDatasetProcessingContext = Pipeline.get_active_context()
     parameters = context.processing_parameters.to_dict()
 
     # Initialize an empty COCO dataset
