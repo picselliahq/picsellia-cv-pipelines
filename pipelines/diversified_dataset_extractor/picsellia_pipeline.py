@@ -19,13 +19,13 @@ from picsellia_cv_engine.core.services.utils.picsellia_context import (
 from picsellia_cv_engine.decorators.pipeline_decorator import pipeline
 from picsellia_cv_engine.steps.base.dataset.loader import load_coco_datasets
 
-processing_context = create_picsellia_dataset_processing_context(
+context = create_picsellia_dataset_processing_context(
     processing_parameters_cls=ProcessingDiversifiedDataExtractorParameters,
 )
 
 
 @pipeline(
-    context=processing_context,
+    context=context,
     log_folder_path="logs/",
     remove_logs_on_completion=False,
 )

@@ -1,6 +1,4 @@
 import argparse
-from picsellia_cv_engine.decorators.pipeline_decorator import pipeline
-from picsellia_cv_engine.steps.base.dataset.loader import load_coco_datasets
 
 from diversified_dataset_extractor.pipeline_utils.parameters.processing_diversified_data_extractor_parameters import (
     ProcessingDiversifiedDataExtractorParameters,
@@ -20,6 +18,8 @@ from diversified_dataset_extractor.pipeline_utils.steps.weights_validation.proce
 from picsellia_cv_engine.core.services.utils.local_context import (
     create_local_dataset_processing_context,
 )
+from picsellia_cv_engine.decorators.pipeline_decorator import pipeline
+from picsellia_cv_engine.steps.base.dataset.loader import load_coco_datasets
 
 parser = argparse.ArgumentParser(description="Run the local preannotation pipeline")
 parser.add_argument("--api_token", required=True, type=str, help="Picsellia API token")
@@ -56,7 +56,6 @@ context = create_local_dataset_processing_context(
 )
 
 
-
 @pipeline(
     context=context,
     log_folder_path="logs/",
@@ -71,7 +70,11 @@ def diversified_data_extractor_pipeline() -> None:
         pretrained_weights=pretrained_weights
     )
 
-    process(input_dataset=datasets["input"], output_dataset=datasets["output"], embedding_model=embedding_model)
+    process(
+        input_dataset=datasets["input"],
+        output_dataset=datasets["output"],
+        embedding_model=embedding_model,
+    )
 
 
 if __name__ == "__main__":
