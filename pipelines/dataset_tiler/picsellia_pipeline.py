@@ -1,27 +1,26 @@
-from picsellia_cv_engine.core.contexts import PicselliaProcessingContext
+from picsellia_cv_engine.core.services.utils.picsellia_context import (
+    create_picsellia_dataset_processing_context,
+)
 from picsellia_cv_engine.decorators.pipeline_decorator import pipeline
 from picsellia_cv_engine.steps.base.dataset.loader import load_coco_datasets
 from picsellia_cv_engine.steps.base.dataset.uploader import upload_full_dataset
-
-from dataset_tiler.pipeline_utils.parameters.processing_tiler_parameters import (
+from pipeline_utils.parameters.processing_tiler_parameters import (
     ProcessingTilerParameters,
 )
-from dataset_tiler.pipeline_utils.steps.data_validation.processing_tiler_data_validator import (
+from pipeline_utils.steps.data_validation.processing_tiler_data_validator import (
     validate_tiler_data,
 )
-from dataset_tiler.pipeline_utils.steps.processing.tiler_processing import (
+from pipeline_utils.steps.processing.tiler_processing import (
     process,
 )
 
-
-def get_context() -> PicselliaProcessingContext[ProcessingTilerParameters]:
-    return PicselliaProcessingContext(
-        processing_parameters_cls=ProcessingTilerParameters,
-    )
+context = create_picsellia_dataset_processing_context(
+    processing_parameters_cls=ProcessingTilerParameters,
+)
 
 
 @pipeline(
-    context=get_context(),
+    context=context,
     log_folder_path="logs/",
     remove_logs_on_completion=False,
 )

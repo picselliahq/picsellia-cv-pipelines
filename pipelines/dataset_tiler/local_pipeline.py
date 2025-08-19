@@ -1,69 +1,58 @@
 from argparse import ArgumentParser
 
-from picsellia.types.enums import ProcessingType
+from pipeline_utils.steps.data_validation.processing_tiler_data_validator import (
+    validate_tiler_data,
+)
+from pipeline_utils.steps.processing.tiler_processing import (
+    process,
+)
 from picsellia_cv_engine.core.services.utils.local_context import (
-    create_local_processing_context,
+    create_local_dataset_processing_context,
 )
 from picsellia_cv_engine.decorators.pipeline_decorator import pipeline
 from picsellia_cv_engine.steps.base.dataset.loader import load_coco_datasets
 from picsellia_cv_engine.steps.base.dataset.uploader import upload_full_dataset
-
-from dataset_tiler.pipeline_utils.steps.data_validation.processing_tiler_data_validator import (
-    validate_tiler_data,
-)
-from dataset_tiler.pipeline_utils.steps.processing.tiler_processing import (
-    process,
-)
-from dataset_tiler.pipeline_utils.steps_utils.processing.base_tiler_processing import (
-    TileMode,
+from pipeline_utils.parameters.processing_tiler_parameters import (
+    ProcessingTilerParameters,
 )
 
 parser = ArgumentParser()
-parser.add_argument("--api_token", type=str)
-parser.add_argument("--organization_name", type=str)
-parser.add_argument("--job_id", type=str)
-parser.add_argument("--input_dataset_version_id", type=str)
-parser.add_argument("--output_dataset_version_name", type=str)
-parser.add_argument("--tile_height", type=int, default=640)
-parser.add_argument("--tile_width", type=int, default=640)
-parser.add_argument("--overlap_height_ratio", type=float, default=0.1)
-parser.add_argument("--overlap_width_ratio", type=float, default=0.1)
-parser.add_argument("--min_annotation_area_ratio", type=float, default=0.1)
-parser.add_argument("--min_annotation_width", type=int, default=0)
-parser.add_argument("--min_annotation_height", type=int, default=0)
-parser.add_argument("--padding_color_value", type=int, default=114)
-parser.add_argument("--datalake", type=str, default="default")
-parser.add_argument("--data_tag", type=str)
-parser.add_argument("--fix_annotation", action="store_true", default=False)
-
+parser.add_argument("--api_token", required=True, type=str, help="Picsellia API token")
+parser.add_argument(
+    "--organization_name", required=True, type=str, help="Picsellia organization name"
+)
+parser.add_argument(
+    "--job_type",
+    required=True,
+    type=str,
+    choices=["DATASET_VERSION_CREATION", "PRE_ANNOTATION", "TRAINING"],
+    help="Job type",
+)
+parser.add_argument(
+    "--input_dataset_version_id",
+    required=True,
+    type=str,
+    help="Input dataset version ID",
+)
+parser.add_argument("--output_dataset_version_name", type=str, default="output")
+parser.add_argument(
+    "--working_dir", required=False, type=str, help="Working directory", default=None
+)
 args = parser.parse_args()
 
-local_context = create_local_processing_context(
+context = create_local_dataset_processing_context(
+    processing_parameters_cls=ProcessingTilerParameters,
     api_token=args.api_token,
     organization_name=args.organization_name,
-    job_type=ProcessingType.DATASET_VERSION_CREATION,
+    job_type=args.job_type,
     input_dataset_version_id=args.input_dataset_version_id,
     output_dataset_version_name=args.output_dataset_version_name,
-    processing_parameters={
-        "tiling_mode": "constant",
-        "tile_height": args.tile_height,
-        "tile_width": args.tile_width,
-        "overlap_height_ratio": args.overlap_height_ratio,
-        "overlap_width_ratio": args.overlap_width_ratio,
-        "min_annotation_area_ratio": args.min_annotation_area_ratio,
-        "min_annotation_width": args.min_annotation_width,
-        "min_annotation_height": args.min_annotation_height,
-        "padding_color_value": args.padding_color_value,
-        "datalake": args.datalake,
-        "data_tag": args.data_tag,
-        "fix_annotation": args.fix_annotation,
-    },
+    working_dir=args.working_dir,
 )
-local_context.processing_parameters.tiling_mode = TileMode.CONSTANT
 
 
 @pipeline(
-    context=local_context,
+    context=context,
     log_folder_path="logs/",
     remove_logs_on_completion=False,
 )
