@@ -1,0 +1,23 @@
+[project]
+name = "diversified_dataset_extractor"
+version = "0.1.0"
+description = "Picsellia processing pipeline"
+requires-python = ">=3.10,<3.12"
+
+dependencies = [
+    "picsellia-cv-engine",
+    "picsellia-pipelines-cli",
+    "Pillow>=9.0.0, <10.0.0",
+    "numpy>=1.26.0, <2.0.0",
+    "open_clip_torch==2.24.0",
+    "picsellia>=6.16.0, <7.0.0",
+    "requests>=2.32.3, <3.0.0",
+    "scipy>=1.14.0, <2.0.0",
+    "tabulate>=0.9.0, <1.0.0",
+    "tqdm>=4.66.0, <5.0.0",
+
+]
+
+[tool.uv.sources]
+picsellia-cv-engine = { git = "https://github.com/picselliahq/picsellia-cv-engine.git", rev = "main" }
+picsellia-pipelines-cli = { git = "https://github.com/picselliahq/picsellia-pipelines-cli.git", rev = "main" }

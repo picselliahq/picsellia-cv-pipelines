@@ -7,7 +7,7 @@ type = "DATASET_VERSION_CREATION"
 [execution]
 picsellia_pipeline_script = "picsellia_pipeline.py"
 local_pipeline_script = "local_pipeline.py"
-requirements_file = "requirements.txt"
+requirements_file = "pyproject.toml"
 parameters_class = "pipeline_utils/parameters/processing_diversified_data_extractor_parameters.py:ProcessingDiversifiedDataExtractorParameters"
 
 [docker]
