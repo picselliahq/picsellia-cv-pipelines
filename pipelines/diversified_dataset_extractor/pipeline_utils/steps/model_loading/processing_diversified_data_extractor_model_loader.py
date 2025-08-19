@@ -5,19 +5,18 @@ from typing import Any
 import numpy as np
 import open_clip
 import torch
+from diversified_dataset_extractor.pipeline_utils.parameters.processing_diversified_data_extractor_parameters import (
+    ProcessingDiversifiedDataExtractorParameters,
+)
 from open_clip.model import CLIP
-from picsellia_cv_engine.core.contexts.processing.dataset.picsellia_processing_context import (
-    PicselliaProcessingContext,
+from picsellia_cv_engine.core.contexts.processing.dataset import (
+    PicselliaDatasetProcessingContext,
 )
 from picsellia_cv_engine.decorators.pipeline_decorator import Pipeline
 from picsellia_cv_engine.decorators.step_decorator import step
 from PIL import Image
 from torch._C._te import Tensor
 from torchvision.transforms import transforms
-
-from diversified_dataset_extractor.pipeline_utils.parameters.processing_diversified_data_extractor_parameters import (
-    ProcessingDiversifiedDataExtractorParameters,
-)
 
 
 class SupportedEmbeddingModels(Enum):
@@ -74,7 +73,7 @@ def is_embedding_model_name_valid(
 
 @step
 def load_diversified_data_extractor_model(pretrained_weights: str) -> EmbeddingModel:
-    context: PicselliaProcessingContext[
+    context: PicselliaDatasetProcessingContext[
         ProcessingDiversifiedDataExtractorParameters
     ] = Pipeline.get_active_context()
 

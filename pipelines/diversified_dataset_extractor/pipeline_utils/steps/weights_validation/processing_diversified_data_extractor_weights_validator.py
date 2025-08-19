@@ -1,10 +1,4 @@
 import open_clip
-from picsellia_cv_engine.core.contexts.processing.dataset.picsellia_processing_context import (
-    PicselliaProcessingContext,
-)
-from picsellia_cv_engine.decorators.pipeline_decorator import Pipeline
-from picsellia_cv_engine.decorators.step_decorator import step
-
 from diversified_dataset_extractor.pipeline_utils.parameters.processing_diversified_data_extractor_parameters import (
     ProcessingDiversifiedDataExtractorParameters,
 )
@@ -12,6 +6,11 @@ from diversified_dataset_extractor.pipeline_utils.steps.model_loading.processing
     SupportedEmbeddingModels,
     is_embedding_model_name_valid,
 )
+from picsellia_cv_engine.core.contexts.processing.dataset import (
+    PicselliaDatasetProcessingContext,
+)
+from picsellia_cv_engine.decorators.pipeline_decorator import Pipeline
+from picsellia_cv_engine.decorators.step_decorator import step
 
 
 def validate_pretrained_weights(
@@ -63,7 +62,7 @@ def validate_model_architecture(
 
 @step
 def validate_diversified_data_extractor_weights() -> str:
-    context: PicselliaProcessingContext[
+    context: PicselliaDatasetProcessingContext[
         ProcessingDiversifiedDataExtractorParameters
     ] = Pipeline.get_active_context()
 

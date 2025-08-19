@@ -5,6 +5,9 @@ import numpy as np
 import picsellia
 import PIL
 import requests
+from diversified_dataset_extractor.pipeline_utils.steps.model_loading.processing_diversified_data_extractor_model_loader import (
+    EmbeddingModel,
+)
 from picsellia import Client, Data, Datalake, DatasetVersion
 from picsellia.colors import Colors
 from picsellia.sdk.asset import MultiAsset
@@ -17,10 +20,6 @@ from picsellia_cv_engine.core.services.processing.dataset_version_creation_proce
 from PIL import Image, ImageOps
 from scipy.spatial import KDTree
 from tqdm import tqdm
-
-from diversified_dataset_extractor.pipeline_utils.steps.model_loading.processing_diversified_data_extractor_model_loader import (
-    EmbeddingModel,
-)
 
 logger = logging.getLogger("picsellia-engine")
 
@@ -276,7 +275,7 @@ class DiversifiedDataExtractorProcessing(DatasetVersionCreationProcessing):
         pbar.set_postfix_str(s=self.get_tqdm_postfix_string(is_batch_uploading=True))
 
         if len(batch_to_upload) > 0:
-            self._add_data_to_dataset_version(data=batch_to_upload)
+            self.output_dataset_version.add_data(data=batch_to_upload)
             self.uploaded_asset_number += len(batch_to_upload)
 
         pbar.set_postfix_str(s=self.get_tqdm_postfix_string())
