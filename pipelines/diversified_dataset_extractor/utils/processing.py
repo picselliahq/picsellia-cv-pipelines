@@ -5,9 +5,6 @@ import numpy as np
 import picsellia
 import PIL
 import requests
-from diversified_dataset_extractor.pipeline_utils.steps.model_loading.processing_diversified_data_extractor_model_loader import (
-    EmbeddingModel,
-)
 from picsellia import Client, Data, Datalake, DatasetVersion
 from picsellia.colors import Colors
 from picsellia.sdk.asset import MultiAsset
@@ -20,6 +17,7 @@ from picsellia_cv_engine.core.services.processing.dataset_version_creation_proce
 from PIL import Image, ImageOps
 from scipy.spatial import KDTree
 from tqdm import tqdm
+from utils.model_loader import EmbeddingModel
 
 logger = logging.getLogger("picsellia-engine")
 
