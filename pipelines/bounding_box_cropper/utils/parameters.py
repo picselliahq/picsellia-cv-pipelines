@@ -9,9 +9,11 @@ class ProcessingBoundingBoxCropperParameters(Parameters):
             keys=["datalake"], expected_type=str, default="default"
         )
         self.label_name_to_extract = self.extract_parameter(
-            keys=["label_name_to_extract"], expected_type=str
+            keys=["label_name_to_extract"], expected_type=str, default="car"
         )
-        self.data_tag = self.extract_parameter(keys=["data_tag"], expected_type=str)
+        self.data_tag = self.extract_parameter(
+            keys=["data_tag"], expected_type=str, default="processed"
+        )
         self.fix_annotation = self.extract_parameter(
             keys=["fix_annotation"], expected_type=bool, default=True
         )
