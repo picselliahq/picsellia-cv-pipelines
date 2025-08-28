@@ -5,8 +5,7 @@ description = "This pipeline uses the Grounding DINO model to automatically gene
 type = "PRE_ANNOTATION"
 
 [execution]
-picsellia_pipeline_script = "picsellia_pipeline.py"
-local_pipeline_script = "local_pipeline.py"
+pipeline_script = "pipeline.py"
 requirements_file = "pyproject.toml"
 parameters_class = "utils/parameters.py:ProcessingParameters"
 
