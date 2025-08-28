@@ -1,17 +1,17 @@
-from pipeline_utils.steps_utils.processing.base_tiler_processing import (
+from base_tiler_processing import (
     BaseTilerProcessing,
     TileMode,
 )
-from pipeline_utils.steps_utils.processing.classification_tiler_processing import (
+from classification_tiler_processing import (
     ClassificationTilerProcessing,
 )
-from pipeline_utils.steps_utils.processing.object_detection_tiler_processing import (
+from object_detection_tiler_processing import (
     ObjectDetectionTilerProcessing,
 )
-from pipeline_utils.steps_utils.processing.segmentation_tiler_processing import (
+from picsellia.types.enums import InferenceType
+from segmentation_tiler_processing import (
     SegmentationTilerProcessing,
 )
-from picsellia.types.enums import InferenceType
 
 
 class TilerProcessingFactory:

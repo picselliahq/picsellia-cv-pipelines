@@ -1,8 +1,4 @@
-from typing import Optional
-
-from pipeline_utils.steps_utils.processing.base_tiler_processing import (
-    TileMode,
-)
+from base_tiler_processing import TileMode
 from picsellia_cv_engine.core.parameters import Parameters
 
 
@@ -42,19 +38,19 @@ class ProcessingTilerParameters(Parameters):
         )
         self.min_annotation_area_ratio = self.extract_parameter(
             keys=["min_annotation_area_ratio", "min_area_ratio"],
-            expected_type=Optional[float],
-            default=0.,
+            expected_type=float | None,
+            default=0.0,
             range_value=(0, 0.99),
         )
         self.min_annotation_width = self.extract_parameter(
             keys=["min_annotation_width"],
-            expected_type=Optional[int],
+            expected_type=int | None,
             default=0,
             range_value=(0, float("inf")),
         )
         self.min_annotation_height = self.extract_parameter(
             keys=["min_annotation_height"],
-            expected_type=Optional[int],
+            expected_type=int | None,
             default=0,
             range_value=(0, float("inf")),
         )

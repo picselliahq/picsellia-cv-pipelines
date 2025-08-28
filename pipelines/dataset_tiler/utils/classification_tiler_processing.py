@@ -1,6 +1,6 @@
 from typing import Any
 
-from pipeline_utils.steps_utils.processing.base_tiler_processing import (
+from base_tiler_processing import (
     BaseTilerProcessing,
 )
 

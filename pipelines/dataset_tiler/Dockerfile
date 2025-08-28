@@ -18,4 +18,4 @@ RUN uv sync --python=$(which python3.10) --project dataset_tiler
 
 ENV PYTHONPATH="/experiment"
 
-ENTRYPOINT ["run", "python3.10", "dataset_tiler/picsellia_pipeline.py"]
+ENTRYPOINT ["run", "python3.10", "dataset_tiler/pipeline.py"]

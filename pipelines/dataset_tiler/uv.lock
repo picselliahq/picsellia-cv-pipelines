@@ -1,5 +1,5 @@
 version = 1
-revision = 2
+revision = 3
 requires-python = ">=3.10, <3.12"
 resolution-markers = [
     "python_full_version >= '3.11'",
@@ -105,7 +105,7 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
-    { name = "picsellia-cv-engine", git = "https://github.com/picselliahq/picsellia-cv-engine.git?rev=main" },
+    { name = "picsellia-cv-engine", git = "https://github.com/picselliahq/picsellia-cv-engine.git?rev=feat%2Funified-pipeline-context-runner" },
     { name = "picsellia-pipelines-cli", git = "https://github.com/picselliahq/picsellia-pipelines-cli.git?rev=main" },
 ]
 
@@ -345,13 +345,14 @@ wheels = [
 [[package]]
 name = "picsellia-cv-engine"
 version = "0.1.0"
-source = { git = "https://github.com/picselliahq/picsellia-cv-engine.git?rev=main#adb0f34c06c72ce8d674ad1361e9d81a081e03a3" }
+source = { git = "https://github.com/picselliahq/picsellia-cv-engine.git?rev=feat%2Funified-pipeline-context-runner#949622a272b4658fbc519177fb756782685d61cb" }
 dependencies = [
     { name = "numpy" },
     { name = "pandas" },
     { name = "picsellia" },
     { name = "pycocotools" },
     { name = "tabulate" },
+    { name = "toml" },
 ]
 
 [[package]]

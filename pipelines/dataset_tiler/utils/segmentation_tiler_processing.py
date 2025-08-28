@@ -1,6 +1,6 @@
 from typing import Any
 
-from pipeline_utils.steps_utils.processing.object_detection_tiler_processing import (
+from object_detection_tiler_processing import (
     ObjectDetectionTilerProcessing,
 )
 

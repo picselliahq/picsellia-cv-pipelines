@@ -1,11 +1,8 @@
-from pipeline_utils.parameters.processing_tiler_parameters import (
-    ProcessingTilerParameters,
-)
-from pipeline_utils.steps_utils.data_validation.processing_tiler_data_validator import (
-    ProcessingTilerDataValidator,
-)
 from picsellia.types.enums import InferenceType
-from picsellia_cv_engine.core import CocoDataset
+from picsellia_cv_engine.core import (
+    CocoDataset,
+    DatasetCollection,
+)
 from picsellia_cv_engine.core.contexts.processing.dataset import (
     PicselliaDatasetProcessingContext,
 )
@@ -23,6 +20,16 @@ from picsellia_cv_engine.core.services.data.dataset.validator.segmentation.coco_
 )
 from picsellia_cv_engine.decorators.pipeline_decorator import Pipeline
 from picsellia_cv_engine.decorators.step_decorator import step
+from utils.parameters import (
+    ProcessingTilerParameters,
+)
+
+from pipelines.dataset_tiler.utils.processing_tiler_data_validator import (
+    ProcessingTilerDataValidator,
+)
+from pipelines.dataset_tiler.utils.tiler_processing_factory import (
+    TilerProcessingFactory,
+)
 
 
 @step
@@ -90,3 +97,31 @@ def validate_tiler_data(
     processing_validator.validate()
 
     return dataset
+
+
+@step
+def process(
+    dataset_collection: DatasetCollection[CocoDataset],
+) -> CocoDataset:
+    context: PicselliaDatasetProcessingContext[ProcessingTilerParameters] = (
+        Pipeline.get_active_context()
+    )
+
+    processor = TilerProcessingFactory.create_tiler_processing(
+        dataset_type=dataset_collection["input"].dataset_version.type,
+        tile_height=context.processing_parameters.tile_height,
+        tile_width=context.processing_parameters.tile_width,
+        overlap_height_ratio=context.processing_parameters.overlap_height_ratio,
+        overlap_width_ratio=context.processing_parameters.overlap_width_ratio,
+        min_annotation_area_ratio=context.processing_parameters.min_annotation_area_ratio,
+        min_annotation_width=context.processing_parameters.min_annotation_width,
+        min_annotation_height=context.processing_parameters.min_annotation_height,
+        tiling_mode=context.processing_parameters.tiling_mode,
+        padding_color_value=context.processing_parameters.padding_color_value,
+    )
+
+    dataset_collection = processor.process_dataset_collection(
+        dataset_collection=dataset_collection
+    )
+
+    return dataset_collection["output"]
