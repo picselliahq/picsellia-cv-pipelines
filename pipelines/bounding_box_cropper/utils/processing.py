@@ -123,6 +123,7 @@ class BoundingBoxCropperProcessing:
                                 "id": annotation_id,
                                 "image_id": annotation_id,
                                 "category_id": 1,
+                                "bbox": [],
                             }
                         )
                         annotation_id += 1
