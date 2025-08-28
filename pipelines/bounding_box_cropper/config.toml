@@ -5,10 +5,9 @@ description = "This pipeline processes data for X."
 type = "DATASET_VERSION_CREATION"
 
 [execution]
-picsellia_pipeline_script = "picsellia_pipeline.py"
-local_pipeline_script = "local_pipeline.py"
-requirements_file = "requirements.txt"
-parameters_class = "pipeline_utils/parameters/processing_bounding_box_cropper_parameters.py:ProcessingBoundingBoxCropperParameters"
+pipeline_script = "pipeline.py"
+requirements_file = "pyproject.toml"
+parameters_class = "utils/parameters.py:ProcessingBoundingBoxCropperParameters"
 
 [docker]
 image_name = "picsellia/processing-bounding-box-cropper"
