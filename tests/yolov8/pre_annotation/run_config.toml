@@ -1,0 +1,22 @@
+[job]
+type = "PRE_ANNOTATION"
+
+[auth]
+host = "https://staging.picsellia.com"
+organization_name = "test-account"
+
+[parameters]
+agnostic_nms = true
+batch_size = 8
+confidence_threshold = 0.1
+device = "cuda"
+image_size = 640
+label_matching_strategy = "add"
+model_file_name = "pretrained-weights"
+replace_annotations = false
+
+[input.dataset_version]
+id = "0198e049-b98a-7bb6-b043-7cc3c8eeb5e3"
+
+[input.model_version]
+id = "0196a0ec-e802-775f-818a-4d3482f31d31"

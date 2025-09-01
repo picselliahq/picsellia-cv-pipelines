@@ -1,0 +1,24 @@
+[job]
+type = "PRE_ANNOTATION"
+
+[auth]
+host = "https://staging.picsellia.com"
+organization_name = "test-account"
+
+[input.dataset_version]
+id = "01976431-fda1-721b-bb3c-9eabbd56bec0"
+name = "test-preannotation-grounding-dino"
+origin_name = "SampleDataset"
+url = "https://staging.picsellia.com/0189266d-64f5-79b4-9b80-6fcf8a3b498b/dataset/01892b88-63ec-767f-91f9-0765e68d0f78/version/01976431-fda1-721b-bb3c-9eabbd56bec0/assets?offset=0&q=&order_by=-created_at"
+
+
+[input.model_version]
+id = "01976345-2213-746c-9799-0db012ba2330"
+name = "GroundingDINO_SwinT_OGC"
+origin_name = "GroundingDINO"
+url = "https://staging.picsellia.com/0189266d-64f5-79b4-9b80-6fcf8a3b498b/model/01976344-8624-7752-be35-34305ff944a6/version/01976345-2213-746c-9799-0db012ba2330"
+
+
+[parameters]
+box_threshold = 0.35
+text_threshold = 0.25
