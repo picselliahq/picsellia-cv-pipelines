@@ -5,9 +5,10 @@ description = "This pipeline processes data for X."
 type = "PRE_ANNOTATION"
 
 [execution]
-picsellia_pipeline_script = "picsellia_pipeline.py"
-local_pipeline_script = "local_pipeline.py"
-requirements_file = "requirements.txt"
+pipeline_script = "pipeline.py"
+requirements_file = "pyproject.toml"
+parameters_class = "utils/parameters.py:ProcessingYOLOV8PreannotationParameters"
+
 
 [docker]
 image_name = "picsellia/preannotation-yolov8"

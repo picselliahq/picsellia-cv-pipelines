@@ -7,13 +7,16 @@ RUN apt-get update && apt-get install -y \
 
 WORKDIR /experiment
 
+RUN git clone --depth 1 https://github.com/picselliahq/picsellia-cv-base-docker.git /tmp/base-docker &&     cp -r /tmp/base-docker/base/. /experiment
+
+RUN sed -i '1 a source /experiment/./pre_annotation/.venv/bin/activate' /experiment/run.sh
+
 ARG REBUILD_ALL
 COPY ./ ./pre_annotation
 ARG REBUILD_PICSELLIA
 
-RUN uv pip install --python=$(which python3.10) git+https://github.com/picselliahq/picsellia-cv-engine.git@main --project pre_annotation
-RUN uv pip install --python=$(which python3.10) --no-cache -r ./pre_annotation/requirements.txt --project pre_annotation
+RUN uv sync --python=$(which python3.10) --project pre_annotation
 
-ENV PYTHONPATH=":/experiment"
+ENV PYTHONPATH="/experiment"
 
-ENTRYPOINT ["run", "python3.10", "./pre_annotation/picsellia_pipeline.py"]
+ENTRYPOINT ["run", "python3.10", "pre_annotation/pipeline.py"]
