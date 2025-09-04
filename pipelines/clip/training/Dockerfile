@@ -28,4 +28,4 @@ RUN uv sync --python=$(which python3.10) --project training
 
 ENV PYTHONPATH=":/experiment"
 
-ENTRYPOINT ["run", "python3.10", "training/picsellia_pipeline.py"]
+ENTRYPOINT ["run", "python3.10", "training/pipeline.py"]
