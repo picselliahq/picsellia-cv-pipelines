@@ -1,6 +1,6 @@
 [metadata]
-name = "training"
-version = "1.0"
+name = "clip-training"
+version = "1.0.3-rc"
 description = "Training pipeline using YOLO and Ultralytics."
 type = "TRAINING"
 
@@ -11,9 +11,10 @@ parameters_class = "utils/parameters.py:TrainingHyperParameters"
 
 [docker]
 image_name = "picsellia/training-clip"
-image_tag = "test"
+image_tag = "1.0.3-rc"
 
-[model]
-model_name = "CLIP"
-model_version_id = "0197e93d-11bf-7faa-af3f-a9a1940e0de9"
-model_version_name = "v1"
+[model_version]
+name = "v1"
+origin_name = "CLIP"
+framework = "PYTORCH"
+inference_type = "OBJECT_DETECTION"
