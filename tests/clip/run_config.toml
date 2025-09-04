@@ -1,0 +1,18 @@
+override_outputs = true
+
+[job]
+type = "TRAINING"
+
+[auth]
+organization_name = "SoniaGrh"
+host = "https://app.picsellia.com"
+
+[input.train_dataset_version]
+id = "019840ce-ca4a-7036-9f3a-a7556310913e"
+
+[input.model_version]
+id = "0197e93d-11bf-7faa-af3f-a9a1940e0de9"
+
+[output.experiment]
+name = "test-project"
+project_name = "test-clip"
