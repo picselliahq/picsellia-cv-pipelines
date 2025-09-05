@@ -1,0 +1,13 @@
+[project]
+name = "training"
+version = "0.1.0"
+description = "CLIP fine-tuning pipeline"
+requires-python = ">=3.10"
+
+dependencies = [
+    "picsellia-pipelines-cli",
+    "picsellia-cv-engine[clip]>=0.3.0"
+]
+
+[project.optional-dependencies]
+clip = ["picsellia-cv-engine[clip]"]
