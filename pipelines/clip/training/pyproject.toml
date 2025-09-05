@@ -6,11 +6,8 @@ requires-python = ">=3.10"
 
 dependencies = [
     "picsellia-pipelines-cli",
-    "picsellia-cv-engine[clip]"
+    "picsellia-cv-engine[clip]>=0.3.0"
 ]
 
 [project.optional-dependencies]
 clip = ["picsellia-cv-engine[clip]"]
-
-[tool.uv.sources]
-picsellia-cv-engine = { git = "https://github.com/picselliahq/picsellia-cv-engine.git", rev = "feat/unified-pipeline-context-runner", extra = "clip"}
