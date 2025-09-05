@@ -1,4 +1,7 @@
 from picsellia.types.schemas import LogDataType
+from picsellia_cv_engine.core.parameters.augmentation_parameters import (
+    AugmentationParameters,
+)
 from picsellia_cv_engine.core.parameters.base_parameters import Parameters
 
 
@@ -41,3 +44,8 @@ class PaddleOCRHyperParameters(Parameters):
         self.max_text_length = self.extract_parameter(
             keys=["max_text_length"], expected_type=int, default=25
         )
+
+
+class PaddleOCRAugmentationParameters(AugmentationParameters):
+    def __init__(self, log_data: LogDataType):
+        super().__init__(log_data=log_data)

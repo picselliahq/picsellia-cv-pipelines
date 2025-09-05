@@ -6,15 +6,9 @@ from picsellia_cv_engine.core import (
 )
 from picsellia_cv_engine.core.models import Model
 
-from paddle_ocr.pipeline_utils.dataset.paddle_ocr_dataset_context import (
-    PaddleOCRDataset,
-)
-from paddle_ocr.pipeline_utils.model.paddle_ocr_model_collection import (
-    PaddleOCRModelCollection,
-)
-from paddle_ocr.pipeline_utils.parameters.paddle_ocr_hyper_parameters import (
-    PaddleOCRHyperParameters,
-)
+from .dataset import PaddleOCRDataset
+from .model import PaddleOCRModelCollection
+from .parameters import PaddleOCRHyperParameters
 
 
 def generate_bbox_yaml_config(

@@ -13,13 +13,13 @@ RUN apt-get update && apt-get upgrade -y && \
     apt-get update && rm -rf /var/lib/apt/lists/*
 
 RUN python3.10 -m pip install --upgrade pip && \
-    python3.10 -m pip install -U setuptools
+    python3.10 -m pip install -U setuptools && \
+    python3.10 -m pip install uv
 
-# --- Python deps ---
-RUN python3.10 -m pip install git+https://github.com/picselliahq/picsellia-cv-engine.git@main
+RUN git clone --depth 1 https://github.com/picselliahq/picsellia-cv-base-docker.git /tmp/base-docker && \
+    cp -r /tmp/base-docker/base/. /experiment
 
-# --- Shared run script ---
-ADD https://raw.githubusercontent.com/picselliahq/picsellia-cv-base-docker/main/base/run.sh /experiment/run.sh
+RUN sed -i '1 a source /experiment/paddle_ocr/.venv/bin/activate' /experiment/run.sh
 
 RUN ln -s /experiment/run.sh /usr/bin/run && \
     chmod +x /experiment/run.sh && \
@@ -30,16 +30,16 @@ ARG REBUILD_ALL
 COPY ./ ./paddle_ocr
 ARG REBUILD_PICSELLIA
 
-RUN python3.10 -m pip install --no-cache -r ./paddle_ocr/requirements.txt
-
 # --- External clone ---
 RUN git clone https://github.com/PaddlePaddle/PaddleOCR.git --branch release/2.8 ./paddle_ocr/PaddleOCR
+
+RUN uv sync --python=$(which python3.10) --project paddle_ocr
 
 # --- Workspace and env ---
 RUN mkdir -p /workspace /root && chmod -R 777 /workspace /root
 
-ENV PYTHONPATH=":/experiment" \
+ENV PYTHONPATH="/experiment" \
     PATH="/usr/local/cuda/bin:${PATH}" \
     LD_LIBRARY_PATH="/usr/local/cuda/lib64:/usr/local/cuda/lib:/usr/lib/x86_64-linux-gnu:${LD_LIBRARY_PATH}"
 
-ENTRYPOINT ["run", "python3.10", "./paddle_ocr/picsellia_pipeline.py"]
+ENTRYPOINT ["run", "python3.10", "paddle_ocr/pipeline.py"]
