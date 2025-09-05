@@ -1,5 +1,14 @@
-from base_tiler_processing import TileMode
+from enum import Enum
+
 from picsellia_cv_engine.core.parameters import Parameters
+
+
+class TileMode(Enum):
+    CONSTANT = "constant"
+    DROP = "drop"
+    REFLECT = "reflect"
+    EDGE = "edge"
+    WRAP = "wrap"
 
 
 class ProcessingTilerParameters(Parameters):
