@@ -4,15 +4,15 @@ override_outputs = true
 type = "TRAINING"
 
 [auth]
-organization_name = "SoniaGrh"
-host = "https://app.picsellia.com"
+organization_name = "test-account"
+host = "https://staging.picsellia.com"
 
 [input.train_dataset_version]
-id = "019840ce-ca4a-7036-9f3a-a7556310913e"
+id = "01892b88-6572-7161-8b78-ec5fff300cec"
 
 [input.model_version]
-id = "0197e93d-11bf-7faa-af3f-a9a1940e0de9"
+id = "01991517-f20e-7667-a4f7-4216dfcc076a"
 
 [output.experiment]
-name = "test-project"
+name = "test-clip"
 project_name = "test-clip"
