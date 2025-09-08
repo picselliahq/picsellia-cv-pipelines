@@ -1,0 +1,18 @@
+override_outputs = true
+
+[job]
+type = "TRAINING"
+
+[auth]
+organization_name = "SoniaGrh"
+host = "https://app.picsellia.com"
+
+[input.train_dataset_version]
+id = "01907372-2672-7196-bd2a-801ed9e9ac60"
+
+[input.model_version]
+id = "0190828c-db20-7243-b321-2c9c66424ee7"
+
+[output.experiment]
+name = "test-paddle-ocr"
+project_name = "test-paddle-ocr"

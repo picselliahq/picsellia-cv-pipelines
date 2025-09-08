@@ -1,0 +1,20 @@
+override_outputs = true
+
+[job]
+type = "TRAINING"
+
+[auth]
+organization_name = "SoniaGrh"
+host = "https://app.picsellia.com"
+
+[input.train_dataset_version]
+id = "9604b5f5-0ab8-4a33-89cd-99ec37329bf0"
+
+[input.model_version]
+name = "YoloV8-m"
+origin_name = "YoloV8-ObjectDetection"
+visibility = "public"
+
+[output.experiment]
+name = "test-1"
+project_name = "yolov8"
