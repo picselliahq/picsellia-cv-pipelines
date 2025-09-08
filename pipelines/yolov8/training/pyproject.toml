@@ -1,0 +1,19 @@
+[project]
+name = "training-yolov8"
+version = "0.1.0"
+description = "Picsellia processing pipeline"
+requires-python = ">=3.10,<3.11"
+
+dependencies = [
+    "picsellia-cv-engine",
+    "picsellia-pipelines-cli",
+    "ultralytics>=8.3.96",
+    "onnx==1.13",
+    "onnxruntime==1.14",
+    "onnxruntime-gpu==1.21",
+    "onnxslim==0.1.44",
+]
+
+[tool.uv.sources]
+picsellia-cv-engine = { git = "https://github.com/picselliahq/picsellia-cv-engine.git", rev = "fix/ultralytics-steps" }
+picsellia-pipelines-cli = { git = "https://github.com/picselliahq/picsellia-pipelines-cli.git", rev = "main" }

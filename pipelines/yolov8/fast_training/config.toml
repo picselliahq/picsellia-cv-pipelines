@@ -5,8 +5,7 @@ description = "This pipeline processes data for X."
 type = "TRAINING"
 
 [execution]
-picsellia_pipeline_script = "picsellia_pipeline.py"
-local_pipeline_script = "local_pipeline.py"
+pipeline_script = "pipeline.py"
 requirements_file = "requirements.txt"
 
 [docker]

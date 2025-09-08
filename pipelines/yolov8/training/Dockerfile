@@ -19,4 +19,4 @@ RUN export UV_HTTP_TIMEOUT=900 && uv pip install --python=$(which python3.10) --
 
 ENV PYTHONPATH=":/experiment"
 
-ENTRYPOINT ["run", "python3.10", "./yolov8/training/picsellia_pipeline.py"]
+ENTRYPOINT ["run", "python3.10", "yolov8/training/picsellia_pipeline.py"]
