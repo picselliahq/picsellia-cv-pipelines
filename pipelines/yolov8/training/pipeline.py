@@ -8,6 +8,9 @@ from picsellia_cv_engine.core.services.context.unified_context import (
 from picsellia_cv_engine.frameworks.ultralytics.parameters.augmentation_parameters import (
     UltralyticsAugmentationParameters,
 )
+from picsellia_cv_engine.frameworks.ultralytics.parameters.hyper_parameters import (
+    UltralyticsHyperParameters,
+)
 from picsellia_cv_engine.steps.ultralytics.dataset.preparator import (
     prepare_ultralytics_dataset,
 )
@@ -21,9 +24,6 @@ from picsellia_cv_engine.steps.ultralytics.model.loader import (
     load_ultralytics_model,
 )
 from steps import simple_train_ultralytics_model
-from utils.parameters import (
-    UltralyticsHyperParameters,
-)
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--mode", choices=["local", "picsellia"], default="picsellia")
