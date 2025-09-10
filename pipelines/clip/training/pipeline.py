@@ -12,8 +12,8 @@ from picsellia_cv_engine.frameworks.clip.model.model import CLIPModel
 from picsellia_cv_engine.steps.base.dataset.loader import load_coco_datasets
 from picsellia_cv_engine.steps.base.model.builder import build_model
 from picsellia_cv_engine.steps.clip.model.evaluator import evaluate
-from picsellia_cv_engine.steps.clip.model.trainer import train
 from utils.parameters import TrainingHyperParameters
+from utils.custom_train_step import train
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--mode", choices=["local", "picsellia"], default="picsellia")

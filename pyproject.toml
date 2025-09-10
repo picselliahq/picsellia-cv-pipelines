@@ -9,6 +9,8 @@ dependencies = [
     "picsellia>=6.21.0,<7.0.0",
     "picsellia-pipelines-cli",
     "picsellia-cv-engine",
+    "torch>=2.8.0",
+    "transformers>=4.56.1",
 ]
 requires-python = ">=3.10,<3.14"
 readme = "README.md"
@@ -27,3 +29,6 @@ select = [
 ignore = [
     "E501",  # line too long, handled by black
 ]
+
+[tool.uv.sources]
+picsellia-pipelines-cli = { git = "https://github.com/picselliahq/picsellia-pipelines-cli", rev = "feat/improve-pipeline-testing" }

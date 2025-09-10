@@ -8,11 +8,11 @@ organization_name = "test-account"
 host = "https://staging.picsellia.com"
 
 [input.train_dataset_version]
-id = "01892b88-6572-7161-8b78-ec5fff300cec"
+id = "0189df3b-3e0e-7977-847a-b152c539b4cd"
 
 [input.model_version]
 id = "01991517-f20e-7667-a4f7-4216dfcc076a"
 
 [output.experiment]
-name = "test-clip"
-project_name = "test-clip"
+name = "test-clip-tibo"
+project_name = "test-clip-tibo"
