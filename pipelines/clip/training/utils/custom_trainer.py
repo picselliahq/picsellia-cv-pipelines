@@ -188,14 +188,23 @@ def export_dataset_to_clip_json(
     enriched_images = []
 
     enriched_images = coco_to_rich_captions(
-        coco_json_path=dataset.coco_json_path,
+        coco_json_path=dataset.coco_file_path,
         images_root=dataset.images_dir,
         max_captions_per_image=4,   
     )
 
     with open(output_path, "w") as f:
         for item in enriched_images:
-            f.write(json.dumps(item, separators=(",", ":")) + "\n")
+            image_path = item["image"]
+            captions = item["captions"]
+
+            if isinstance(captions, str):
+                captions = [captions]
+
+            for caption in captions:
+                json_line = {"image": image_path, "captions": caption}
+                f.write(json.dumps(json_line, separators=(",", ":")) + "\n")
+
 
 
 def build_clip_command(
@@ -236,7 +245,7 @@ def build_clip_command(
         "--image_column",
         "image",
         "--caption_column",
-        "caption",
+        "captions",
         "--remove_unused_columns",
         "False",
         "--max_seq_length",
