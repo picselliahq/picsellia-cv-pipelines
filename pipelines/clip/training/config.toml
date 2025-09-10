@@ -1,7 +1,7 @@
 [metadata]
 name = "clip-training"
 version = "1.0.6"
-description = "Training pipeline using YOLO and Ultralytics."
+description = "CLIP training pipeline"
 type = "TRAINING"
 
 [execution]
@@ -10,11 +10,11 @@ requirements_file = "pyproject.toml"
 parameters_class = "utils/parameters.py:TrainingHyperParameters"
 
 [docker]
-image_name = "picsellia/training-clip"
+image_name = "soniagrh/training-clip-2"
 image_tag = "1.0.6"
 
 [model_version]
-name = "v1"
+name = "v2"
 origin_name = "CLIP"
 framework = "PYTORCH"
 inference_type = "OBJECT_DETECTION"
