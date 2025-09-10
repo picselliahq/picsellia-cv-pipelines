@@ -1,20 +1,20 @@
 [metadata]
 name = "fine_tuning"
-version = "1.0"
+version = "1.0.3"
 description = "Training pipeline using YOLO and Ultralytics."
 type = "TRAINING"
 
 [execution]
-picsellia_pipeline_script = "picsellia_pipeline.py"
-local_pipeline_script = "local_pipeline.py"
+pipeline_script = "pipeline.py"
 requirements_file = "pyproject.toml"
 parameters_class = "utils/parameters.py:TrainingHyperParameters"
 
 [docker]
 image_name = "picsellia/training-sam2"
-image_tag = "latest"
+image_tag = "1.0.3"
 
-[model]
-model_name = "SAM2"
-model_version_id = "0198418f-84d2-7e21-8bab-77c8d3996172"
-model_version_name = "v1"
+[model_version]
+name = "v1"
+origin_name = "SAM2"
+framework = "PYTORCH"
+inference_type = "SEGMENTATION"
