@@ -14,7 +14,7 @@ ARG REBUILD_ALL
 COPY ./ fine_tuning
 ARG REBUILD_PICSELLIA
 
-RUN bash setup.sh
+RUN bash fine_tuning/setup.sh
 
 # Sync from uv.lock (assumes uv lock has already been created)
 RUN uv sync --python=$(which python3.11) --project fine_tuning
