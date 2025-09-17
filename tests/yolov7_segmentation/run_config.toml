@@ -1,0 +1,18 @@
+override_outputs = true
+
+[job]
+type = "TRAINING"
+
+[auth]
+organization_name = "test-account"
+env = "STAGING"
+
+[input.train_dataset_version]
+id = "01892b87-34ec-73a6-8035-e5ef7bba15f7"
+
+[input.model_version]
+id = "01936972-fe78-706a-8b15-967a78737a11"
+
+[output.experiment]
+name = "test-1"
+project_name = "yolov7"
