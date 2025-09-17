@@ -6,8 +6,6 @@ RUN apt-get update && apt-get install -y \
     git \
     && rm -rf /var/lib/apt/lists/*
 
-RUN uv pip install --python=$(which python3.10) git+https://github.com/picselliahq/picsellia-cv-engine.git@main
-
 ARG REBUILD_ALL
 COPY ./ ./yolov7_segmentation
 ARG REBUILD_PICSELLIA

@@ -5,10 +5,9 @@ description = "This pipeline processes data for X."
 type = "TRAINING"
 
 [execution]
-picsellia_pipeline_script = "picsellia_pipeline.py"
-local_pipeline_script = "local_pipeline.py"
+pipeline_script = "pipeline.py"
 requirements_file = "requirements.txt"
-parameters_class = "pipeline_utils/parameters/yolov7_hyper_parameters.py:PaddleOCRHyperParameters"
+parameters_class = "utils/parameters.py:Yolov7HyperParameters"
 
 [docker]
 image_name = "picsellia/training-yolov7-segmentation"
