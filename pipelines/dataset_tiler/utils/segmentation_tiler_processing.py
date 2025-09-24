@@ -1,6 +1,6 @@
 from typing import Any
 
-from object_detection_tiler_processing import (
+from .object_detection_tiler_processing import (
     ObjectDetectionTilerProcessing,
 )
 

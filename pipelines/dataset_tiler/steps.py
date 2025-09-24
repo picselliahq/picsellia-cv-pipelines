@@ -23,11 +23,10 @@ from picsellia_cv_engine.decorators.step_decorator import step
 from utils.parameters import (
     ProcessingTilerParameters,
 )
-
-from pipelines.dataset_tiler.utils.processing_tiler_data_validator import (
+from utils.processing_tiler_data_validator import (
     ProcessingTilerDataValidator,
 )
-from pipelines.dataset_tiler.utils.tiler_processing_factory import (
+from utils.tiler_processing_factory import (
     TilerProcessingFactory,
 )
 

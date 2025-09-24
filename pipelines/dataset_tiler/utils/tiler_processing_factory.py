@@ -1,15 +1,16 @@
-from base_tiler_processing import (
+from picsellia.types.enums import InferenceType
+
+from .base_tiler_processing import (
     BaseTilerProcessing,
     TileMode,
 )
-from classification_tiler_processing import (
+from .classification_tiler_processing import (
     ClassificationTilerProcessing,
 )
-from object_detection_tiler_processing import (
+from .object_detection_tiler_processing import (
     ObjectDetectionTilerProcessing,
 )
-from picsellia.types.enums import InferenceType
-from segmentation_tiler_processing import (
+from .segmentation_tiler_processing import (
     SegmentationTilerProcessing,
 )
 
