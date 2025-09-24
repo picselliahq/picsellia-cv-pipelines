@@ -4,6 +4,13 @@ type = "DATASET_VERSION_CREATION"
 [auth]
 organization_name = "test-account"
 env = "STAGING"
+host = "https://staging.picsellia.com"
+
+[parameters]
+data_tag = "processed"
+datalake = "default"
+fix_annotation = true
+label_name_to_extract = "car"
 
 [input.dataset_version]
 id = "01892b88-ba7e-7a75-a146-3b9d48280fba"
@@ -11,12 +18,5 @@ name = "single-class-val"
 origin_name = "SampleDataset"
 url = "https://staging.picsellia.com/0189266d-64f5-79b4-9b80-6fcf8a3b498b/dataset/01892b88-63ec-767f-91f9-0765e68d0f78/version/01892b88-ba7e-7a75-a146-3b9d48280fba/assets?offset=0&q=&order_by=-created_at"
 
-
 [output.dataset_version]
 name = "test_bounding_box_cropper"
-
-[parameters]
-data_tag = "processed"
-datalake = "default"
-fix_annotation = true
-label_name_to_extract = "car"

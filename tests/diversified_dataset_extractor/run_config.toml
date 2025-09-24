@@ -6,6 +6,13 @@ type = "DATASET_VERSION_CREATION"
 [auth]
 organization_name = "test-account"
 env = "STAGING"
+host = "https://staging.picsellia.com"
+
+[parameters]
+distance_threshold = 5
+embedding_model = "openclip"
+model_architecture = "ViT-B-16-plus-240"
+pretrained_weights = "laion400m_e32"
 
 [input.dataset_version]
 id = "01892b87-55b0-7f6e-8ae7-f25694ecebc1"
@@ -15,9 +22,3 @@ url = "https://staging.picsellia.com/0189266d-64f5-79b4-9b80-6fcf8a3b498b/datase
 
 [output.dataset_version]
 name = "test_diversified_dataset_extractor"
-
-[parameters]
-distance_threshold = 5
-embedding_model = "openclip"
-model_architecture = "ViT-B-16-plus-240"
-pretrained_weights = "laion400m_e32"
