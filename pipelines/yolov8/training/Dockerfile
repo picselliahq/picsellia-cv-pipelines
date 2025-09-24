@@ -5,18 +5,18 @@ RUN apt-get update && apt-get install -y \
     git \
     && rm -rf /var/lib/apt/lists/*
 
-RUN uv pip install --python=$(which python3.10) git+https://github.com/picselliahq/picsellia-cv-engine.git@main
-
 WORKDIR /experiment
 
+RUN git clone --depth 1 https://github.com/picselliahq/picsellia-cv-base-docker.git /tmp/base-docker &&     cp -r /tmp/base-docker/base/. /experiment
+
+RUN sed -i '1 a source /experiment/./training/.venv/bin/activate' /experiment/run.sh
+
 ARG REBUILD_ALL
-COPY ./ ./yolov8
+COPY ./ ./training
 ARG REBUILD_PICSELLIA
 
-RUN export UV_HTTP_TIMEOUT=900 && uv pip install --python=$(which python3.10) --no-cache -r ./yolov8/training/requirements.txt
-RUN export UV_HTTP_TIMEOUT=900 && uv pip install --python=$(which python3.10) --no-cache torch==2.2.1+cu118 torchaudio==2.2.1+cu118 torchvision==0.17.1+cu118 --find-links https://download.pytorch.org/whl/torch_stable.html
-
+RUN uv sync --python=$(which python3.10) --project training
 
 ENV PYTHONPATH=":/experiment"
 
-ENTRYPOINT ["run", "python3.10", "yolov8/training/picsellia_pipeline.py"]
+ENTRYPOINT ["run", "python3.10", "training/pipeline.py"]
