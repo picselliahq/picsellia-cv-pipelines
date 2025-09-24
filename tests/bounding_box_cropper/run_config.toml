@@ -2,8 +2,8 @@
 type = "DATASET_VERSION_CREATION"
 
 [auth]
-host = "https://staging.picsellia.com"
 organization_name = "test-account"
+env = "STAGING"
 
 [input.dataset_version]
 id = "01892b88-ba7e-7a75-a146-3b9d48280fba"

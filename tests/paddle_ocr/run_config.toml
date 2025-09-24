@@ -5,7 +5,7 @@ type = "TRAINING"
 
 [auth]
 organization_name = "SoniaGrh"
-host = "https://app.picsellia.com"
+env = "PROD"
 
 [input.train_dataset_version]
 id = "01907372-2672-7196-bd2a-801ed9e9ac60"

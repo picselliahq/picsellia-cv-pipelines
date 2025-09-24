@@ -4,8 +4,8 @@ override_outputs = true
 type = "DATASET_VERSION_CREATION"
 
 [auth]
-host = "https://staging.picsellia.com"
 organization_name = "test-account"
+env = "STAGING"
 
 [parameters]
 data_tag = "processed"

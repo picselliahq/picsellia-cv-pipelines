@@ -5,14 +5,33 @@ type = "TRAINING"
 
 [auth]
 organization_name = "SoniaGrh"
-host = "https://app.picsellia.com"
+env = "PROD"
+
+[hyperparameters]
+batch_size = 8
+close_mosaic = 0
+device = "cuda:0"
+epochs = 2
+export_format = "onnx"
+image_size = 640
+patience = 100
+save_period = 100
+seed = 0
+train_set_split_ratio = 0.8
+validate = false
 
 [input.train_dataset_version]
 id = "9604b5f5-0ab8-4a33-89cd-99ec37329bf0"
+name = "train"
+origin_name = "wine_grape"
+version_name = "train"
+url = "https://app.picsellia.com/dataset/version/9604b5f5-0ab8-4a33-89cd-99ec37329bf0"
 
 [input.model_version]
+id = "f6e44ac0-1880-4ce6-a5a0-8be8fce8eadb"
 name = "YoloV8-m"
 origin_name = "YoloV8-ObjectDetection"
+url = "https://app.picsellia.com/model/version/f6e44ac0-1880-4ce6-a5a0-8be8fce8eadb"
 visibility = "public"
 
 [output.experiment]

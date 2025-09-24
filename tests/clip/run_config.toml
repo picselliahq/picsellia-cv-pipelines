@@ -5,7 +5,7 @@ type = "TRAINING"
 
 [auth]
 organization_name = "test-account"
-host = "https://staging.picsellia.com"
+env = "STAGING"
 
 [input.train_dataset_version]
 id = "01892b88-6572-7161-8b78-ec5fff300cec"

@@ -2,8 +2,8 @@
 type = "PRE_ANNOTATION"
 
 [auth]
-host = "https://staging.picsellia.com"
 organization_name = "test-account"
+env = "STAGING"
 
 [parameters]
 agnostic_nms = true

@@ -2,8 +2,8 @@
 type = "PRE_ANNOTATION"
 
 [auth]
-host = "https://staging.picsellia.com"
 organization_name = "test-account"
+env = "STAGING"
 
 [input.dataset_version]
 id = "01976431-fda1-721b-bb3c-9eabbd56bec0"

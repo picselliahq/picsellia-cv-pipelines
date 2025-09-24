@@ -16,3 +16,32 @@ id = "01936972-fe78-706a-8b15-967a78737a11"
 [output.experiment]
 name = "test-1"
 project_name = "yolov7"
+
+[hyperparameters]
+epochs = 2
+image_size = 640
+batch_size = 8
+confidence_threshold = 0.1
+device = "0"
+anchor_t = 4.0
+box = 0.05
+cls = 0.3
+cls_pw = 1.0
+fl_gamma = 0.0
+iou_t = 0.2
+loss_ota = 1
+lr0 = 0.01
+lrf = 0.1
+momentum = 0.937
+obj = 0.7
+obj_pw = 1.0
+patience = 100
+save_period = 100
+seed = 0
+train_set_split_ratio = 0.8
+validate = false
+warmup_bias_lr = 0.1
+warmup_epochs = 3.0
+warmup_momentum = 0.8
+weight_decay = 0.0005
+export_format = "onnx"
