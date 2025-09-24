@@ -1,6 +1,6 @@
 [metadata]
 name = "albumentations_processing"
-version = "1.0"
+version = "1.0.2"
 description = "This pipeline processes data for X."
 type = "DATASET_VERSION_CREATION"
 
@@ -11,6 +11,6 @@ parameters_class = "utils/parameters.py:ProcessingParameters"
 
 [docker]
 image_name = "picsellia/albumentation-processing"
-image_tag = "test"
+image_tag = "1.0.2"
 cpu = "8"
 gpu = "0"

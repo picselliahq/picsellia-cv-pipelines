@@ -19,4 +19,4 @@ RUN uv sync --python=$(which python3.10) --project ./albumentations_processing
 
 ENV PYTHONPATH="/experiment"
 
-ENTRYPOINT ["run", "python3.10", "./albumentations_processing/picsellia_pipeline.py"]
+ENTRYPOINT ["run", "python3.10", "./albumentations_processing/pipeline.py"]
