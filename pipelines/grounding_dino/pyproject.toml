@@ -15,16 +15,10 @@ dependencies = [
     "torchvision==0.20.1",
     "opencv-python",
     "groundingdino",
-    "scikit-learn"
 ]
-
-[tool.uv.extra-build-dependencies]
-groundingdino = ["setuptools", "torch"]
-
-[tool.uv.sources]
-picsellia-cv-engine = { git = "https://github.com/picselliahq/picsellia-cv-engine.git", rev = "feat/unified-pipeline-context-runner" }
-picsellia-pipelines-cli = { git = "https://github.com/picselliahq/picsellia-pipelines-cli.git", rev = "main" }
-groundingdino = { git = "https://github.com/IDEA-Research/GroundingDINO.git", rev = "main" }
 
 [[tool.uv.index]]
 url = "https://download.pytorch.org/whl/cu124"
+
+[tool.uv.sources]
+groundingdino = { git = "https://github.com/IDEA-Research/GroundingDINO.git" }
