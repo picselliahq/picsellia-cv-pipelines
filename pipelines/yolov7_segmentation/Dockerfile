@@ -18,7 +18,7 @@ ARG REBUILD_PICSELLIA
 
 RUN uv sync --python=$(which python3.10) --project yolov7_segmentation
 
-RUN bash fine_tuning/setup.sh
+RUN bash yolov7_segmentation/setup.sh
 
 ENV PYTHONPATH=".:/experiment/yolov7_segmentation/yolov7/seg:/experiment"
 
