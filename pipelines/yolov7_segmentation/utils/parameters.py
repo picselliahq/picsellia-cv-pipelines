@@ -8,8 +8,21 @@ from picsellia_cv_engine.core.parameters.hyper_parameters import (
 
 
 class Yolov7HyperParameters(HyperParameters):
-    def __init__(self, log_data: LogDataType):
-        super().__init__(log_data=log_data)
+    def __init__(self, log_data):
+        super().__init__(log_data)
+
+        self.patience = self.extract_parameter(
+            keys=["patience"], expected_type=int, default=100
+        )
+        self.save_period = self.extract_parameter(
+            keys=["save_period"], expected_type=int, default=100
+        )
+        self.close_mosaic = self.extract_parameter(
+            keys=["close_mosaic"], expected_type=int, default=0
+        )
+        self.export_format = self.extract_parameter(
+            keys=["export_format"], expected_type=str, default="onnx"
+        )
         self.device = self.extract_parameter(
             keys=["device"], expected_type=str, default="0"
         )
@@ -63,9 +76,6 @@ class Yolov7HyperParameters(HyperParameters):
         )
         self.confidence_threshold = self.extract_parameter(
             keys=["confidence_threshold"], expected_type=float, default=0.1
-        )
-        self.iou_threshold = self.extract_parameter(
-            keys=["iou_threshold"], expected_type=float, default=0.45
         )
 
 
