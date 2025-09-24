@@ -1,6 +1,6 @@
 [metadata]
 name = "yolov7_segmentation"
-version = "1.0"
+version = "1.0.1"
 description = ""
 type = "TRAINING"
 
@@ -11,4 +11,10 @@ parameters_class = "utils/parameters.py:Yolov7HyperParameters"
 
 [docker]
 image_name = "picsellia/training-yolov7-segmentation"
-image_tag = "latest"
+image_tag = "1.0.1"
+
+[model_version]
+name = "yolov7-segmentation"
+origin_name = "yolov7"
+framework = "PYTORCH"
+inference_type = "SEGMENTATION"
