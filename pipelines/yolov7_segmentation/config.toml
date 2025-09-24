@@ -1,12 +1,12 @@
 [metadata]
-name = "yolov7"
+name = "yolov7_segmentation"
 version = "1.0"
-description = "This pipeline processes data for X."
+description = ""
 type = "TRAINING"
 
 [execution]
 pipeline_script = "pipeline.py"
-requirements_file = "requirements.txt"
+requirements_file = "pyproject.toml"
 parameters_class = "utils/parameters.py:Yolov7HyperParameters"
 
 [docker]
