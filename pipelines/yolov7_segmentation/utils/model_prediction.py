@@ -12,12 +12,11 @@ from picsellia_cv_engine.core.models import (
     PicselliaPolygon,
     PicselliaPolygonPrediction,
 )
-
-from pipelines.yolov7_segmentation.pipeline_utils.model.yolov7_model_context import (
+from utils.model import (
     Yolov7Model,
     find_latest_run_dir,
 )
-from pipelines.yolov7_segmentation.pipeline_utils.parameters.yolov7_hyper_parameters import (
+from utils.parameters import (
     Yolov7HyperParameters,
 )
 
@@ -76,13 +75,15 @@ class Yolov7SegmentationModelPredictor:
             os.makedirs(project_dir, exist_ok=True)
 
             detect_file_path = os.path.abspath(
-                "pipelines/yolov7_segmentation/yolov7/seg/segment/predict.py"
+                "yolov7_segmentation/yolov7/seg/segment/predict.py"
             )
 
             print(f"Running inference with weights: {self.model.trained_weights_path}")
 
+            venv_python = os.path.abspath("yolov7_segmentation/.venv/bin/python")
+
             command = [
-                "python3.10",
+                venv_python,
                 detect_file_path,
                 "--weights",
                 self.model.trained_weights_path,
@@ -93,7 +94,7 @@ class Yolov7SegmentationModelPredictor:
                 "--conf-thres",
                 str(hyperparameters.confidence_threshold),
                 "--iou-thres",
-                str(hyperparameters.iou_threshold),
+                str(hyperparameters.iou_t),
                 "--device",
                 str(hyperparameters.device),
                 "--save-txt",

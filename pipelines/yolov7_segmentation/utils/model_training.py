@@ -73,11 +73,13 @@ class Yolov7ModelTrainer:
         os.makedirs(project_dir, exist_ok=True)
 
         train_file_path = os.path.abspath(
-            "pipelines/yolov7_segmentation/yolov7/seg/segment/train.py"
+            "yolov7_segmentation/yolov7/seg/segment/train.py"
         )
 
+        venv_python = os.path.abspath("yolov7_segmentation/.venv/bin/python")
+
         command = [
-            "python3.10",
+            venv_python,
             train_file_path,
             "--weights",
             self.model.pretrained_weights_path,
@@ -100,13 +102,13 @@ class Yolov7ModelTrainer:
             "--name",
             self.model.name,
             "--api_token",
-            api_token,
+            str(api_token),
             "--organization_id",
-            organization_id,
+            str(organization_id),
             "--host",
             host,
             "--experiment_id",
-            experiment_id,
+            str(experiment_id),
         ]
 
         process = subprocess.Popen(command, stdout=None, stderr=None, text=True)
