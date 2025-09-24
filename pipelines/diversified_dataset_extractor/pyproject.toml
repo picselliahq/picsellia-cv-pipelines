@@ -12,9 +12,4 @@ dependencies = [
     "requests>=2.32.3, <3.0.0",
     "scipy>=1.14.0, <2.0.0",
     "tqdm>=4.66.0, <5.0.0",
-
 ]
-
-[tool.uv.sources]
-picsellia-cv-engine = { git = "https://github.com/picselliahq/picsellia-cv-engine.git", rev = "feat/unified-pipeline-context-runner" }
-picsellia-pipelines-cli = { git = "https://github.com/picselliahq/picsellia-pipelines-cli.git", rev = "main" }

@@ -22,4 +22,4 @@ RUN chmod 777 /workspace
 
 ENV PYTHONPATH="/experiment"
 
-ENTRYPOINT ["run", "python3.11", "diversified_dataset_extractor/picsellia_pipeline.py"]
+ENTRYPOINT ["run", "python3.11", "diversified_dataset_extractor/pipeline.py"]
