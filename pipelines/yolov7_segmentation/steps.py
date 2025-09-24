@@ -16,9 +16,6 @@ from picsellia_cv_engine.core.parameters.export_parameters import (
 from picsellia_cv_engine.core.services.data.dataset.loader import (
     TrainingDatasetCollectionExtractor,
 )
-from picsellia_cv_engine.core.services.model.evaluator.model_evaluator import (
-    ModelEvaluator,
-)
 from picsellia_cv_engine.core.services.utils.dataset_logging import log_labelmap
 from picsellia_cv_engine.decorators.pipeline_decorator import Pipeline
 from picsellia_cv_engine.decorators.step_decorator import step
@@ -75,7 +72,7 @@ def get_dataset_collection() -> Yolov7DatasetCollection:
     )
 
     yolov7_dataset_collection.dataset_path = os.path.join(
-        os.getcwd(), context.experiment.name, "dataset"
+        context.working_dir, "dataset"
     )
 
     yolov7_dataset_collection.download_all(
@@ -135,13 +132,9 @@ def get_model(
         hyperparameters_name=hyperparameters_name,
         exported_weights_name=exported_weights_name,
     )
-    model.download_weights(
-        destination_dir=os.path.join(os.getcwd(), context.experiment.name, "model")
-    )
+    model.download_weights(destination_dir=os.path.join(context.working_dir, "model"))
     model.set_hyperparameters_path(
-        destination_path=os.path.join(
-            os.getcwd(), context.experiment.name, "model", "weights"
-        )
+        destination_path=os.path.join(context.working_dir, "model", "weights")
     )
     return model
 
@@ -251,7 +244,7 @@ def train_model(
 
 
 @step
-def evaluate_model(
+def evaluate_yolov7_model(
     model: Yolov7Model,
     dataset: TBaseDataset,
 ) -> None:
@@ -270,15 +263,11 @@ def evaluate_model(
         dataset=dataset,
     )
 
-    model_evaluator = ModelEvaluator(
-        experiment=context.experiment, inference_type=model.model_version.type
-    )
-    model_evaluator.evaluate(picsellia_predictions=picsellia_polygons_predictions)
-
     evaluate_model_impl(
         context=context,
         picsellia_predictions=picsellia_polygons_predictions,
         inference_type=model.model_version.type,
         assets=dataset.assets,
-        output_dir=context.experiment.get_logs_dir(),
+        output_dir=os.path.join(model.results_dir, "inference"),
+        training_labelmap=dict(enumerate(model.labelmap.keys())),
     )
