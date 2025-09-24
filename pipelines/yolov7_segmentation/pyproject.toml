@@ -7,6 +7,7 @@ requires-python = ">=3.10,<3.12"
 dependencies = [
     "picsellia-cv-engine",
     "picsellia-pipelines-cli",
+    "ultralytics>=8.3.96",
     "Pillow>=7.1.2",
     "PyYAML>=5.3.1",
     "ipython",
@@ -21,11 +22,6 @@ dependencies = [
     "seaborn>=0.11.0",
     "tensorboard>=2.4.1",
     "thop>=0.1.1",
-    "torch>=1.7.0",
     "torchvision>=0.8.1",
     "tqdm>=4.64.0",
 ]
-
-[tool.uv.sources]
-picsellia-cv-engine = { git = "https://github.com/picselliahq/picsellia-cv-engine.git", rev = "main" }
-picsellia-pipelines-cli = { git = "https://github.com/picselliahq/picsellia-pipelines-cli.git", rev = "main" }
