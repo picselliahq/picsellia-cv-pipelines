@@ -303,9 +303,9 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
     )
     labels = np.concatenate(dataset.labels, 0)
     mlc = int(labels[:, 0].max())  # max label class
-    assert (
-        mlc < nc
-    ), f"Label class {mlc} exceeds nc={nc} in {data}. Possible class labels are 0-{nc - 1}"
+    assert mlc < nc, (
+        f"Label class {mlc} exceeds nc={nc} in {data}. Possible class labels are 0-{nc - 1}"
+    )
 
     # Process 0
     if RANK in {-1, 0}:
@@ -582,7 +582,7 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
             log_vals = list(mloss) + list(results) + lr
             # callbacks.run('on_fit_epoch_end', log_vals, epoch, best_fitness, fi)
             # Log val metrics and media
-            metrics_dict = dict(zip(KEYS, log_vals))
+            metrics_dict = dict(zip(KEYS, log_vals, strict=False))
             logger.log_metrics(metrics_dict, epoch)
             if plots:
                 files = sorted(save_dir.glob("val*.jpg"))
@@ -661,7 +661,9 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
                             best_fitness,
                             fi,
                         )
-                        metrics_dict = dict(zip(KEYS, list(mloss) + list(results) + lr))
+                        metrics_dict = dict(
+                            zip(KEYS, list(mloss) + list(results) + lr, strict=False)
+                        )
                         logger.log_metrics(metrics_dict, epoch)
 
         # callbacks.run('on_train_end', last, best, epoch, results)
@@ -885,9 +887,9 @@ def main(opt, callbacks=Callbacks()):
             str(opt.weights),
             str(opt.project),
         )  # checks
-        assert len(opt.cfg) or len(
-            opt.weights
-        ), "either --cfg or --weights must be specified"
+        assert len(opt.cfg) or len(opt.weights), (
+            "either --cfg or --weights must be specified"
+        )
         if opt.evolve:
             if opt.project == str(
                 ROOT / "runs/train"
@@ -909,15 +911,15 @@ def main(opt, callbacks=Callbacks()):
         msg = "is not compatible with YOLOv5 Multi-GPU DDP training"
         assert not opt.image_weights, f"--image-weights {msg}"
         assert not opt.evolve, f"--evolve {msg}"
-        assert (
-            opt.batch_size != -1
-        ), f"AutoBatch with --batch-size -1 {msg}, please pass a valid --batch-size"
-        assert (
-            opt.batch_size % WORLD_SIZE == 0
-        ), f"--batch-size {opt.batch_size} must be multiple of WORLD_SIZE"
-        assert (
-            torch.cuda.device_count() > LOCAL_RANK
-        ), "insufficient CUDA devices for DDP command"
+        assert opt.batch_size != -1, (
+            f"AutoBatch with --batch-size -1 {msg}, please pass a valid --batch-size"
+        )
+        assert opt.batch_size % WORLD_SIZE == 0, (
+            f"--batch-size {opt.batch_size} must be multiple of WORLD_SIZE"
+        )
+        assert torch.cuda.device_count() > LOCAL_RANK, (
+            "insufficient CUDA devices for DDP command"
+        )
         torch.cuda.set_device(LOCAL_RANK)
         device = torch.device("cuda", LOCAL_RANK)
         dist.init_process_group(backend="nccl" if dist.is_nccl_available() else "gloo")
