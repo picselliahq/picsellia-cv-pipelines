@@ -269,5 +269,5 @@ def evaluate_yolov7_model(
         inference_type=model.model_version.type,
         assets=dataset.assets,
         output_dir=os.path.join(model.results_dir, "inference"),
-        training_labelmap=dict(enumerate(model.labelmap.keys())),
+        training_labelmap=context.experiment.get_log("labelmap").data,
     )

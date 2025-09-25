@@ -9,6 +9,7 @@ from picsellia_cv_engine.core.services.context.unified_context import (
 from picsellia_cv_engine.decorators.pipeline_decorator import pipeline
 from picsellia_cv_engine.steps.base.dataset.validator import validate_dataset
 from steps import (
+    evaluate_yolov7_model,
     get_dataset_collection,
     get_model,
     prepare_dataset_collection,
@@ -51,7 +52,7 @@ def yolov7_segmentation_training_pipeline():
     # model = load_model()
     model = prepare_model(model=model)
     model = train_model(model=model, dataset_collection=dataset_collection)
-    # evaluate_yolov7_model(model=model, dataset=dataset_collection["test"])
+    evaluate_yolov7_model(model=model, dataset=dataset_collection["test"])
 
 
 if __name__ == "__main__":
