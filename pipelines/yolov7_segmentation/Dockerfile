@@ -6,22 +6,20 @@ RUN apt-get update && apt-get install -y \
     git \
     && rm -rf /var/lib/apt/lists/*
 
-RUN uv pip install --python=$(which python3.10) git+https://github.com/picselliahq/picsellia-cv-engine.git@main
-
-ARG REBUILD_ALL
-COPY ./pipelines/yolov7_segmentation/requirements.txt ./pipelines/yolov7_segmentation/requirements.txt
-ARG REBUILD_PICSELLIA
-
-RUN export UV_HTTP_TIMEOUT=900 && uv pip install --python=$(which python3.10) --no-cache -r ./pipelines/yolov7_segmentation/requirements.txt
-
 WORKDIR /experiment
 
-COPY ./pipelines/yolov7_segmentation ./pipelines/yolov7_segmentation
+RUN git clone --depth 1 https://github.com/picselliahq/picsellia-cv-base-docker.git /tmp/base-docker &&     cp -r /tmp/base-docker/base/. /experiment
 
-RUN cd /experiment/pipelines/yolov7_segmentation && git clone https://github.com/WongKinYiu/yolov7 --branch u7
+RUN sed -i '1 a source /experiment/./yolov7_segmentation/.venv/bin/activate' /experiment/run.sh
 
-COPY ./pipelines/yolov7_segmentation/yolov7_changes/ /experiment/pipelines/yolov7_segmentation/yolov7/seg/
+ARG REBUILD_ALL
+COPY ./ ./yolov7_segmentation
+ARG REBUILD_PICSELLIA
 
-ENV PYTHONPATH=".:/experiment/pipelines/yolov7_segmentation/yolov7/seg:/experiment"
+RUN uv sync --python=$(which python3.10) --project yolov7_segmentation
 
-ENTRYPOINT ["run", "python3.10", "pipelines/yolov7_segmentation/training_pipeline.py"]
+RUN bash yolov7_segmentation/setup.sh
+
+ENV PYTHONPATH=".:/experiment/yolov7_segmentation/yolov7/seg:/experiment"
+
+ENTRYPOINT ["run", "python3.10", "yolov7_segmentation/pipeline.py"]

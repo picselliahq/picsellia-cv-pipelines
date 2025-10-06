@@ -24,10 +24,11 @@ ARG REBUILD_PICSELLIA
 
 # Sync from uv.lock (assumes uv lock has already been created)
 RUN uv sync --python=$(which python3.10) --project grounding_dino
-RUN uv add --python=$(which python3.10) git+https://github.com/IDEA-Research/GroundingDINO.git --project grounding_dino --no-build-isolation
+
+RUN bash grounding_dino/setup.sh
 
 ENV PYTHONPATH="/experiment"
 ENV PATH="/usr/local/cuda/bin:$PATH"
 ENV LD_LIBRARY_PATH="/usr/local/cuda/lib64:/usr/lib/x86_64-linux-gnu:$LD_LIBRARY_PATH"
 
-ENTRYPOINT ["run", "python3.10", "grounding_dino/picsellia_pipeline.py"]
+ENTRYPOINT ["run", "python3.10", "grounding_dino/pipeline.py"]

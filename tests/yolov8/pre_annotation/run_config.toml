@@ -1,0 +1,29 @@
+[job]
+type = "PRE_ANNOTATION"
+
+[auth]
+organization_name = "test-account"
+env = "STAGING"
+
+[parameters]
+agnostic_nms = true
+batch_size = 8
+confidence_threshold = 0.1
+device = "cuda"
+image_size = 640
+label_matching_strategy = "add"
+model_file_name = "pretrained-weights"
+replace_annotations = false
+
+[input.dataset_version]
+id = "0198e049-b98a-7bb6-b043-7cc3c8eeb5e3"
+name = "test-preannotation-yolov8"
+origin_name = "SampleDataset"
+url = "https://staging.picsellia.com/0189266d-64f5-79b4-9b80-6fcf8a3b498b/dataset/01892b88-63ec-767f-91f9-0765e68d0f78/version/0198e049-b98a-7bb6-b043-7cc3c8eeb5e3/assets?offset=0&q=&order_by=-created_at"
+
+
+[input.model_version]
+id = "0196a0ec-e802-775f-818a-4d3482f31d31"
+name = "YoloV8-m"
+origin_name = "YoloV8-ObjectDetection"
+url = "https://staging.picsellia.com/0189266d-64f5-79b4-9b80-6fcf8a3b498b/model/0196a0ec-e4b2-7034-ac99-66053ad0fd0c/version/0196a0ec-e802-775f-818a-4d3482f31d31"

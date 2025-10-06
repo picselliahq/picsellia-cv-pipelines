@@ -1,0 +1,31 @@
+override_outputs = true
+
+[job]
+type = "DATASET_VERSION_CREATION"
+
+[auth]
+organization_name = "test-account"
+env = "STAGING"
+
+[parameters]
+data_tag = "processed"
+datalake = "default"
+fix_annotation = true
+min_annotation_area_ratio = 0.0
+min_annotation_height = 0
+min_annotation_width = 0
+overlap_height_ratio = 0
+overlap_width_ratio = 0
+padding_color_value = 114
+tile_height = 240
+tile_width = 240
+tiling_mode = "CONSTANT"
+
+[input.dataset_version]
+id = "01892b87-55b0-7f6e-8ae7-f25694ecebc1"
+name = "eval"
+origin_name = "Banana Segmentation"
+url = "https://staging.picsellia.com/0189266d-64f5-79b4-9b80-6fcf8a3b498b/dataset/01892b85-3c3b-72c8-943d-8a780c46a82d/version/01892b87-55b0-7f6e-8ae7-f25694ecebc1/assets?offset=0&q=&order_by=-created_at"
+
+[output.dataset_version]
+name = "test_dataset_tiler"

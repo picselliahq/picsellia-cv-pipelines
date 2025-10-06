@@ -5,19 +5,21 @@ RUN apt-get update && apt-get install -y \
     git \
     && rm -rf /var/lib/apt/lists/*
 
-RUN uv pip install --python=$(which python3.11) git+https://github.com/picselliahq/picsellia-cv-engine.git@main
+WORKDIR /experiment
+
+RUN git clone --depth 1 https://github.com/picselliahq/picsellia-cv-base-docker.git /tmp/base-docker &&     cp -r /tmp/base-docker/base/. /experiment
+
+RUN sed -i '1 a source /experiment/./diversified_dataset_extractor/.venv/bin/activate' /experiment/run.sh
 
 ARG REBUILD_ALL
-COPY ./pipelines/diversified_dataset_extractor/requirements.txt ./pipelines/diversified_dataset_extractor/requirements.txt
+COPY ./ ./diversified_dataset_extractor
 ARG REBUILD_PICSELLIA
 
-RUN uv pip install --python=$(which python3.11) --no-cache -r ./pipelines/diversified_dataset_extractor/requirements.txt
-
-WORKDIR /experiment
+RUN uv sync --python=$(which python3.11) --project diversified_dataset_extractor
 
 RUN mkdir -p /workspace
 RUN chmod 777 /workspace
 
-ENV PYTHONPATH=":/experiment"
+ENV PYTHONPATH="/experiment"
 
-ENTRYPOINT ["run", "python3.11", "pipelines/diversified_dataset_extractor/processing_pipeline.py"]
+ENTRYPOINT ["run", "python3.11", "diversified_dataset_extractor/pipeline.py"]

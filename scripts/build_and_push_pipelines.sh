@@ -1,47 +1,82 @@
 #!/bin/bash
 
+set -euo pipefail
+
 PIPELINES_DIR="pipelines"
-EXCLUDE_DIRS=("kie" "augmentations_pipeline")
-TAG=${1:-"test"} # Default to "test" if no argument is provided
+EXCLUDE_DIRS=("kie" "augmentations_pipeline" "pre_annotation")
+DEFAULT_TAG=${1:-"latest"}
+
+echo "🔍 Scanning Dockerfiles recursively..."
 
 find "$PIPELINES_DIR" -type f -name "Dockerfile" | while read -r dockerfile_path; do
     pipeline_dir=$(dirname "$dockerfile_path")
     pipeline_name=$(basename "$pipeline_dir")
-    parent_name=$(basename "$(dirname "$pipeline_dir")")
+    config_path="$pipeline_dir/config.toml"
 
-    # Exclude
-    should_skip=false
+    # Skip excluded pipelines
     for excluded in "${EXCLUDE_DIRS[@]}"; do
-        if [[ "$excluded" == "$pipeline_name" ]]; then
-            should_skip=true
-            break
+        if [[ "$pipeline_name" == "$excluded" ]]; then
+            echo "⏭️  Skipping $pipeline_name (excluded)"
+            continue 2
         fi
     done
-    if $should_skip; then
-        echo "Skipping $pipeline_name (excluded)"
-        continue
-    fi
 
-    entrypoint=$(grep "ENTRYPOINT" "$dockerfile_path" || echo "")
-    if [[ $entrypoint =~ training_pipeline.py ]] || [[ -f "$pipeline_dir/training_pipeline.py" ]]; then
-        prefix="training-"
-    elif [[ $entrypoint =~ processing_pipeline.py ]] || [[ -f "$pipeline_dir/processing_pipeline.py" ]]; then
-        prefix="processing-"
+    # Get image name & tag from config.toml if exists
+    if [[ -f "$config_path" ]]; then
+        echo "📄 Reading config.toml for $pipeline_name..."
+        image_name=$(grep '^image_name' "$config_path" | cut -d '"' -f2 || true)
+        image_tag=$(grep '^image_tag' "$config_path" | cut -d '"' -f2 || true)
     else
-        prefix=""
+        image_name=""
+        image_tag=""
     fi
 
-    docker_image_name=$(echo "$pipeline_name" | tr '_' '-')
-    if [[ "$parent_name" != "$(basename $PIPELINES_DIR)" ]]; then
-        docker_image_name="${docker_image_name}-$(echo "$parent_name" | tr '_' '-')"
+    # Fallbacks if config.toml is missing or incomplete
+    if [[ -z "$image_name" ]]; then
+        parent_name=$(basename "$(dirname "$pipeline_dir")")
+        base_name=$(echo "$pipeline_name" | tr '_' '-')
+        if [[ "$parent_name" != "$(basename $PIPELINES_DIR)" ]]; then
+            image_name="picsellia/${base_name}-$(echo "$parent_name" | tr '_' '-')"
+        else
+            image_name="picsellia/${base_name}"
+        fi
+    fi
+    if [[ -z "$image_tag" ]]; then
+        image_tag="$DEFAULT_TAG"
     fi
 
-    echo "Building $pipeline_dir..."
-    docker build . -f "$dockerfile_path" -t "picsellia/${prefix}${docker_image_name}:${TAG}"
-    if [[ $? -eq 0 ]]; then
-        echo "Pushing ${prefix}${docker_image_name}..."
-        docker push "picsellia/${prefix}${docker_image_name}:${TAG}"
-    else
-        echo "Build failed for $pipeline_dir, skipping push"
+    full_image="${image_name}:${image_tag}"
+
+    echo ""
+    echo "📦 Building Docker image for: $pipeline_name"
+    echo "📁 Context: $pipeline_dir"
+    echo "🐳 Image: $full_image"
+
+    # Create default .dockerignore if missing
+    dockerignore_path="$pipeline_dir/.dockerignore"
+    if [[ ! -f "$dockerignore_path" ]]; then
+        echo "📄 Creating .dockerignore..."
+        cat <<EOF > "$dockerignore_path"
+.venv/
+venv/
+__pycache__/
+*.pyc
+*.pyo
+.DS_Store
+logs/
+EOF
     fi
+
+    # Build image
+    echo "🔨 Building image..."
+    docker build -t "$full_image" -f "$dockerfile_path" "$pipeline_dir"
+
+    # Push image
+    echo "📤 Pushing image..."
+    docker push "$full_image"
+
+    echo "✅ Image pushed: $full_image"
 done
+
+echo ""
+echo "🏁 All Docker images built and pushed successfully."

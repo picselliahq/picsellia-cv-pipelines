@@ -1,5 +1,0 @@
-picsellia
-opencv-python
-Pillow
-tabulate
-albumentations

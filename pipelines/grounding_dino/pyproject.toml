@@ -14,11 +14,11 @@ dependencies = [
     "torchaudio==2.5.1",
     "torchvision==0.20.1",
     "opencv-python",
+    "groundingdino",
 ]
-
-[tool.uv.sources]
-picsellia-cv-engine = { git = "https://github.com/picselliahq/picsellia-cv-engine.git", rev = "main" }
-picsellia-pipelines-cli = { git = "https://github.com/picselliahq/picsellia-pipelines-cli.git", rev = "main" }
 
 [[tool.uv.index]]
 url = "https://download.pytorch.org/whl/cu124"
+
+[tool.uv.sources]
+groundingdino = { git = "https://github.com/IDEA-Research/GroundingDINO.git" }

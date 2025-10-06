@@ -1,7 +1,7 @@
 import os
 from copy import deepcopy
 from glob import glob
-from typing import Any, Optional
+from typing import Any
 
 import albumentations as A
 import numpy as np
@@ -163,7 +163,9 @@ def apply_bbox_augmentation(
     transformed_annotations = []
 
     # Reconstruct annotations
-    for bbox, category_id in zip(transformed["bboxes"], transformed["bbox_labels"]):
+    for bbox, category_id in zip(
+        transformed["bboxes"], transformed["bbox_labels"], strict=False
+    ):
         if is_valid_bbox(bbox):
             transformed_annotations.append(
                 {
@@ -203,7 +205,7 @@ def prepare_keypoints_and_map(
 
 def clip_polygon_to_image(
     polygon_coords: list[tuple[float, float]], img_width: int, img_height: int
-) -> Optional[list[float]]:
+) -> list[float] | None:
     if len(polygon_coords) < 3:
         return None  # not a polygon
 
@@ -290,12 +292,12 @@ def apply_segmentation_augmentation(
 
 def process_images(
     input_images_dir: str,
-    input_coco: Optional[dict[str, Any]],
+    input_coco: dict[str, Any] | None,
     parameters: dict[str, Any],
     output_images_dir: str,
-    output_coco: Optional[dict[str, Any]],
+    output_coco: dict[str, Any] | None,
     inference_type: InferenceType,
-) -> Optional[dict[str, Any]]:
+) -> dict[str, Any] | None:
     """
     Process images and their annotations using Albumentations augmentations.
 

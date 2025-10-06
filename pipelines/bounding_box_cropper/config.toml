@@ -1,0 +1,16 @@
+[metadata]
+name = "bounding-box-cropper"
+version = "1.0.1"
+description = "This pipeline processes data for X."
+type = "DATASET_VERSION_CREATION"
+
+[execution]
+pipeline_script = "pipeline.py"
+requirements_file = "pyproject.toml"
+parameters_class = "utils/parameters.py:ProcessingBoundingBoxCropperParameters"
+
+[docker]
+image_name = "picsellia/processing-bounding-box-cropper"
+image_tag = "1.0.1"
+cpu = "8"
+gpu = "0"
