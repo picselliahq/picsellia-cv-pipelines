@@ -10,7 +10,7 @@ from picsellia_cv_engine.core.services.context.unified_context import (
 )
 from picsellia_cv_engine.steps.base.dataset.loader import load_coco_datasets
 from picsellia_cv_engine.steps.base.model.builder import build_model
-from steps import evaluate_model, train
+from steps import evaluate, train
 from utils.parameters import TrainingHyperParameters
 
 parser = argparse.ArgumentParser()
@@ -32,9 +32,7 @@ def training_pipeline():
     picsellia_datasets = load_coco_datasets()
     picsellia_model = build_model(pretrained_weights_name="pretrained-weights")
     train(picsellia_model=picsellia_model, picsellia_datasets=picsellia_datasets)
-    evaluate_model(
-        picsellia_model=picsellia_model, picsellia_datasets=picsellia_datasets
-    )
+    evaluate(picsellia_model=picsellia_model, picsellia_datasets=picsellia_datasets)
 
 
 if __name__ == "__main__":

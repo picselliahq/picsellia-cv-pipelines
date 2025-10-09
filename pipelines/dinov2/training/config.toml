@@ -1,7 +1,7 @@
 [metadata]
 name = "training"
 version = "1.0"
-description = "Training pipeline using YOLOV8."
+description = "Training pipeline using DinoV2."
 type = "TRAINING"
 
 [execution]
@@ -10,8 +10,8 @@ requirements_file = "pyproject.toml"
 parameters_class = "utils/parameters.py:TrainingHyperParameters"
 
 [docker]
-image_name = ""
-image_tag = ""
+image_name = "picsellia/training-dinov2"
+image_tag = "1.0.2"
 
 [model_version]
 name = "v1"

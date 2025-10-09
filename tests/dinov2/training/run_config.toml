@@ -4,15 +4,18 @@ override_outputs = true
 type = "TRAINING"
 
 [auth]
-organization_name = "SoniaGrh"
-env = "PROD"
+organization_name = "test-account"
+env = "STAGING"
 
 [input.train_dataset_version]
-id = "98018700-5c03-443b-96c6-9b4e6de0c898"
+id = "01892b87-f7a7-77f6-9ab8-489213c64f3d"
 
 [input.model_version]
-id = "019980b5-2c11-750e-87b3-65e3c3004c54"
+id = "0199c8a5-fc0f-70f7-96b9-146f7f661adb"
 
 [output.experiment]
-name = "training_exp1"
-project_name = "training"
+name = "dinov2_exp2"
+project_name = "dinov2"
+
+[hyperparameters]
+epochs = 3

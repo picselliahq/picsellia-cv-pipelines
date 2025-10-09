@@ -1,12 +1,14 @@
 [project]
-name = "training"
+name = "dinov2"
 version = "0.1.0"
 description = "YoloV8 training pipeline"
 requires-python = ">=3.10"
 
 dependencies = [
-    "picsellia-pipelines-cli",
+    "picsellia-pipelines-cli>=0.1.2",
     "picsellia-cv-engine",
-    "transformers[torch]>=4.54.1",
-    "evaluate"
+    "transformers[torch]>=4.0"
 ]
+
+[tool.uv.sources]
+picsellia-cv-engine = { git = "https://github.com/picselliahq/picsellia-cv-engine", branch = "fix/context-config" }
