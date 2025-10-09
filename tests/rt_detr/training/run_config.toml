@@ -1,0 +1,18 @@
+override_outputs = true
+
+[job]
+type = "TRAINING"
+
+[auth]
+organization_name = "SoniaGrh"
+env = "PROD"
+
+[input.train_dataset_version]
+id = "019073a6-b465-77f2-86b5-52c1c9876029"
+
+[input.model_version]
+id = "0199c8fe-6721-74ec-8d9f-8412205c4185"
+
+[output.experiment]
+name = "rt_detr_exp1"
+project_name = "rt_detr"
