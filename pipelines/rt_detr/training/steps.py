@@ -229,7 +229,7 @@ def evaluate(
 
     # 3) Boucle assets → un seul PicselliaRectanglePrediction par asset
     for asset in ds.assets:
-        img_path = asset.file_path
+        img_path = os.path.join(ds.images_dir, asset.id_with_extension)
         image = Image.open(img_path).convert("RGB")
         w, h = image.size
 
@@ -276,11 +276,7 @@ def evaluate(
 
     # 4) Évaluation Picsellia (mAP, etc.)
     if predictions:
-        training_labelmap = (
-            ctx.experiment.get_log("labelmap").data
-            if ctx.experiment.get_log("labelmap")
-            else id2label
-        )
+        training_labelmap = ctx.experiment.get_log("labelmap").data
         evaluate_model_impl(
             context=ctx,
             picsellia_predictions=predictions,
