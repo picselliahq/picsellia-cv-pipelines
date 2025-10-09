@@ -2,7 +2,8 @@ import os
 from typing import Any
 
 import torch
-from picsellia.types.enums import InferenceType
+from picsellia import Experiment
+from picsellia.types.enums import InferenceType, LogType
 from picsellia_cv_engine import Pipeline, step
 from picsellia_cv_engine.core import CocoDataset, DatasetCollection, Model
 from picsellia_cv_engine.core.models import (
@@ -19,6 +20,7 @@ from transformers import (
     AutoImageProcessor,
     AutoModelForObjectDetection,
     Trainer,
+    TrainerCallback,
     TrainingArguments,
 )
 
@@ -71,7 +73,13 @@ class CocoHFDataset(Dataset):
         )
         # squeeze batch dim added by processor
         return {
-            k: (v.squeeze(0) if isinstance(v, torch.Tensor) else v)
+            k: (
+                v.squeeze(0)
+                if isinstance(v, torch.Tensor)
+                else (
+                    v[0] if k == "labels" and isinstance(v, list) and len(v) == 1 else v
+                )
+            )
             for k, v in encoding.items()
         }
 
@@ -81,6 +89,19 @@ def hf_collate(batch: list[dict[str, Any]]) -> dict[str, Any]:
     pixel_values = torch.stack([b["pixel_values"] for b in batch])
     labels = [b["labels"] for b in batch]
     return {"pixel_values": pixel_values, "labels": labels}
+
+
+class PicselliaLogger(TrainerCallback):
+    def __init__(self, experiment: Experiment):
+        self.experiment = experiment
+
+    def on_log(self, args, state, control, logs=None, **kwargs):
+        if not logs:
+            return
+        # quelques clés standard
+        for k in ("loss", "learning_rate", "grad_norm", "eval_loss", "eval_runtime"):
+            if k in logs:
+                self.experiment.log(name=k, data=float(logs[k]), type=LogType.LINE)
 
 
 # -----------
@@ -149,20 +170,34 @@ def train(picsellia_model: Model, picsellia_datasets: DatasetCollection[CocoData
         train_dataset=train_ds,
         eval_dataset=val_ds,
         data_collator=hf_collate,
+        callbacks=[PicselliaLogger(ctx.experiment)],
     )
 
     trainer.train()
 
     # 6) Save final + upload to Picsellia
+    out_dir = os.path.join(picsellia_model.results_dir, picsellia_model.name)
     final_dir = os.path.join(out_dir, "final")
     os.makedirs(final_dir, exist_ok=True)
     model.save_pretrained(final_dir)
     processor.save_pretrained(final_dir)
 
+    import shutil
+    import time
+
+    archive_base = os.path.join(
+        out_dir, f"{picsellia_model.name}_final_{int(time.time())}"
+    )
+    archive_path = shutil.make_archive(archive_base, "zip", final_dir)
+
+    # sanity check
+    if not os.path.isfile(archive_path):
+        raise FileNotFoundError(f"Archive not created: {archive_path}")
+
     picsellia_model.save_artifact_to_experiment(
         experiment=ctx.experiment,
         artifact_name="best-model",
-        artifact_path=final_dir,  # directory with pytorch_model.bin, config.json, preprocessor config, etc.
+        artifact_path=archive_path,  # fichier zip
     )
 
 
