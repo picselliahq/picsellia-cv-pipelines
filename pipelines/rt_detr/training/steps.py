@@ -10,7 +10,12 @@ from picsellia_cv_engine.core.models import (
     PicselliaRectanglePrediction,
 )
 from picsellia_cv_engine.core.services.model.utils import evaluate_model_impl
-from steps import (
+from transformers import (
+    AutoImageProcessor,
+    AutoModelForObjectDetection,
+    Trainer,
+)
+from utils.steps_utils import (
     PicselliaLogger,
     build_datasets,
     build_label_maps,
@@ -19,11 +24,6 @@ from steps import (
     load_processor_and_model,
     run_inference_on_asset,
     save_and_upload_artifacts,
-)
-from transformers import (
-    AutoImageProcessor,
-    AutoModelForObjectDetection,
-    Trainer,
 )
 
 HF_CKPT = "PekingU/rtdetr_v2_r50vd"
