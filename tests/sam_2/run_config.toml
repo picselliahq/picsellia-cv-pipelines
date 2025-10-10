@@ -1,0 +1,18 @@
+override_outputs = true
+
+[job]
+type = "TRAINING"
+
+[auth]
+organization_name = "test-account"
+host = "https://staging.picsellia.com"
+
+[input.train_dataset_version]
+id = "01892b87-34ec-73a6-8035-e5ef7bba15f7"
+
+[input.model_version]
+id = "01993342-52b8-77d5-a77d-118bcb960d6c"
+
+[output.experiment]
+name = "test-sam-2"
+project_name = "test-sam-2"
