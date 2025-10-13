@@ -1,6 +1,6 @@
 [metadata]
 name = "training"
-version = "1.0"
+version = "1.0.0"
 description = "Training pipeline using DinoV2."
 type = "TRAINING"
 
@@ -11,10 +11,10 @@ parameters_class = "utils/parameters.py:TrainingHyperParameters"
 
 [docker]
 image_name = "picsellia/training-dinov2"
-image_tag = "1.0.2"
+image_tag = "1.0.0"
 
 [model_version]
 name = "v1"
-origin_name = "DinoV2"
+origin_name = "DINOv2"
 framework = "PYTORCH"
 inference_type = "CLASSIFICATION"
