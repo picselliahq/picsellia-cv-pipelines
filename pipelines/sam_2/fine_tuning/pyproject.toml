@@ -1,10 +1,10 @@
 [project]
 name = "training"
 version = "0.1.0"
-description = "YoloV8 training pipeline"
+description = "SAM2 training pipeline"
 requires-python = ">=3.10"
 
 dependencies = [
     "picsellia-pipelines-cli",
-    "picsellia-cv-engine[sam2]>=0.4.0, <1.0.0"
+    "picsellia-cv-engine[sam2]>=0.4.0, <1.0.0",
 ]
