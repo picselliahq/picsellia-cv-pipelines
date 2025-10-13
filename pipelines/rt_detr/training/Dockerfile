@@ -17,6 +17,10 @@ ARG REBUILD_PICSELLIA
 # Sync from uv.lock (assumes uv lock has already been created)
 RUN uv sync --python=$(which python3.10) --project training
 
+# Hugging Face cache directory fix
+ENV HF_HOME=/experiment/.cache/huggingface
+RUN mkdir -p $HF_HOME && chmod -R 777 $HF_HOME
+
 ENV PYTHONPATH=":/experiment"
 
 ENTRYPOINT ["run", "python3.10", "training/pipeline.py"]
