@@ -1,7 +1,7 @@
 [metadata]
 name = "fine_tuning"
 version = "1.0.4"
-description = "Training pipeline using YOLO and Ultralytics."
+description = "Training pipeline using SAM2."
 type = "TRAINING"
 
 [execution]
