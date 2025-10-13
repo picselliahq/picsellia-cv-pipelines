@@ -15,6 +15,7 @@ from picsellia_cv_engine.steps.base.dataset.loader import (
 )
 from picsellia_cv_engine.steps.base.model.builder import build_model
 from picsellia_cv_engine.steps.sam2.model.trainer import train
+from steps import evaluate_sam2_model
 from utils.parameters import TrainingHyperParameters
 
 parser = argparse.ArgumentParser()
@@ -44,7 +45,9 @@ def fine_tuning_pipeline():
         dataset_collection=picsellia_datasets,
         sam2_repo_path=os.path.join(os.path.dirname(os.path.abspath(__file__)), "sam2"),
     )
-    # evaluate(model=picsellia_model, dataset=picsellia_datasets["test"])
+    evaluate_sam2_model(
+        predictor=picsellia_model.loaded_predictor, dataset=picsellia_datasets["test"]
+    )
 
 
 if __name__ == "__main__":
