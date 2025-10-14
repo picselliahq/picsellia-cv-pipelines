@@ -26,11 +26,12 @@ def _get_or_load_predictor(model: SAM2Model, device: str) -> SAM2ModelPredictor:
             raise ValueError(
                 "SAM2Model requires both trained_weights_path and config_path."
             ) from e
-        _, predictor = model.load_weights(
+        loaded_model, predictor = model.load_weights(
             weights_path=model.trained_weights_path,
-            config_path=model.config_path,
+            config_path="configs/sam2.1/sam2.1_hiera_b+.yaml",
             device=device,
         )
+        model.set_loaded_model(loaded_model)
         model.set_loaded_predictor(predictor)
     return SAM2ModelPredictor(predictor=predictor)
 
@@ -110,7 +111,7 @@ def evaluate_sam2_model(model: SAM2Model, dataset: TBaseDataset) -> None:
     model_predictor = _get_or_load_predictor(model=model, device=device)
     resolve_label = _build_label_resolver(dataset)
     ann_by_image = _index_annotations_by_image(dataset)
-    filename_to_asset = {a.filename: a for a in dataset.assets}
+    filename_to_asset = {a.id_with_extension: a for a in dataset.assets}
 
     predictions: list[PicselliaPolygonPrediction] = []
     for img_info in dataset.coco_data.get("images", []):

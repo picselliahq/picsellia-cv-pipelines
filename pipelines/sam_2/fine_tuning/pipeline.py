@@ -45,9 +45,7 @@ def fine_tuning_pipeline():
         dataset_collection=picsellia_datasets,
         sam2_repo_path=os.path.join(os.path.dirname(os.path.abspath(__file__)), "sam2"),
     )
-    evaluate_sam2_model(
-        predictor=picsellia_model.loaded_predictor, dataset=picsellia_datasets["test"]
-    )
+    evaluate_sam2_model(model=picsellia_model, dataset=picsellia_datasets["test"])
 
 
 if __name__ == "__main__":
