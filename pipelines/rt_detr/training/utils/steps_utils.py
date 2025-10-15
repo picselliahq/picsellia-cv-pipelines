@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import math
 import os
 import shutil
 import time
@@ -176,6 +177,53 @@ def save_and_upload_artifacts(
     )
 
 
+def _is_finite(*vals: float) -> bool:
+    return all(math.isfinite(v) for v in vals)
+
+
+def _clamp_box_to_image(
+    x1: float, y1: float, x2: float, y2: float, w: int, h: int
+) -> tuple[int, int, int, int] | None:
+    if not _is_finite(x1, y1, x2, y2):
+        return None
+    x1 = max(0.0, min(x1, float(w - 1)))
+    y1 = max(0.0, min(y1, float(h - 1)))
+    x2 = max(0.0, min(x2, float(w)))
+    y2 = max(0.0, min(y2, float(h)))
+    if x2 <= x1 or y2 <= y1:
+        return None
+    iw = max(1, int(round(x2 - x1)))
+    ih = max(1, int(round(y2 - y1)))
+    ix = int(round(x1))
+    iy = int(round(y1))
+    if ix + iw > w:
+        iw = max(1, w - ix)
+    if iy + ih > h:
+        ih = max(1, h - iy)
+    return ix, iy, iw, ih
+
+
+def _process_detection(
+    box_tensor: Any,
+    score: float,
+    label_id: int,
+    w: int,
+    h: int,
+    ds: CocoDataset,
+    id2label: dict[int, str],
+) -> tuple[PicselliaRectangle, PicselliaLabel, PicselliaConfidence] | None:
+    x1, y1, x2, y2 = map(float, box_tensor.tolist())
+    clamped = _clamp_box_to_image(x1, y1, x2, y2, w, h)
+    if clamped is None:
+        return None
+    ix, iy, iw, ih = clamped
+    rect = PicselliaRectangle(ix, iy, iw, ih)
+    name = id2label.get(int(label_id), str(int(label_id)))
+    label = PicselliaLabel(ds.dataset_version.get_or_create_label(name))
+    conf = PicselliaConfidence(float(score))
+    return rect, label, conf
+
+
 def run_inference_on_asset(
     ds: CocoDataset,
     asset,
@@ -189,6 +237,7 @@ def run_inference_on_asset(
     img_path = os.path.join(ds.images_dir, asset.id_with_extension)
     image = Image.open(img_path).convert("RGB")
     w, h = image.size
+
     inputs = processor(image, return_tensors="pt").to(device)
     with torch.no_grad():
         outputs = model(**inputs)
@@ -197,19 +246,23 @@ def run_inference_on_asset(
     )[0]
     if len(det["boxes"]) == 0:
         return None
-    boxes: list[PicselliaRectangle] = []
-    labels: list[PicselliaLabel] = []
-    confidences: list[PicselliaConfidence] = []
-    for box, score, label_id in zip(
-        det["boxes"], det["scores"], det["labels"], strict=False
-    ):
-        x1, y1, x2, y2 = box.tolist()
-        boxes.append(PicselliaRectangle(int(x1), int(y1), int(x2 - x1), int(y2 - y1)))
-        name = id2label.get(int(label_id), str(int(label_id)))
-        labels.append(PicselliaLabel(ds.dataset_version.get_or_create_label(name)))
-        confidences.append(PicselliaConfidence(float(score)))
+
+    triples = (
+        _process_detection(box, float(score), int(label_id), w, h, ds, id2label)
+        for box, score, label_id in zip(
+            det["boxes"], det["scores"], det["labels"], strict=False
+        )
+    )
+    filtered = [t for t in triples if t is not None]
+    if not filtered:
+        return None
+
+    boxes, labels, confidences = zip(*filtered, strict=False)
     return PicselliaRectanglePrediction(
-        asset=asset, boxes=boxes, labels=labels, confidences=confidences
+        asset=asset,
+        boxes=list(boxes),
+        labels=list(labels),
+        confidences=list(confidences),
     )
 
 
