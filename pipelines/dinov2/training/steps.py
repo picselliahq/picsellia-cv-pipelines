@@ -35,7 +35,7 @@ def train(
     experiment: Experiment = context.experiment
 
     model_name: str = getattr(
-        context.hyperparameters, "hugging_face_model_name", "facebook/dinov2-small"
+        context.hyperparameters, "model_name", "facebook/dinov2-small"
     )
     epochs: int = getattr(context.hyperparameters, "epochs", 100)
     lr: float = getattr(context.hyperparameters, "learning_rate", 1e-4)

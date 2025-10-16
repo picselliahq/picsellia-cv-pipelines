@@ -12,8 +12,8 @@ class TrainingHyperParameters(HyperParameters):
         self.image_size = self.extract_parameter(
             ["image_size"], expected_type=int, default=640
         )
-        self.hugging_face_model_name = self.extract_parameter(
-            ["hugging_face_model_name"],
+        self.model_name = self.extract_parameter(
+            ["model_name"],
             expected_type=str,
             default="facebook/dinov2-small",
         )
