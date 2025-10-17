@@ -145,9 +145,10 @@ def build_training_args(
         learning_rate=learning_rate,
         weight_decay=weight_decay,
         warmup_ratio=warmup_ratio,
+        logging_strategy="epoch",
         eval_strategy="epoch",
         save_strategy="epoch",
-        logging_steps=50,
+        logging_steps=1,
         fp16=torch.cuda.is_available(),
         dataloader_num_workers=workers,
         remove_unused_columns=False,
@@ -172,7 +173,7 @@ def save_and_upload_artifacts(
         raise FileNotFoundError(f"Archive not created: {archive_path}")
     picsellia_model.save_artifact_to_experiment(
         experiment=experiment,
-        artifact_name="best-model",
+        artifact_name="model-latest",
         artifact_path=archive_path,
     )
 
