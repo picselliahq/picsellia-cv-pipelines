@@ -26,8 +26,6 @@ from utils.steps_utils import (
     save_and_upload_artifacts,
 )
 
-HF_CKPT = "PekingU/rtdetr_v2_r50vd"
-
 
 @step()
 def train(
@@ -36,9 +34,12 @@ def train(
     """Train RT-DETR(v2) on COCO datasets and upload zipped weights."""
     ctx = Pipeline.get_active_context()
     hp = ctx.hyperparameters
-    id2label, label2id = build_label_maps(picsellia_datasets["train"])
+    id2label, label2id = build_label_maps(ds=picsellia_datasets["train"])
     processor, model = load_processor_and_model(
-        HF_CKPT, len(id2label), id2label, label2id
+        hf_ckpt=hp.model_name,
+        num_labels=len(id2label),
+        id2label=id2label,
+        label2id=label2id,
     )
     train_ds, val_ds = build_datasets(picsellia_datasets, processor)
     out_dir = os.path.join(picsellia_model.results_dir, picsellia_model.name)

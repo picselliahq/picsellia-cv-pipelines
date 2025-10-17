@@ -12,3 +12,8 @@ class TrainingHyperParameters(HyperParameters):
         self.image_size = self.extract_parameter(
             ["image_size"], expected_type=int, default=640
         )
+        self.model_name = self.extract_parameter(
+            ["model_name", "repo_id"],
+            expected_type=str,
+            default="PekingU/rtdetr_v2_r50vd",
+        )
