@@ -9,6 +9,3 @@ dependencies = [
     "picsellia-cv-engine",
     "transformers[torch]>=4.0"
 ]
-
-[tool.uv.sources]
-picsellia-cv-engine = { git = "https://github.com/picselliahq/picsellia-cv-engine", branch = "fix/context-config" }
