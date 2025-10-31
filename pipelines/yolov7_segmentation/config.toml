@@ -14,7 +14,7 @@ image_name = "picsellia/training-yolov7-segmentation"
 image_tag = "1.0.1"
 
 [model_version]
-name = "yolov7-segmentation"
-origin_name = "yolov7"
+name = "segmentation"
+origin_name = "YOLOv7"
 framework = "PYTORCH"
 inference_type = "SEGMENTATION"

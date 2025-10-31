@@ -1,7 +1,7 @@
 [metadata]
-name = "fine_tuning"
-version = "1.0.5"
-description = "Training pipeline using SAM2."
+name = "training"
+version = "1.0.2"
+description = "Training pipeline using RT DETR and HuggingFace."
 type = "TRAINING"
 
 [execution]
@@ -10,11 +10,11 @@ requirements_file = "pyproject.toml"
 parameters_class = "utils/parameters.py:TrainingHyperParameters"
 
 [docker]
-image_name = "picsellia/training-sam2"
-image_tag = "1.0.5"
+image_name = "picsellia/training-rt-detr"
+image_tag = "1.0.2"
 
 [model_version]
 name = "v1"
-origin_name = "SAM2"
+origin_name = "RT-DETR"
 framework = "PYTORCH"
-inference_type = "SEGMENTATION"
+inference_type = "OBJECT_DETECTION"

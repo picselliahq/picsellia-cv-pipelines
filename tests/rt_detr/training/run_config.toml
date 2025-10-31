@@ -1,0 +1,18 @@
+override_outputs = true
+
+[job]
+type = "TRAINING"
+
+[auth]
+organization_name = "test-account"
+env = "STAGING"
+
+[input.train_dataset_version]
+id = "01892b88-8dac-7664-96ee-16d05aa599c9"
+
+[input.model_version]
+id = "0199de21-e8a5-7cd7-91dc-1f2d6bde3528"
+
+[output.experiment]
+name = "rt_detr_exp1"
+project_name = "test_models"

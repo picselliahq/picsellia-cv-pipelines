@@ -35,5 +35,5 @@ url = "https://app.picsellia.com/model/version/f6e44ac0-1880-4ce6-a5a0-8be8fce8e
 visibility = "public"
 
 [output.experiment]
-name = "test-1"
-project_name = "yolov8"
+name = "yolov8_exp1"
+project_name = "test_models"

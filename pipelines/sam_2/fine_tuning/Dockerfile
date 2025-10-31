@@ -19,6 +19,6 @@ RUN bash fine_tuning/setup.sh
 # Sync from uv.lock (assumes uv lock has already been created)
 RUN uv sync --python=$(which python3.11) --project fine_tuning
 
-ENV PYTHONPATH=":/experiment"
+ENV PYTHONPATH="/experiment/fine_tuning/sam2:/experiment"
 
 ENTRYPOINT ["run", "python3.11", "fine_tuning/pipeline.py"]
