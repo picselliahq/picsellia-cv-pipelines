@@ -1,0 +1,11 @@
+[project]
+name = "dinov2"
+version = "0.1.0"
+description = "YoloV8 training pipeline"
+requires-python = ">=3.10"
+
+dependencies = [
+    "picsellia-pipelines-cli>=0.1.2",
+    "picsellia-cv-engine",
+    "transformers[torch]>=4.0"
+]
