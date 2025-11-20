@@ -5,13 +5,18 @@ description = ""
 authors = [
     {name = "SoniaGrh", email = "sonia.garrouch@hotmail.fr"}
 ]
+requires-python = ">=3.10,<3.14"
+readme = "README.md"
+
 dependencies = [
     "picsellia-pipelines-cli",
     "picsellia-cv-engine",
 ]
-requires-python = ">=3.10,<3.14"
-readme = "README.md"
 
+[dependency-groups]
+dev = [
+    "pre-commit>=4.2.0"
+]
 
 [tool.ruff.lint]
 select = [
@@ -26,6 +31,3 @@ select = [
 ignore = [
     "E501",  # line too long, handled by black
 ]
-
-[tool.uv.sources]
-picsellia-cv-engine = { git = "https://github.com/picselliahq/picsellia-cv-engine", branch = "feat/37-add-assets_ids-in-context" }
