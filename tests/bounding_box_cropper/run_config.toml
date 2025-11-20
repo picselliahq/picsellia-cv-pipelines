@@ -1,3 +1,5 @@
+override_outputs = true
+
 [job]
 type = "DATASET_VERSION_CREATION"
 
