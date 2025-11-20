@@ -1,15 +1,17 @@
 import logging
 import math
+from collections.abc import Generator
+from typing import Any
 
 import numpy as np
 import tqdm
-from picsellia import Client
+from picsellia import Asset, Client
 from picsellia.exceptions import (
     InsufficientResourcesError,
     PicselliaError,
     ResourceNotFoundError,
 )
-from picsellia.sdk.asset import Asset
+from picsellia.sdk.asset import MultiAsset
 from picsellia.sdk.dataset import DatasetVersion
 from picsellia.sdk.label import Label
 from picsellia.types.enums import InferenceType
@@ -355,12 +357,15 @@ class PreAnnotator:
         model: UltralyticsModel,
         model_labels: list[str],
         parameters: ProcessingYOLOV8PreannotationParameters,
+        assets: list[Asset] | None = None,
     ) -> None:
         self.client = client
         self.dataset_version = dataset_version
         self.model = model
         self.model_labels_name = model_labels
         self.parameters = parameters
+
+        self._assets: list[Asset] | None = list(assets) if assets else None
 
         # Initialize components
         self.label_manager = LabelManager(dataset_version)
@@ -393,33 +398,75 @@ class PreAnnotator:
         # Verify label compatibility
         self.label_manager.check_labels_coherence(self.model_labels_name)
 
+        total = (
+            len(self._assets)
+            if self._assets is not None
+            else int(self.dataset_version.sync()["size"])
+        )
+        logging.info(
+            f"Pre-annotation will run on {total} asset(s)"
+            + (" (selection provided)" if self._assets is not None else "")
+        )
+
     def preannotate(
         self, confidence_threshold: float, agnostic_nms: bool = False
     ) -> dict:
-        """Run pre-annotation on the dataset"""
-        dataset_size = self.dataset_version.sync()["size"]
-        batch_size = min(self.parameters.batch_size, dataset_size)
-        image_size = self.parameters.image_size
-        total_batch_number = math.ceil(dataset_size / batch_size)
+        """
+        Run pre-annotation on either the provided `assets` selection or the whole dataset.
 
-        for batch_number in tqdm.tqdm(range(total_batch_number)):
-            # Get batch of assets
-            assets = self.dataset_version.list_assets(
-                limit=batch_size, offset=batch_number * batch_size
-            )
+        Returns a COCO dict with images / annotations / categories.
+        """
+        if self._assets is not None:
+            total_assets = len(self._assets)
+            # Respect requested batch size but not more than total
+            batch_size = min(self.parameters.batch_size, total_assets) or 1
+            asset_batch_iter = self._iter_local_batches(self._assets, batch_size)
+            total_batch_number = math.ceil(total_assets / batch_size)
+        else:
+            dataset_size = int(self.dataset_version.sync()["size"])
+            batch_size = min(self.parameters.batch_size, dataset_size) or 1
+            asset_batch_iter = self._iter_remote_batches(dataset_size, batch_size)
+            total_batch_number = math.ceil(dataset_size / batch_size)
+
+        image_size = self.parameters.image_size
+
+        for _batch_idx, assets in enumerate(
+            tqdm.tqdm(asset_batch_iter, total=total_batch_number)
+        ):
+            if not assets:
+                continue
+
             url_list = [asset.sync()["data"]["presigned_url"] for asset in assets]
 
-            # Get predictions for batch
             predictions = self.model.loaded_model(
                 url_list, imgsz=image_size, agnostic_nms=agnostic_nms
             )
 
-            # Process each asset and prediction
             for asset, prediction in list(zip(assets, predictions, strict=False)):
                 if len(prediction) > 0:
                     self._process_prediction(asset, prediction, confidence_threshold)
 
         return self.coco_formatter.coco
+
+    def _iter_local_batches(
+        self, assets: list[Asset], batch_size: int
+    ) -> Generator[list[Asset], Any, None]:
+        """Yield slices from the in-memory selection of assets."""
+        for i in range(0, len(assets), batch_size):
+            yield assets[i : i + batch_size]
+
+    def _iter_remote_batches(
+        self, dataset_size: int, batch_size: int
+    ) -> Generator[MultiAsset, Any, None]:
+        """
+        Yield assets by paging the remote dataset (legacy behavior).
+        This preserves existing logic when no selection is provided.
+        """
+        total_batch_number = math.ceil(dataset_size / batch_size)
+        for batch_number in range(total_batch_number):
+            yield self.dataset_version.list_assets(
+                limit=batch_size, offset=batch_number * batch_size
+            )
 
     def _process_prediction(
         self, asset: Asset, prediction, confidence_threshold: float

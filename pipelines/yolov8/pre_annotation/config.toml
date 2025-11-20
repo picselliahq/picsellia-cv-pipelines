@@ -1,6 +1,6 @@
 [metadata]
 name = "yolov8-pre-annotation"
-version = "1.0.5-rc"
+version = "1.0.11"
 description = "This pipeline processes data for X."
 type = "PRE_ANNOTATION"
 
@@ -11,6 +11,6 @@ parameters_class = "utils/parameters.py:ProcessingYOLOV8PreannotationParameters"
 
 [docker]
 image_name = "picsellia/yolov8-pre-annotation"
-image_tag = "1.0.5-rc"
+image_tag = "latest"
 cpu = "8"
 gpu = "1"
