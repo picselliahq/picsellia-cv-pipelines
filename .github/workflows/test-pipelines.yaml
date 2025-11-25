@@ -14,8 +14,6 @@ on:
     paths:
       - "pipelines/**"
       - "tests/**"
-      - "scripts/test_pipelines.sh"
-      - ".github/workflows/cv-pipelines-tests.yaml"
 
 jobs:
   test-pipelines-matrix:
@@ -30,7 +28,6 @@ jobs:
     env:
       ORGANIZATION: test-account
       ENVIRONMENT: STAGING
-      PICSELLIA_CONFIG_DIR: ${{ runner.temp }}/picsellia_cfg
 
     steps:
       - name: Checkout repo
@@ -42,19 +39,18 @@ jobs:
       - name: Sync project dependencies
         run: uv sync
 
-      - name: Prepare Picsellia config dir
-        run: mkdir -p "$PICSELLIA_CONFIG_DIR"
-
       - name: Run pipeline tests for one pipeline
         env:
           PXL_API_TOKEN: ${{ secrets.PXL_API_TOKEN_STAGING }}
         run: |
+          PICSELLIA_CONFIG_DIR="$RUNNER_TEMP/picsellia_cfg"
+          mkdir -p "$PICSELLIA_CONFIG_DIR"
+
           echo "PIPELINE from matrix = '${{ matrix.pipeline }}'"
           echo "ORGANIZATION=$ORGANIZATION"
           echo "ENVIRONMENT=$ENVIRONMENT"
           echo "PICSELLIA_CONFIG_DIR=$PICSELLIA_CONFIG_DIR"
 
-          # Le script test_pipelines.sh fait lui-même le pxl-pipeline login si TOKEN est fourni
           uv run bash scripts/test_pipelines.sh \
             --pipeline "${{ github.event_name == 'workflow_dispatch' && github.event.inputs.pipeline || matrix.pipeline }}" \
             --organization "$ORGANIZATION" \
