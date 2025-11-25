@@ -1,0 +1,62 @@
+name: CV Pipelines tests (matrix)
+
+on:
+  workflow_dispatch:
+    inputs:
+      pipeline:
+        description: "Pipeline name (all | bounding_box_cropper | yolov8/pre_annotation, ...)"
+        required: true
+        default: "bounding_box_cropper"
+
+  push:
+    branches:
+      - feat/27-use-assets-ids-in-dataset-processing
+    paths:
+      - "pipelines/**"
+      - "tests/**"
+      - "scripts/test_pipelines.sh"
+      - ".github/workflows/cv-pipelines-tests.yaml"
+
+jobs:
+  test-pipelines-matrix:
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        pipeline:
+          - bounding_box_cropper
+
+    env:
+      ORGANIZATION: test-account
+      ENVIRONMENT: STAGING
+      PICSELLIA_CONFIG_DIR: ${{ runner.temp }}/picsellia_cfg
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Install uv
+        run: pip install uv
+
+      - name: Sync project dependencies
+        run: uv sync
+
+      - name: Prepare Picsellia config dir
+        run: mkdir -p "$PICSELLIA_CONFIG_DIR"
+
+      - name: Run pipeline tests for one pipeline
+        env:
+          PXL_API_TOKEN: ${{ secrets.PXL_API_TOKEN_STAGING }}
+        run: |
+          echo "PIPELINE from matrix = '${{ matrix.pipeline }}'"
+          echo "ORGANIZATION=$ORGANIZATION"
+          echo "ENVIRONMENT=$ENVIRONMENT"
+          echo "PICSELLIA_CONFIG_DIR=$PICSELLIA_CONFIG_DIR"
+
+          # Le script test_pipelines.sh fait lui-même le pxl-pipeline login si TOKEN est fourni
+          uv run bash scripts/test_pipelines.sh \
+            --pipeline "${{ github.event_name == 'workflow_dispatch' && github.event.inputs.pipeline || matrix.pipeline }}" \
+            --organization "$ORGANIZATION" \
+            --env "$ENVIRONMENT" \
+            --token "$PXL_API_TOKEN"
