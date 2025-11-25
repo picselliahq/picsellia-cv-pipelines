@@ -25,9 +25,6 @@ jobs:
             bounding_box_cropper:
               - 'pipelines/bounding_box_cropper/**'
               - 'tests/bounding_box_cropper/**'
-            yolov8:
-              - 'pipelines/yolov8/**'
-              - 'tests/yolov8/**'
             dataset_tiler:
               - 'pipelines/dataset_tiler/**'
               - 'tests/dataset_tiler/**'
@@ -39,10 +36,6 @@ jobs:
 
           if [ "${{ steps.changes.outputs.bounding_box_cropper }}" = "true" ]; then
             PIPELINES+=("\"bounding_box_cropper\"")
-          fi
-
-          if [ "${{ steps.changes.outputs.yolov8 }}" = "true" ]; then
-            PIPELINES+=("\"yolov8\"")
           fi
 
           if [ "${{ steps.changes.outputs.dataset_tiler }}" = "true" ]; then
