@@ -11,9 +11,6 @@ on:
   push:
     branches:
       - feat/27-use-assets-ids-in-dataset-processing
-    paths:
-      - "pipelines/**"
-      - "tests/**"
 
 jobs:
   test-pipelines-matrix:
