@@ -1,34 +1,77 @@
 name: CV Pipelines tests (matrix)
 
 on:
-  workflow_dispatch:
-    inputs:
-      pipeline:
-        description: "Pipeline name (all | bounding_box_cropper | yolov8/pre_annotation, ...)"
-        required: true
-        default: "bounding_box_cropper"
-
   push:
     branches:
       - feat/27-use-assets-ids-in-dataset-processing
 
 jobs:
-  test-pipelines-matrix:
+  detect-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      pipelines: ${{ steps.build-matrix.outputs.pipelines }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Detect which pipelines changed
+        id: changes
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            bounding_box_cropper:
+              - 'pipelines/bounding_box_cropper/**'
+              - 'tests/bounding_box_cropper/**'
+            yolov8:
+              - 'pipelines/yolov8/**'
+              - 'tests/yolov8/**'
+            dataset_tiler:
+              - 'pipelines/dataset_tiler/**'
+              - 'tests/dataset_tiler/**'
+
+      - name: Build matrix from changed pipelines
+        id: build-matrix
+        run: |
+          PIPELINES=()
+
+          if [ "${{ steps.changes.outputs.bounding_box_cropper }}" = "true" ]; then
+            PIPELINES+=("\"bounding_box_cropper\"")
+          fi
+
+          if [ "${{ steps.changes.outputs.yolov8 }}" = "true" ]; then
+            PIPELINES+=("\"yolov8\"")
+          fi
+
+          if [ "${{ steps.changes.outputs.dataset_tiler }}" = "true" ]; then
+            PIPELINES+=("\"dataset_tiler\"")
+          fi
+
+          # Fallback if nothing matched
+          if [ ${#PIPELINES[@]} -eq 0 ]; then
+            PIPELINES+=("\"bounding_box_cropper\"")
+          fi
+
+          JSON="[$(IFS=,; echo "${PIPELINES[*]}")]"
+          echo "pipelines=$JSON" >> "$GITHUB_OUTPUT"
+
+  test-pipelines:
+    needs: detect-changes
     runs-on: ubuntu-latest
 
     strategy:
       fail-fast: false
       matrix:
-        pipeline:
-          - bounding_box_cropper
+        pipeline: ${{ fromJson(needs.detect-changes.outputs.pipelines) }}
 
     env:
       ORGANIZATION: test-account
       ENVIRONMENT: STAGING
 
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Install uv
         run: pip install uv
@@ -43,13 +86,10 @@ jobs:
           PICSELLIA_CONFIG_DIR="$RUNNER_TEMP/picsellia_cfg"
           mkdir -p "$PICSELLIA_CONFIG_DIR"
 
-          echo "PIPELINE from matrix = '${{ matrix.pipeline }}'"
-          echo "ORGANIZATION=$ORGANIZATION"
-          echo "ENVIRONMENT=$ENVIRONMENT"
-          echo "PICSELLIA_CONFIG_DIR=$PICSELLIA_CONFIG_DIR"
+          echo "PIPELINE=${{ matrix.pipeline }}"
 
           uv run bash scripts/test_pipelines.sh \
-            --pipeline "${{ github.event_name == 'workflow_dispatch' && github.event.inputs.pipeline || matrix.pipeline }}" \
+            --pipeline "${{ matrix.pipeline }}" \
             --organization "$ORGANIZATION" \
             --env "$ENVIRONMENT" \
             --token "$PXL_API_TOKEN"
