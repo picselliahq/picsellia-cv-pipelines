@@ -7,57 +7,13 @@ on:
 
 jobs:
   detect-changed-pipelines:
-    runs-on: ubuntu-latest
-
-    outputs:
-      pipelines: ${{ steps.build-matrix.outputs.pipelines }}
-
-    steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 2
-
-      - name: Detect pipeline changes
-        id: changes
-        uses: dorny/paths-filter@v3
-        with:
-          filters: |
-            bounding_box_cropper:
-              - 'pipelines/bounding_box_cropper/**'
-              - 'tests/bounding_box_cropper/**'
-            dataset_tiler:
-              - 'pipelines/dataset_tiler/**'
-              - 'tests/dataset_tiler/**'
-
-      - name: Build matrix from changed pipelines
-        id: build-matrix
-        run: |
-          PIPELINES=()
-
-          if [ "${{ steps.changes.outputs.bounding_box_cropper }}" = "true" ]; then
-            PIPELINES+=("\"bounding_box_cropper\"")
-          fi
-
-          if [ "${{ steps.changes.outputs.dataset_tiler }}" = "true" ]; then
-            PIPELINES+=("\"dataset_tiler\"")
-          fi
-
-          if [ ${#PIPELINES[@]} -eq 0 ]; then
-            echo "No pipelines to deploy to staging."
-            echo 'pipelines=[]' >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-
-          JSON="[$(IFS=,; echo "${PIPELINES[*]}")]"
-          echo "pipelines=$JSON" >> "$GITHUB_OUTPUT"
-          echo "Matrix pipelines = $JSON"
+    uses: ./.github/workflows/detect-pipeline-changes.yaml
 
   deploy-to-staging:
     needs: detect-changed-pipelines
     runs-on: ubuntu-latest
 
-    if: ${{ needs.detect-changed-pipelines.outputs.pipelines != '[]' && needs.detect-changed-pipelines.outputs.pipelines != '' }}
+    if: ${{ needs.detect-changed-pipelines.outputs.pipelines != '' && needs.detect-changed-pipelines.outputs.pipelines != '[]' }}
 
     strategy:
       fail-fast: false
@@ -84,7 +40,9 @@ jobs:
           DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
           DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
         run: |
-          echo "$DOCKERHUB_TOKEN" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
+          echo "$DOCKERHUB_TOKEN" | docker login \
+            -u "$DOCKERHUB_USERNAME" \
+            --password-stdin
 
       - name: Deploy one pipeline to STAGING
         env:
@@ -97,6 +55,7 @@ jobs:
           echo "ORG=$ORGANIZATION"
           echo "ENV=$ENVIRONMENT"
           echo "BUMP=$BUMP"
+          echo "PICSELLIA_CONFIG_DIR=$PICSELLIA_CONFIG_DIR"
 
           uv run bash scripts/deploy_pipelines.sh \
             --pipeline "${{ matrix.pipeline }}" \
