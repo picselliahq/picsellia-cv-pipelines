@@ -4,7 +4,7 @@ on:
   workflow_call:
     outputs:
       pipelines:
-        description: "JSON array of pipelines that changed"
+        description: "JSON array of pipelines that changed (top-level dir names under pipelines/ or tests/)"
         value: ${{ jobs.detect.outputs.pipelines }}
 
 jobs:
@@ -20,44 +20,22 @@ jobs:
         with:
           fetch-depth: 2
 
-      - name: Detect changed pipelines
+      - name: Detect changed files under pipelines/ and tests/
         id: changes
         uses: dorny/paths-filter@v3
         with:
           filters: |
-            bounding_box_cropper:
-              - 'pipelines/bounding_box_cropper/**'
-              - 'tests/bounding_box_cropper/**'
-            dataset_tiler:
-              - 'pipelines/dataset_tiler/**'
-              - 'tests/dataset_tiler/**'
-            # add more pipelines here as you add them:
-            # yolov8_pre_annotation:
-            #   - 'pipelines/yolov8/**'
-            #   - 'tests/yolov8/**'
+            pipelines:
+              - 'pipelines/**'
+              - 'tests/**'
 
-      - name: Build matrix from changed pipelines
+      - name: Build pipelines JSON from changed files (script)
         id: build-matrix
-        shell: bash
+        env:
+          CHANGED_FLAG: ${{ steps.changes.outputs.pipelines }}
         run: |
-          PIPELINES=()
+          echo "pipelines_files from dorny:"
+          printf '%s\n' "${{ steps.changes.outputs.pipelines_files }}"
 
-          if [ "${{ steps.changes.outputs.bounding_box_cropper }}" = "true" ]; then
-            PIPELINES+=("\"bounding_box_cropper\"")
-          fi
-
-          if [ "${{ steps.changes.outputs.dataset_tiler }}" = "true" ]; then
-            PIPELINES+=("\"dataset_tiler\"")
-          fi
-
-          # TODO: add more if-blocks here when you add new pipelines
-
-          if [ ${#PIPELINES[@]} -eq 0 ]; then
-            echo "No pipelines changed."
-            echo 'pipelines=[]' >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-
-          JSON="[$(IFS=,; echo "${PIPELINES[*]}")]"
-          echo "Computed matrix: $JSON"
-          echo "pipelines=$JSON" >> "$GITHUB_OUTPUT"
+          printf '%s\n' "${{ steps.changes.outputs.pipelines_files }}" \
+            | .github/scripts/build_pipelines_matrix.sh
