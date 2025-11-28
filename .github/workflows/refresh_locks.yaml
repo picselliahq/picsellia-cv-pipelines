@@ -1,0 +1,88 @@
+name: Refresh uv.lock files
+
+on:
+  pull_request:
+    branches:
+      - main
+  # Manual trigger from the "Actions" tab
+  workflow_dispatch:
+    inputs:
+      pipeline:
+        description: "Pipeline name (all | bounding_box_cropper | yolov8 | ...)"
+        required: true
+        default: "all"
+      base-branch:
+        description: "Base branch to branch from and open the PR against"
+        required: true
+        default: "main"
+
+jobs:
+  refresh-locks:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout base branch
+        uses: actions/checkout@v4
+        with:
+          # Make sure we actually work from the chosen base branch
+          ref: ${{ github.event.inputs.base-branch }}
+
+      - name: Setup Git user
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Install uv
+        run: pip install uv
+
+      - name: Make refresh_locks.sh executable
+        run: chmod +x scripts/refresh_locks.sh
+
+      - name: Create working branch
+        run: |
+          BRANCH_NAME="chore/refresh-locks-${{ github.event.inputs.pipeline }}-${{ github.run_id }}"
+          echo "BRANCH_NAME=$BRANCH_NAME" >> "$GITHUB_ENV"
+          git checkout -b "$BRANCH_NAME"
+
+      - name: Run refresh_locks.sh
+        run: |
+          echo "Running refresh_locks.sh for pipeline='${{ github.event.inputs.pipeline }}'"
+          uv run bash scripts/refresh_locks.sh \
+            --pipeline "${{ github.event.inputs.pipeline }}"
+
+      - name: Check for changes
+        id: diff
+        run: |
+          if git diff --quiet; then
+            echo "has_changes=false" >> "$GITHUB_OUTPUT"
+            echo "No changes detected, nothing to commit."
+          else
+            echo "has_changes=true" >> "$GITHUB_OUTPUT"
+            echo "Changes detected:"
+            git status
+          fi
+
+      - name: Commit changes
+        if: steps.diff.outputs.has_changes == 'true'
+        run: |
+          git add .
+          git commit -m "chore: refresh uv.lock for ${{ github.event.inputs.pipeline }}"
+
+      - name: Create Pull Request
+        if: steps.diff.outputs.has_changes == 'true'
+        uses: peter-evans/create-pull-request@v7
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          branch: ${{ env.BRANCH_NAME }}
+          base: ${{ github.event.inputs.base-branch }}
+          title: "chore: refresh uv.lock for ${{ github.event.inputs.pipeline }}"
+          commit-message: "chore: refresh uv.lock for ${{ github.event.inputs.pipeline }}"
+          body: |
+            This PR was created automatically by the **Refresh uv.lock files** workflow.
+
+            - Base branch: `${{ github.event.inputs.base-branch }}`
+            - Target pipeline: `${{ github.event.inputs.pipeline }}`
+          labels: |
+            dependencies
+            infra
+          draft: false
