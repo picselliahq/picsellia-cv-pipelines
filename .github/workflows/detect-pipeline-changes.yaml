@@ -24,18 +24,28 @@ jobs:
         id: changes
         uses: dorny/paths-filter@v3
         with:
+          list-files: shell
           filters: |
             pipelines:
               - 'pipelines/**'
               - 'tests/**'
 
-      - name: Build pipelines JSON from changed files (script)
+      - name: Make matrix script executable
+        run: chmod +x .github/scripts/build_pipelines_matrix.sh
+
+      - name: Build pipelines JSON from changed files
         id: build-matrix
-        env:
-          CHANGED_FLAG: ${{ steps.changes.outputs.pipelines }}
+        shell: bash
         run: |
+          echo "pipelines flag: ${{ steps.changes.outputs.pipelines }}"
           echo "pipelines_files from dorny:"
           printf '%s\n' "${{ steps.changes.outputs.pipelines_files }}"
+
+          if [[ "${{ steps.changes.outputs.pipelines }}" != "true" ]]; then
+            echo "No changes under pipelines/ or tests/."
+            echo 'pipelines=[]' >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
 
           printf '%s\n' "${{ steps.changes.outputs.pipelines_files }}" \
             | .github/scripts/build_pipelines_matrix.sh
