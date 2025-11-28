@@ -14,11 +14,7 @@ dependencies = [
     "torchaudio==2.5.1",
     "torchvision==0.20.1",
     "opencv-python",
-    "groundingdino",
 ]
 
 [[tool.uv.index]]
 url = "https://download.pytorch.org/whl/cu124"
-
-[tool.uv.sources]
-groundingdino = { git = "https://github.com/IDEA-Research/GroundingDINO.git" }
