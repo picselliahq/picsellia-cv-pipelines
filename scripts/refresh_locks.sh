@@ -5,8 +5,9 @@ set -euo pipefail
 #   scripts/refresh_locks.sh --pipeline <name|all> [--pipeline-dir "<path>"]
 # Examples:
 #   scripts/refresh_locks.sh --pipeline bounding_box_cropper
+#   scripts/refresh_locks.sh --pipeline yolov8/pre_annotation
 #   scripts/refresh_locks.sh --pipeline all
-#   scripts/refresh_locks.sh --pipeline clip --pipeline-dir "/tmp/my-pipelines"
+#   scripts/refresh_locks.sh --pipeline yolov8 --pipeline-dir "/tmp/my-pipelines"
 
 command -v uv >/dev/null || { echo "❌ 'uv' not found in PATH"; exit 1; }
 
@@ -25,20 +26,59 @@ done
 
 [[ -d "$PIPELINES_DIR" ]] || { echo "❌ PIPELINES_DIR does not exist: $PIPELINES_DIR"; exit 1; }
 
-filter="*"
-[[ "$PIPE" != "all" ]] && filter="$PIPE"
-
 echo "📦 Pipelines dir: $PIPELINES_DIR"
-echo "🎯 Selection:     $filter"
+echo "🎯 Selection:     $PIPE"
 echo
 
-shopt -s nullglob
-count=0
-matched_any=false
+# -------------------------------------------------------------------
+# Build the list of actual project directories (those with pyproject.toml)
+# -------------------------------------------------------------------
+declare -a TARGET_DIRS=()
 
-for P in "$PIPELINES_DIR"/$filter; do
+if [[ "$PIPE" == "all" ]]; then
+  # All pipelines: any folder under pipelines/ that contains a pyproject.toml
+  while IFS= read -r -d '' pyproj; do
+    TARGET_DIRS+=("$(dirname "$pyproj")")
+  done < <(find "$PIPELINES_DIR" -mindepth 1 -maxdepth 3 -type f -name "pyproject.toml" -print0)
+
+elif [[ "$PIPE" == */* ]]; then
+  # e.g. yolov8/pre_annotation
+  dir="$PIPELINES_DIR/$PIPE"
+  if [[ -d "$dir" ]]; then
+    TARGET_DIRS+=("$dir")
+  else
+    echo "⚠️  No such pipeline directory: $dir"
+  fi
+
+else
+  # e.g. PIPE="bounding_box_cropper" or PIPE="yolov8"
+  # Case 1: direct project at pipelines/<PIPE>/pyproject.toml
+  if [[ -f "$PIPELINES_DIR/$PIPE/pyproject.toml" ]]; then
+    TARGET_DIRS+=("$PIPELINES_DIR/$PIPE")
+  fi
+
+  # Case 2: nested projects under pipelines/<PIPE>/*/pyproject.toml
+  if [[ -d "$PIPELINES_DIR/$PIPE" ]]; then
+    while IFS= read -r -d '' pyproj; do
+      TARGET_DIRS+=("$(dirname "$pyproj")")
+    done < <(find "$PIPELINES_DIR/$PIPE" -mindepth 1 -maxdepth 3 -type f -name "pyproject.toml" -print0)
+  fi
+fi
+
+# Deduplicate just in case
+if ((${#TARGET_DIRS[@]} > 0)); then
+  mapfile -t TARGET_DIRS < <(printf '%s\n' "${TARGET_DIRS[@]}" | sort -u)
+fi
+
+if ((${#TARGET_DIRS[@]} == 0)); then
+  echo "⚠️  No pipeline directories found for selection '$PIPE'."
+  exit 0
+fi
+
+count=0
+
+for P in "${TARGET_DIRS[@]}"; do
   [[ -d "$P" ]] || continue
-  matched_any=true
   name="$(basename "$P")"
 
   echo "─────────────────────────────────────────────"
@@ -59,15 +99,16 @@ for P in "$PIPELINES_DIR"/$filter; do
   fi
 
   echo "🔄 Running 'uv sync'"
-  (cd "$P" && uv sync)
-  echo "✅ Done"
+  # Important: wrap in `if ...; then` so `set -e` doesn't kill the script
+  if (cd "$P" && uv sync); then
+    echo "✅ Done"
+  else
+    echo "⚠️  uv sync failed for $name, skipping (exit code $?)"
+    # continue with other pipelines instead of exiting the whole script
+  fi
 done
 
-shopt -u nullglob
-
-if ! $matched_any; then
-  echo "⚠️  No folder matched '$PIPELINES_DIR/$filter'."
-elif [[ $count -eq 0 ]]; then
+if [[ $count -eq 0 ]]; then
   echo "⚠️  No pipelines processed (missing pyproject.toml?)."
 else
   echo "✨ Completed for $count pipeline(s)."
