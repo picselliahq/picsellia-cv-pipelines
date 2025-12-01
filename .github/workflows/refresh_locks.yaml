@@ -84,13 +84,10 @@ jobs:
           body: |
             This PR was created automatically by the **Refresh uv.lock files** workflow.
 
-            - Base branch: `${{ env.BASE_BRANCH }}`
-            - Target pipeline: `${{ env.PIPELINE }}`
-
           add-paths: |
             pipelines/**/uv.lock
 
-          labels: |
-            dependencies
-            infra
           draft: false
+
+          reviewers: |
+            SoniaGrh
