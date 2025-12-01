@@ -98,12 +98,12 @@ for P in "${TARGET_DIRS[@]}"; do
     echo "ℹ️  No uv.lock found"
   fi
 
-  echo "🔄 Running 'uv sync'"
+  echo "🔄 Running 'uv lock'"
   # Important: wrap in `if ...; then` so `set -e` doesn't kill the script
-  if (cd "$P" && uv sync); then
+  if (cd "$P" && uv lock); then
     echo "✅ Done"
   else
-    echo "⚠️  uv sync failed for $name, skipping (exit code $?)"
+    echo "⚠️  uv lock failed for $name, skipping (exit code $?)"
     # continue with other pipelines instead of exiting the whole script
   fi
 done
