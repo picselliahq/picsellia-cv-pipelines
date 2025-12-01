@@ -78,23 +78,12 @@ jobs:
             git status
           fi
 
-      - name: Commit changes
-        if: steps.diff.outputs.has_changes == 'true'
-        run: |
-          git add .
-          git commit -m "chore: refresh uv.lock for ${{ env.PIPELINE }}"
-
-      - name: Push branch
-        if: steps.diff.outputs.has_changes == 'true'
-        run: |
-          git push origin "$BRANCH_NAME"
-
       - name: Create Pull Request
         if: steps.diff.outputs.has_changes == 'true'
         uses: peter-evans/create-pull-request@v7
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          branch: ${{ env.BRANCH_NAME }}
+          branch: chore/refresh-locks-${{ env.PIPELINE }}-${{ github.run_id }}
           base: ${{ env.BASE_BRANCH }}
           title: "chore: refresh uv.lock for ${{ env.PIPELINE }}"
           commit-message: "chore: refresh uv.lock for ${{ env.PIPELINE }}"
