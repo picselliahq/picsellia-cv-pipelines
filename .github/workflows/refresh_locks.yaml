@@ -51,7 +51,6 @@ jobs:
           echo "ls scripts:"
           ls scripts || echo "scripts/ directory does not exist"
 
-
       - name: Make refresh_locks.sh executable
         run: chmod +x scripts/refresh_locks.sh
 
@@ -84,6 +83,11 @@ jobs:
         run: |
           git add .
           git commit -m "chore: refresh uv.lock for ${{ env.PIPELINE }}"
+
+      - name: Push branch
+        if: steps.diff.outputs.has_changes == 'true'
+        run: |
+          git push origin "$BRANCH_NAME"
 
       - name: Create Pull Request
         if: steps.diff.outputs.has_changes == 'true'
