@@ -77,7 +77,7 @@ jobs:
         uses: peter-evans/create-pull-request@v7
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          branch: chore/refresh-locks-${{ env.PIPELINE }}-${{ github.run_id }}
+          branch: chore/refresh-locks-${{ env.PIPELINE }}
           base: ${{ env.BASE_BRANCH }}
           title: "chore: refresh uv.lock for ${{ env.PIPELINE }}"
           commit-message: "chore: refresh uv.lock for ${{ env.PIPELINE }}"
@@ -86,6 +86,10 @@ jobs:
 
             - Base branch: `${{ env.BASE_BRANCH }}`
             - Target pipeline: `${{ env.PIPELINE }}`
+
+          add-paths: |
+            pipelines/**/uv.lock
+
           labels: |
             dependencies
             infra
