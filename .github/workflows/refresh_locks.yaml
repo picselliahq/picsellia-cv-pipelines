@@ -44,6 +44,16 @@ jobs:
       - name: Install uv
         run: pip install uv
 
+      - name: Debug workspace
+        run: |
+          echo "pwd:"
+          pwd
+          echo "ls:"
+          ls
+          echo "ls scripts:"
+          ls scripts || echo "scripts/ directory does not exist"
+
+
       - name: Make refresh_locks.sh executable
         run: chmod +x scripts/refresh_locks.sh
 
