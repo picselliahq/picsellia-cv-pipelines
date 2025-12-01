@@ -54,12 +54,6 @@ jobs:
       - name: Make refresh_locks.sh executable
         run: chmod +x scripts/refresh_locks.sh
 
-      - name: Create working branch
-        run: |
-          BRANCH_NAME="chore/refresh-locks-${{ env.PIPELINE }}-${{ github.run_id }}"
-          echo "BRANCH_NAME=$BRANCH_NAME" >> "$GITHUB_ENV"
-          git checkout -b "$BRANCH_NAME"
-
       - name: Run refresh_locks.sh
         run: |
           echo "Running refresh_locks.sh for pipeline='${{ env.PIPELINE }}'"
