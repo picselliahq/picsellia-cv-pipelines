@@ -33,8 +33,6 @@ jobs:
 
       - name: Checkout base branch
         uses: actions/checkout@v4
-        with:
-          ref: ${{ env.BASE_BRANCH }}
 
       - name: Setup Git user
         run: |
