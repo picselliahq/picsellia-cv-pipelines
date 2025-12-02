@@ -104,6 +104,33 @@ run_pipeline_test() {
     return
   }
 
+  # ------------------------------------------
+  # Optional per-pipeline setup.sh
+  # ------------------------------------------
+  # 1) pipelines/<top>/setup.sh
+  # 2) pipelines/<top>/<mode>/setup.sh (ex: yolov8/pre_annotation/setup.sh)
+  if [[ -f "setup.sh" ]]; then
+    echo "🔧 Found setup.sh in $PIPELINE_DIR, running before tests..."
+    chmod +x setup.sh
+    if ! bash setup.sh; then
+      echo "❌ setup.sh failed for $DISPLAY_NAME"
+      RESULTS+=("❌ $DISPLAY_NAME (setup)")
+      ANY_FAILURE=true
+      popd >/dev/null
+      return
+    fi
+  elif [[ -n "$PIPELINE_NAME" && -f "$PIPELINE_NAME/setup.sh" ]]; then
+    echo "🔧 Found $PIPELINE_NAME/setup.sh in $PIPELINE_DIR, running before tests..."
+    chmod +x "$PIPELINE_NAME/setup.sh"
+    if ! bash "$PIPELINE_NAME/setup.sh"; then
+      echo "❌ $PIPELINE_NAME/setup.sh failed for $DISPLAY_NAME"
+      RESULTS+=("❌ $DISPLAY_NAME (setup)")
+      ANY_FAILURE=true
+      popd >/dev/null
+      return
+    fi
+  fi
+
   echo "▶️  pxl-pipeline test $PIPELINE_NAME"
   if pxl-pipeline test "$PIPELINE_NAME" --run-config-file "$RUN_CONFIG"; then
     echo "✅ test passed for $DISPLAY_NAME"
