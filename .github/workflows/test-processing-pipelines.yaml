@@ -1,4 +1,4 @@
-name: CV Pipelines tests (changes-based matrix)
+name: CV Pipelines tests (processing only, changes-based matrix)
 
 on:
   pull_request:
@@ -9,16 +9,16 @@ jobs:
   detect-changes:
     uses: ./.github/workflows/detect-pipeline-changes.yaml
 
-  test-pipelines:
+  test-processing-pipelines:
     needs: detect-changes
     runs-on: ubuntu-latest
 
-    if: ${{ needs.detect-changes.outputs.pipelines != '' && needs.detect-changes.outputs.pipelines != '[]' }}
+    if: ${{ needs.detect-changes.outputs.processing_pipelines != '' && needs.detect-changes.outputs.processing_pipelines != '[]' }}
 
     strategy:
       fail-fast: false
       matrix:
-        pipeline: ${{ fromJson(needs.detect-changes.outputs.pipelines) }}
+        pipeline: ${{ fromJson(needs.detect-changes.outputs.processing_pipelines) }}
 
     env:
       ORGANIZATION: test-account
@@ -34,7 +34,7 @@ jobs:
       - name: Sync project dependencies
         run: uv sync
 
-      - name: Run pipeline tests for one pipeline
+      - name: Run pipeline tests for one processing pipeline
         env:
           PXL_API_TOKEN: ${{ secrets.PXL_API_TOKEN_STAGING }}
         run: |

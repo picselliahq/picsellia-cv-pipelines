@@ -1,9 +1,6 @@
 name: Refresh uv.lock files
 
 on:
-  pull_request:
-    branches:
-      - main
   workflow_dispatch:
     inputs:
       pipeline:

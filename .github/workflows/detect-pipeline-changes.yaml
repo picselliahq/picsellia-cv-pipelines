@@ -1,11 +1,19 @@
+# .github/workflows/detect-pipeline-changes.yaml
+
 name: Detect CV Pipelines changes
 
 on:
   workflow_call:
     outputs:
       pipelines:
-        description: "JSON array of pipelines that changed (top-level dir names under pipelines/ or tests/)"
+        description: "JSON array of ALL pipelines that changed"
         value: ${{ jobs.detect.outputs.pipelines }}
+      processing_pipelines:
+        description: "JSON array of non-TRAINING pipelines that changed"
+        value: ${{ jobs.detect.outputs.processing_pipelines }}
+      training_pipelines:
+        description: "JSON array of TRAINING pipelines that changed"
+        value: ${{ jobs.detect.outputs.training_pipelines }}
 
 jobs:
   detect:
@@ -13,6 +21,8 @@ jobs:
 
     outputs:
       pipelines: ${{ steps.build-matrix.outputs.pipelines }}
+      processing_pipelines: ${{ steps.filter.outputs.processing_pipelines }}
+      training_pipelines: ${{ steps.filter.outputs.training_pipelines }}
 
     steps:
       - name: Checkout repo
@@ -49,3 +59,15 @@ jobs:
 
           printf '%s\n' "${{ steps.changes.outputs.pipelines_files }}" \
             | .github/scripts/build_pipelines_matrix.sh
+
+      - name: Make filter script executable
+        run: chmod +x .github/scripts/filter_pipelines_by_type.sh
+
+      - name: Filter processing vs training pipelines (metadata.type)
+        id: filter
+        shell: bash
+        env:
+          ALL_JSON: ${{ steps.build-matrix.outputs.pipelines }}
+        run: |
+          echo "All changed pipelines: $ALL_JSON"
+          .github/scripts/filter_pipelines_by_type.sh
