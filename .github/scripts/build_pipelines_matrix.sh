@@ -4,7 +4,7 @@ set -euo pipefail
 echo "Reading changed files from stdin..."
 
 # Known second-level "modes" (sub-pipelines)
-MODES=(pre_annotation training)
+MODES=(pre_annotation training fine_tuning fast_training)
 
 is_mode() {
   local candidate="$1"
@@ -16,11 +16,25 @@ is_mode() {
   return 1
 }
 
+deduce_pipeline_name() {
+  local top="$1"
+  local base="pipelines/$top"
+
+  if [[ -d "$base/training" ]]; then
+    echo "$top/training"
+  elif [[ -d "$base/pre_annotation" ]]; then
+    echo "$top/pre_annotation"
+  elif [[ -d "$base/fine_tuning" ]]; then
+    echo "$top/fine_tuning"
+  elif [[ -d "$base/fast_training" ]]; then
+    echo "$top/fast_training"
+  else
+    echo "$top"
+  fi
+}
+
 declare -A PIPELINE_SET=()
 
-# dorny can give all paths space-separated on one line, so:
-#  - read line by line
-#  - then split each line into tokens (files)
 while IFS= read -r line; do
   [[ -z "$line" ]] && continue
 
@@ -31,18 +45,16 @@ while IFS= read -r line; do
     # Case 1: pipelines/<...>
     # -------------------------
     if [[ "$file" == pipelines/* ]]; then
-      rel="${file#pipelines/}"     # e.g. "yolov8/pre_annotation/steps.py" or "dataset_tiler/utils/x.py"
+      rel="${file#pipelines/}"     # ex: "yolov8/pre_annotation/steps.py" ou "rt_detr/__init__.py"
 
-      IFS='/' read -r p1 p2 _ <<< "$rel"   # p1=yolov8, p2=pre_annotation | utils | <empty>
+      IFS='/' read -r p1 p2 _ <<< "$rel"   # p1=yolov8, p2=pre_annotation | utils | __init__.py | <empty>
 
       pipeline=""
       if [[ -n "${p1:-}" ]]; then
         if is_mode "${p2:-}"; then
-          # multi-mode pipeline: pipelines/yolov8/pre_annotation/...
           pipeline="$p1/$p2"
         else
-          # simple pipeline: pipelines/bounding_box_cropper/..., pipelines/dataset_tiler/...
-          pipeline="$p1"
+          pipeline="$(deduce_pipeline_name "$p1")"
         fi
       fi
 
@@ -53,7 +65,7 @@ while IFS= read -r line; do
     # Case 2: tests/<...>
     # -------------------------
     if [[ "$file" == tests/* ]]; then
-      rel="${file#tests/}"         # e.g. "yolov8/pre_annotation/run_config.toml" or "bounding_box_cropper/run_config.toml"
+      rel="${file#tests/}"         # ex: "yolov8/pre_annotation/run_config.toml" ou "rt_detr/run_config.toml"
       IFS='/' read -r p1 p2 _ <<< "$rel"
 
       pipeline=""
@@ -62,8 +74,7 @@ while IFS= read -r line; do
           # tests/yolov8/pre_annotation/...
           pipeline="$p1/$p2"
         else
-          # tests/bounding_box_cropper/...
-          pipeline="$p1"
+          pipeline="$(deduce_pipeline_name "$p1")"
         fi
       fi
 
