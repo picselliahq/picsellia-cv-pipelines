@@ -84,10 +84,10 @@ fi
 log_header
 
 run_pipeline_test() {
-  local PIPELINE_NAME="$1"   # e.g. pre_annotation or training
+  local PIPELINE_NAME="$1"   # e.g. pre_annotation or training or grounding_dino
   local RUN_CONFIG="$2"
-  local PIPELINE_DIR="$3"    # e.g. pipelines/yolov8
-  local DISPLAY_NAME="$4"    # e.g. yolov8/pre_annotation
+  local PIPELINE_DIR="$3"    # e.g. pipelines/yolov8 or pipelines/grounding_dino
+  local DISPLAY_NAME="$4"    # e.g. yolov8/pre_annotation or grounding_dino
 
   echo
   echo "─────────────────────────────────────────────"
@@ -109,21 +109,40 @@ run_pipeline_test() {
   # ------------------------------------------
   # 1) pipelines/<top>/setup.sh
   # 2) pipelines/<top>/<mode>/setup.sh (ex: yolov8/pre_annotation/setup.sh)
+  local SETUP_PATH=""
+
   if [[ -f "setup.sh" ]]; then
-    echo "🔧 Found setup.sh in $PIPELINE_DIR, running before tests..."
-    chmod +x setup.sh
-    if ! bash setup.sh; then
-      echo "❌ setup.sh failed for $DISPLAY_NAME"
-      RESULTS+=("❌ $DISPLAY_NAME (setup)")
-      ANY_FAILURE=true
-      popd >/dev/null
-      return
-    fi
+    SETUP_PATH="setup.sh"
   elif [[ -n "$PIPELINE_NAME" && -f "$PIPELINE_NAME/setup.sh" ]]; then
-    echo "🔧 Found $PIPELINE_NAME/setup.sh in $PIPELINE_DIR, running before tests..."
-    chmod +x "$PIPELINE_NAME/setup.sh"
-    if ! bash "$PIPELINE_NAME/setup.sh"; then
-      echo "❌ $PIPELINE_NAME/setup.sh failed for $DISPLAY_NAME"
+    SETUP_PATH="$PIPELINE_NAME/setup.sh"
+  fi
+
+  if [[ -n "$SETUP_PATH" ]]; then
+    echo "🔧 Found $SETUP_PATH in $PIPELINE_DIR, preparing environment before running setup..."
+
+    # If this folder is an uv project (has pyproject.toml),
+    # we bootstrap the env and make sure setuptools exists.
+    if [[ -f "pyproject.toml" ]]; then
+      echo "🔄 Running 'uv sync' in $(pwd) (before $SETUP_PATH)..."
+      if ! uv sync; then
+        echo "❌ uv sync failed before $SETUP_PATH for $DISPLAY_NAME"
+        RESULTS+=("❌ $DISPLAY_NAME (uv sync before setup)")
+        ANY_FAILURE=true
+        popd >/dev/null
+        return
+      fi
+
+      echo "📦 Ensuring 'setuptools' is installed in project venv (before $SETUP_PATH)..."
+      # We don't hard-fail on setuptools install, but we log it.
+      if ! uv run python -m pip install --upgrade setuptools; then
+        echo "⚠️ Failed to install setuptools before $SETUP_PATH for $DISPLAY_NAME (setup may still fail)"
+      fi
+    fi
+
+    echo "▶️  Running $SETUP_PATH ..."
+    chmod +x "$SETUP_PATH"
+    if ! bash "$SETUP_PATH"; then
+      echo "❌ $SETUP_PATH failed for $DISPLAY_NAME"
       RESULTS+=("❌ $DISPLAY_NAME (setup)")
       ANY_FAILURE=true
       popd >/dev/null
@@ -164,10 +183,10 @@ while IFS= read -r -d '' CONFIG; do
   fi
 
   matched=true
-  PIPELINE_NAME="$(basename "$(dirname "$CONFIG")")" # e.g. pre_annotation or training
-  TOP="${REL_PATH%%/*}"                              # e.g. yolov8
-  PIPELINE_DIR="$PIPELINES_DIR/$TOP"                 # e.g. pipelines/yolov8
-  DISPLAY_NAME="$REL_NO_SUFFIX"                      # e.g. yolov8/pre_annotation
+  PIPELINE_NAME="$(basename "$(dirname "$CONFIG")")" # e.g. pre_annotation or training or grounding_dino
+  TOP="${REL_PATH%%/*}"                              # e.g. yolov8 or grounding_dino
+  PIPELINE_DIR="$PIPELINES_DIR/$TOP"                 # e.g. pipelines/yolov8 or pipelines/grounding_dino
+  DISPLAY_NAME="$REL_NO_SUFFIX"                      # e.g. yolov8/pre_annotation or grounding_dino
 
   if [[ ! -d "$PIPELINES_DIR" ]]; then
     echo "⚠️  Pipelines directory '$PIPELINES_DIR' not found, skipping $DISPLAY_NAME"
