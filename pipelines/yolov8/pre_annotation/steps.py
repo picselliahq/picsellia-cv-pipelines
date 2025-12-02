@@ -76,9 +76,11 @@ def process(model: UltralyticsModel, dataset: CocoDataset) -> CocoDataset:
         model=model,
         model_labels=model_labels,
         parameters=context.processing_parameters,
+        assets=list(dataset.assets),
     )
 
     pre_annotator.setup_preannotation_job()
+
     dataset.coco_data = pre_annotator.preannotate(
         confidence_threshold=context.processing_parameters.confidence_threshold,
         agnostic_nms=context.processing_parameters.agnostic_nms,

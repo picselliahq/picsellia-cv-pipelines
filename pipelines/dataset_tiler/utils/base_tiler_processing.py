@@ -107,60 +107,110 @@ class BaseTilerProcessing(ABC):
 
     def tile_image(self, image: Image.Image) -> np.ndarray:
         """
-        Tile an input image into smaller overlapping tiles with various padding modes.
-
-        Args:
-            image (PIL.Image): The image to tile.
+        Tile an input image into smaller overlapping tiles with padding if needed.
 
         Returns:
-            np.ndarray: A batch of image tiles as a 4D numpy array (N, H, W, C).
+            np.ndarray: (N, tile_height, tile_width, 3)
         """
-
         image_array = np.array(image)
 
         n_tiles_x = math.ceil(image.width / self.stride_x)
         n_tiles_y = math.ceil(image.height / self.stride_y)
 
-        tiles = []
+        tiles: list[np.ndarray] = []
 
         for i in range(n_tiles_y):
             for j in range(n_tiles_x):
-                x1 = j * self.stride_x
-                y1 = i * self.stride_y
-                x2 = min(x1 + self.tile_width, image.width)
-                y2 = min(y1 + self.tile_height, image.height)
+                tile = self._extract_tile(
+                    image_array=image_array,
+                    i=i,
+                    j=j,
+                    image_width=image.width,
+                    image_height=image.height,
+                )
 
-                tile = image_array[y1:y2, x1:x2]
+                if tile is None:
+                    continue
 
-                if tile.shape[:2] != (self.tile_width, self.tile_height):
-                    if self.tiling_mode == TileMode.DROP:
-                        continue
-                    else:
-                        pad_width = [
-                            (0, max(0, self.tile_height - tile.shape[0])),
-                            (0, max(0, self.tile_width - tile.shape[1])),
-                            (0, 0),
-                        ]
-                        pad_width = [pw for pw in pad_width if pw is not None]
+                self._validate_tile_shape(tile)
+                tiles.append(np.ascontiguousarray(tile))
 
-                        if self.tiling_mode == TileMode.CONSTANT:
-                            tile = np.pad(  # noqa
-                                tile,
-                                pad_width,
-                                mode="constant",
-                                constant_values=self.padding_color_value,
-                            )
-                        elif self.tiling_mode == TileMode.REFLECT:
-                            tile = np.pad(tile, pad_width, mode="reflect")  # noqa
-                        elif self.tiling_mode == TileMode.EDGE:
-                            tile = np.pad(tile, pad_width, mode="edge")  # noqa
-                        elif self.tiling_mode == TileMode.WRAP:
-                            tile = np.pad(tile, pad_width, mode="wrap")  # noqa
+        return np.stack(tiles, axis=0)
 
-                tiles.append(tile)
+    def _extract_tile(
+        self,
+        image_array: np.ndarray,
+        i: int,
+        j: int,
+        image_width: int,
+        image_height: int,
+    ):
+        """Extract a tile and apply padding if needed."""
+        x1 = j * self.stride_x
+        y1 = i * self.stride_y
+        x2 = min(x1 + self.tile_width, image_width)
+        y2 = min(y1 + self.tile_height, image_height)
 
-        tiles_data = np.array(tiles)
-        return tiles_data
+        tile = image_array[y1:y2, x1:x2]
+        tile = self._ensure_three_channels(tile)
+
+        h, w = tile.shape[:2]
+
+        if (h, w) == (self.tile_height, self.tile_width):
+            return tile
+
+        return self._handle_incomplete_tile(tile, h, w)
+
+    @staticmethod
+    def _ensure_three_channels(tile: np.ndarray) -> np.ndarray:
+        """Ensure the tile has three channels."""
+        if tile.ndim == 2:
+            tile = np.stack([tile, tile, tile], axis=-1)
+        return tile
+
+    def _handle_incomplete_tile(
+        self,
+        tile: np.ndarray,
+        h: int,
+        w: int,
+    ):
+        """
+        Handle tiles that do not match the target size, depending on tiling mode.
+
+        Returns:
+            A padded tile, or None if the tile should be dropped.
+        """
+        if self.tiling_mode == TileMode.DROP:
+            return None
+
+        pad_h = max(0, self.tile_height - h)
+        pad_w = max(0, self.tile_width - w)
+
+        if self.tiling_mode == TileMode.CONSTANT:
+            out = np.full(
+                (self.tile_height, self.tile_width, 3),
+                fill_value=self.padding_color_value,
+                dtype=tile.dtype,
+            )
+            out[:h, :w, :] = tile
+            return out
+
+        if self.tiling_mode == TileMode.REFLECT:
+            return np.pad(tile, ((0, pad_h), (0, pad_w), (0, 0)), mode="reflect")
+
+        if self.tiling_mode == TileMode.EDGE:
+            return np.pad(tile, ((0, pad_h), (0, pad_w), (0, 0)), mode="edge")
+
+        if self.tiling_mode == TileMode.WRAP:
+            return np.pad(tile, ((0, pad_h), (0, pad_w), (0, 0)), mode="wrap")
+
+    def _validate_tile_shape(self, tile: np.ndarray) -> None:
+        """Validate that the tile has the expected shape and channels."""
+        if tile.shape[:2] != (self.tile_height, self.tile_width) or tile.ndim != 3:
+            raise ValueError(
+                f"Tile shape mismatch: got {tile.shape}, "
+                f"expected ({self.tile_height}, {self.tile_width}, 3)"
+            )
 
     def _process_dataset_collection(
         self, dataset_collection: DatasetCollection[CocoDataset]
@@ -233,7 +283,9 @@ class BaseTilerProcessing(ABC):
             image_filename = image_info["file_name"]
             image_path = os.path.join(dataset.images_dir, image_filename)
             image = Image.open(image_path)
-            if image.mode != "RGB" or image.mode != "RGBA":
+            if image.mode == "RGBA":
+                image = image.convert("RGB")
+            elif image.mode != "RGB":
                 image = image.convert("RGB")
 
             tiles_batch = self.tile_image(image=image)

@@ -1,0 +1,76 @@
+name: Detect CV Pipelines changes
+
+on:
+  workflow_call:
+    outputs:
+      pipelines:
+        description: "JSON array of ALL pipelines that changed"
+        value: ${{ jobs.detect.outputs.pipelines }}
+      processing_pipelines:
+        description: "JSON array of non-TRAINING pipelines that changed (CPU-safe)"
+        value: ${{ jobs.detect.outputs.processing_pipelines }}
+      training_pipelines:
+        description: "JSON array of TRAINING pipelines that changed"
+        value: ${{ jobs.detect.outputs.training_pipelines }}
+      gpu_processing_pipelines:
+        description: "JSON array of GPU-only processing pipelines that changed"
+        value: ${{ jobs.detect.outputs.gpu_processing_pipelines }}
+
+
+jobs:
+  detect:
+    runs-on: ubuntu-latest
+
+    outputs:
+      pipelines: ${{ steps.build-matrix.outputs.pipelines }}
+      processing_pipelines: ${{ steps.filter.outputs.processing_pipelines }}
+      training_pipelines: ${{ steps.filter.outputs.training_pipelines }}
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Detect changed files under pipelines/ and tests/
+        id: changes
+        uses: dorny/paths-filter@v3
+        with:
+          list-files: shell
+          filters: |
+            pipelines:
+              - 'pipelines/**'
+              - 'tests/**'
+
+      - name: Make matrix script executable
+        run: chmod +x .github/scripts/build_pipelines_matrix.sh
+
+      - name: Build pipelines JSON from changed files
+        id: build-matrix
+        shell: bash
+        run: |
+          echo "pipelines flag: ${{ steps.changes.outputs.pipelines }}"
+          echo "pipelines_files from dorny:"
+          printf '%s\n' "${{ steps.changes.outputs.pipelines_files }}"
+
+          if [[ "${{ steps.changes.outputs.pipelines }}" != "true" ]]; then
+            echo "No changes under pipelines/ or tests/."
+            echo 'pipelines=[]' >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          printf '%s\n' "${{ steps.changes.outputs.pipelines_files }}" \
+            | .github/scripts/build_pipelines_matrix.sh
+
+      - name: Make filter script executable
+        run: chmod +x .github/scripts/filter_pipelines_by_type.sh
+
+      - name: Filter processing vs training pipelines (and GPU-only processings)
+        id: filter
+        shell: bash
+        env:
+          ALL_JSON: ${{ steps.build-matrix.outputs.pipelines }}
+          GPU_ONLY: grounding_dino
+        run: |
+          echo "All changed pipelines: $ALL_JSON"
+          .github/scripts/filter_pipelines_by_type.sh

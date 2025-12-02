@@ -1,0 +1,83 @@
+name: CV Pipelines deploy (one env)
+
+on:
+  workflow_call:
+    inputs:
+      pipelines_json:
+        description: "JSON array of pipeline names"
+        required: true
+        type: string
+      organization:
+        description: "Picsellia organization name"
+        required: true
+        type: string
+      environment_name:
+        description: "Picsellia environment (STAGING|PROD)"
+        required: true
+        type: string
+      bump:
+        description: "Version bump (rc|final|... )"
+        required: true
+        type: string
+    secrets:
+      PXL_API_TOKEN:
+        required: true
+      DOCKERHUB_USERNAME:
+        required: true
+      DOCKERHUB_TOKEN:
+        required: true
+
+jobs:
+  deploy-env:
+    if: ${{ inputs.pipelines_json != '' && inputs.pipelines_json != '[]' }}
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        pipeline: ${{ fromJson(inputs.pipelines_json) }}
+
+    env:
+      ORGANIZATION: ${{ inputs.organization }}
+      ENVIRONMENT: ${{ inputs.environment_name }}
+      BUMP: ${{ inputs.bump }}
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Install uv
+        run: pip install uv
+
+      - name: Sync project dependencies
+        run: uv sync
+
+      - name: Login to Docker Hub as picsellia
+        env:
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+        run: |
+          echo "$DOCKERHUB_TOKEN" | docker login \
+            -u "$DOCKERHUB_USERNAME" \
+            --password-stdin
+
+      - name: Deploy one pipeline
+        env:
+          PXL_API_TOKEN: ${{ secrets.PXL_API_TOKEN }}
+        run: |
+          PICSELLIA_CONFIG_DIR="$RUNNER_TEMP/picsellia_cfg"
+          mkdir -p "$PICSELLIA_CONFIG_DIR"
+
+          echo "Deploying:"
+          echo "  pipeline='${{ matrix.pipeline }}'"
+          echo "  ORG=$ORGANIZATION"
+          echo "  ENV=$ENVIRONMENT"
+          echo "  BUMP=$BUMP"
+          echo "  PICSELLIA_CONFIG_DIR=$PICSELLIA_CONFIG_DIR"
+
+          uv run bash scripts/deploy_pipelines.sh \
+            --pipeline "${{ matrix.pipeline }}" \
+            --organization "$ORGANIZATION" \
+            --env "$ENVIRONMENT" \
+            --token "$PXL_API_TOKEN" \
+            --bump "$BUMP"
