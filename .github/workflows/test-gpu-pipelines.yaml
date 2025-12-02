@@ -1,4 +1,4 @@
-name: CV Pipelines GPU tests (training + GPU processings, changes-based)
+name: Test GPU pipelines
 
 on:
   pull_request:

@@ -1,4 +1,4 @@
-name: Detect CV Pipelines changes
+name: Detect pipelines changes
 
 on:
   workflow_call:

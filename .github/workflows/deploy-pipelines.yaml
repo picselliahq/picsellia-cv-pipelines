@@ -1,4 +1,4 @@
-name: CV Pipelines deploy (processing only, staging + prod)
+name: Deploy CPU processing (staging + prod)
 
 on:
   push:

@@ -1,4 +1,4 @@
-name: CV Pipelines tests (processing only, changes-based matrix)
+name: Test CPU processings
 
 on:
   pull_request:
