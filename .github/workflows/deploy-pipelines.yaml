@@ -1,4 +1,4 @@
-name: Deploy CPU processing (staging + prod)
+name: Deploy pipelines to PROD
 
 on:
   push:
@@ -9,112 +9,47 @@ jobs:
   detect-changed-pipelines:
     uses: ./.github/workflows/detect-pipeline-changes.yaml
 
-  deploy-processing-to-staging:
+  deploy-cpu-processing:
     needs: detect-changed-pipelines
-    runs-on: ubuntu-latest
-
     if: ${{ needs.detect-changed-pipelines.outputs.processing_pipelines != '' && needs.detect-changed-pipelines.outputs.processing_pipelines != '[]' }}
+    uses: ./.github/workflows/deploy-env.yaml
+    with:
+      pipelines_json: ${{ needs.detect-changes.outputs.processing_pipelines }}
+      organization: picsell
+      environment_name: PROD
+      bump: final
+      runs_on: ubuntu-latest
+    secrets:
+      PXL_API_TOKEN: ${{ secrets.PXL_API_TOKEN_PROD }}
+      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+      DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
 
-    strategy:
-      fail-fast: false
-      matrix:
-        pipeline: ${{ fromJson(needs.detect-changed-pipelines.outputs.processing_pipelines) }}
+  deploy-gpu-processing:
+    needs: detect-changed-pipelines
+    if: ${{ needs.detect-changed-pipelines.outputs.gpu_processing_pipelines != '' && needs.detect-changed-pipelines.outputs.gpu_processing_pipelines != '[]' }}
+    uses: ./.github/workflows/deploy-env.yaml
+    with:
+      pipelines_json: ${{ needs.detect-changes.outputs.gpu_processing_pipelines }}
+      organization: picsell
+      environment_name: PROD
+      bump: final
+      runs_on: self-hosted
+    secrets:
+      PXL_API_TOKEN: ${{ secrets.PXL_API_TOKEN_PROD }}
+      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+      DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
 
-    env:
-      ORGANIZATION: test-account
-      ENVIRONMENT: STAGING
-      BUMP: rc
-
-    steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
-
-      - name: Install uv
-        run: pip install uv
-
-      - name: Sync project dependencies
-        run: uv sync
-
-      - name: Login to Docker Hub as picsellia
-        env:
-          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
-          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
-        run: |
-          echo "$DOCKERHUB_TOKEN" | docker login \
-            -u "$DOCKERHUB_USERNAME" \
-            --password-stdin
-
-      - name: Deploy one processing pipeline to STAGING
-        env:
-          PXL_API_TOKEN: ${{ secrets.PXL_API_TOKEN_STAGING }}
-        run: |
-          PICSELLIA_CONFIG_DIR="$RUNNER_TEMP/picsellia_cfg"
-          mkdir -p "$PICSELLIA_CONFIG_DIR"
-
-          echo "Deploying to STAGING: pipeline='${{ matrix.pipeline }}'"
-          echo "ORG=$ORGANIZATION"
-          echo "ENV=$ENVIRONMENT"
-          echo "BUMP=$BUMP"
-
-          uv run bash scripts/deploy_pipelines.sh \
-            --pipeline "${{ matrix.pipeline }}" \
-            --organization "$ORGANIZATION" \
-            --env "$ENVIRONMENT" \
-            --token "$PXL_API_TOKEN" \
-            --bump "$BUMP"
-
-  deploy-processing-to-prod:
-    needs:
-      - detect-changed-pipelines
-      - deploy-processing-to-staging
-    runs-on: ubuntu-latest
-
-    if: ${{ needs.detect-changed-pipelines.outputs.processing_pipelines != '' && needs.detect-changed-pipelines.outputs.processing_pipelines != '[]' }}
-
-    strategy:
-      fail-fast: false
-      matrix:
-        pipeline: ${{ fromJson(needs.detect-changed-pipelines.outputs.processing_pipelines) }}
-
-    env:
-      ORGANIZATION: picsell
-      ENVIRONMENT: PROD
-      BUMP: final
-
-    steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
-
-      - name: Install uv
-        run: pip install uv
-
-      - name: Sync project dependencies
-        run: uv sync
-
-      - name: Login to Docker Hub as picsellia
-        env:
-          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
-          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
-        run: |
-          echo "$DOCKERHUB_TOKEN" | docker login \
-            -u "$DOCKERHUB_USERNAME" \
-            --password-stdin
-
-      - name: Deploy one processing pipeline to PROD
-        env:
-          PXL_API_TOKEN: ${{ secrets.PXL_API_TOKEN_PROD }}
-        run: |
-          PICSELLIA_CONFIG_DIR="$RUNNER_TEMP/picsellia_cfg"
-          mkdir -p "$PICSELLIA_CONFIG_DIR"
-
-          echo "Deploying to PROD: pipeline='${{ matrix.pipeline }}'"
-          echo "ORG=$ORGANIZATION"
-          echo "ENV=$ENVIRONMENT"
-          echo "BUMP=$BUMP"
-
-          uv run bash scripts/deploy_pipelines.sh \
-            --pipeline "${{ matrix.pipeline }}" \
-            --organization "$ORGANIZATION" \
-            --env "$ENVIRONMENT" \
-            --token "$PXL_API_TOKEN" \
-            --bump "$BUMP"
+  deploy-training-processing:
+    needs: detect-changed-pipelines
+    if: ${{ needs.detect-changed-pipelines.outputs.training_pipelines != '' && needs.detect-changed-pipelines.outputs.training_pipelines != '[]' }}
+    uses: ./.github/workflows/deploy-env.yaml
+    with:
+      pipelines_json: ${{ needs.detect-changes.outputs.training_pipelines }}
+      organization: picsell
+      environment_name: PROD
+      bump: final
+      runs_on: self-hosted
+    secrets:
+      PXL_API_TOKEN: ${{ secrets.PXL_API_TOKEN_PROD }}
+      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+      DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
