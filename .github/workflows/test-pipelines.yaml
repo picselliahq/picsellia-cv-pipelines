@@ -150,6 +150,7 @@ jobs:
     needs:
       - detect-changes
       - test-cpu-processing-pipelines
+    if: ${{ needs.test-cpu-processing-pipelines.result == 'success' }}
     uses: ./.github/workflows/deploy-env.yaml
     with:
       pipelines_json: ${{ needs.detect-changes.outputs.processing_pipelines }}
@@ -165,7 +166,8 @@ jobs:
   deploy-gpu-processing:
     needs:
       - detect-changes
-      - test-cpu-processing-pipelines
+      - test-gpu-processing-pipelines
+    if: ${{ needs.test-gpu-processing-pipelines.result == 'success' }}
     uses: ./.github/workflows/deploy-env.yaml
     with:
       pipelines_json: ${{ needs.detect-changes.outputs.gpu_processing_pipelines }}
@@ -181,7 +183,8 @@ jobs:
   deploy-training-processing:
     needs:
       - detect-changes
-      - test-cpu-processing-pipelines
+      - test-training-pipelines
+    if: ${{ needs.test-training-pipelines.result == 'success' }}
     uses: ./.github/workflows/deploy-env.yaml
     with:
       pipelines_json: ${{ needs.detect-changes.outputs.training_pipelines }}
