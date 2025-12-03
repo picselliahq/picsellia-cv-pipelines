@@ -1,20 +1,59 @@
-name: Test GPU pipelines
+name: Test pipelines
 
 on:
   pull_request:
     branches:
       - main
 
+env:
+  ORGANIZATION: test-account
+  ENVIRONMENT: STAGING
+
 jobs:
   detect-changes:
     uses: ./.github/workflows/detect-pipeline-changes.yaml
 
-  # ===========================
-  # Job 1 : GPU processings
-  # ===========================
+  test-cpu-processing-pipelines:
+    needs: detect-changes
+    runs-on: ubuntu-latest
+
+    if: ${{ needs.detect-changes.outputs.processing_pipelines != '' && needs.detect-changes.outputs.processing_pipelines != '[]' }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        pipeline: ${{ fromJson(needs.detect-changes.outputs.processing_pipelines) }}
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Install uv
+        run: pip install uv
+
+      - name: Sync project dependencies
+        run: uv sync
+
+      - name: Run CPU-safe processing pipeline tests
+        env:
+          PXL_API_TOKEN: ${{ secrets.PXL_API_TOKEN_STAGING }}
+        run: |
+          PICSELLIA_CONFIG_DIR="$RUNNER_TEMP/picsellia_cfg"
+          mkdir -p "$PICSELLIA_CONFIG_DIR"
+
+          echo "CPU PIPELINE=${{ matrix.pipeline }}"
+          echo "ORG=$ORGANIZATION"
+          echo "ENV=$ENVIRONMENT"
+          echo "PICSELLIA_CONFIG_DIR=$PICSELLIA_CONFIG_DIR"
+
+          uv run bash scripts/test_pipelines.sh \
+            --pipeline "${{ matrix.pipeline }}" \
+            --organization "$ORGANIZATION" \
+            --env "$ENVIRONMENT" \
+            --token "$PXL_API_TOKEN"
+
   test-gpu-processing-pipelines:
     needs: detect-changes
-
     runs-on: self-hosted
 
     if: ${{ needs.detect-changes.outputs.gpu_processing_pipelines != '' && needs.detect-changes.outputs.gpu_processing_pipelines != '[]' }}
@@ -23,10 +62,6 @@ jobs:
       fail-fast: false
       matrix:
         pipeline: ${{ fromJson(needs.detect-changes.outputs.gpu_processing_pipelines) }}
-
-    env:
-      ORGANIZATION: test-account
-      ENVIRONMENT: STAGING
 
     steps:
       - name: Checkout repo
@@ -64,9 +99,6 @@ jobs:
             --env "$ENVIRONMENT" \
             --token "$PXL_API_TOKEN"
 
-  # ===========================
-  # Job 2 : trainings
-  # ===========================
   test-training-pipelines:
     needs: detect-changes
     runs-on: self-hosted
@@ -78,16 +110,20 @@ jobs:
       matrix:
         pipeline: ${{ fromJson(needs.detect-changes.outputs.training_pipelines) }}
 
-    env:
-      ORGANIZATION: test-account
-      ENVIRONMENT: STAGING
-
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Install uv
-        run: pip install uv
+      - name: Ensure uv is installed
+        shell: bash
+        run: |
+          if command -v uv >/dev/null 2>&1; then
+            echo "✅ uv already available at: $(command -v uv)"
+          else
+            echo "⬇️ Installing uv via curl..."
+            curl -LsSf https://astral.sh/uv/install.sh | sh
+            echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+          fi
 
       - name: Sync project dependencies
         run: uv sync
