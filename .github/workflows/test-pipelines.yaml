@@ -145,3 +145,48 @@ jobs:
             --organization "$ORGANIZATION" \
             --env "$ENVIRONMENT" \
             --token "$PXL_API_TOKEN"
+
+  deploy-cpu-processing:
+    needs: test-cpu-processing-pipelines
+    if: ${{ needs.test-cpu-processing-pipelines.result == 'success' }}
+    uses: ./.github/workflows/deploy-pipelines.yaml
+    with:
+      pipelines_json: ${{ needs.detect-changes.outputs.processing_pipelines }}
+      organization: test-account
+      environment_name: STAGING
+      bump: rc
+      runs_on: ubuntu-latest
+    secrets:
+      PXL_API_TOKEN: ${{ secrets.PXL_API_TOKEN_STAGING }}
+      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+      DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+
+  deploy-gpu-processing:
+    needs: test-gpu-processing-pipelines
+    if: ${{ needs.test-gpu-processing-pipelines.result == 'success' }}
+    uses: ./.github/workflows/deploy-pipelines.yaml
+    with:
+      pipelines_json: ${{ needs.detect-changes.outputs.gpu_processing_pipelines }}
+      organization: test-account
+      environment_name: STAGING
+      bump: rc
+      runs_on: self-hosted
+    secrets:
+      PXL_API_TOKEN: ${{ secrets.PXL_API_TOKEN_STAGING }}
+      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+      DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+
+  deploy-training-processing:
+    needs: test-training-pipelines
+    if: ${{ needs.test-gpu-processing-pipelines.result == 'success' }}
+    uses: ./.github/workflows/deploy-pipelines.yaml
+    with:
+      pipelines_json: ${{ needs.detect-changes.outputs.training_pipelines }}
+      organization: test-account
+      environment_name: STAGING
+      bump: rc
+      runs_on: self-hosted
+    secrets:
+      PXL_API_TOKEN: ${{ secrets.PXL_API_TOKEN_STAGING }}
+      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+      DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
