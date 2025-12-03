@@ -178,7 +178,7 @@ jobs:
 
   deploy-training-processing:
     needs: test-training-pipelines
-    if: ${{ needs.test-gpu-processing-pipelines.result == 'success' }}
+    if: ${{ needs.test-training-pipelines.result == 'success' }}
     uses: ./.github/workflows/deploy-env.yaml
     with:
       pipelines_json: ${{ needs.detect-changes.outputs.training_pipelines }}
