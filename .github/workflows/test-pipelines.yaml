@@ -4,6 +4,9 @@ on:
   pull_request:
     branches:
       - main
+  push:
+    branches:
+      - feat/add-ci-for-gpu-based-pipeline
 
 env:
   ORGANIZATION: test-account
