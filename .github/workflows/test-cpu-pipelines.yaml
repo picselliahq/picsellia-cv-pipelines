@@ -1,4 +1,4 @@
-name: CV Pipelines tests
+name: CV Pipelines test
 
 on:
   pull_request:
