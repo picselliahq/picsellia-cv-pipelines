@@ -1,4 +1,4 @@
-name: Test pipelines
+name: Test pipeline
 
 on:
   pull_request:
