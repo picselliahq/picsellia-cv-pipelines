@@ -147,7 +147,9 @@ jobs:
             --token "$PXL_API_TOKEN"
 
   deploy-cpu-processing:
-    needs: test-cpu-processing-pipelines
+    needs:
+      - detect-changes
+      - test-cpu-processing-pipelines
     uses: ./.github/workflows/deploy-env.yaml
     with:
       pipelines_json: ${{ needs.detect-changes.outputs.processing_pipelines }}
@@ -161,7 +163,9 @@ jobs:
       DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
 
   deploy-gpu-processing:
-    needs: test-gpu-processing-pipelines
+    needs:
+      - detect-changes
+      - test-cpu-processing-pipelines
     uses: ./.github/workflows/deploy-env.yaml
     with:
       pipelines_json: ${{ needs.detect-changes.outputs.gpu_processing_pipelines }}
@@ -175,7 +179,9 @@ jobs:
       DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
 
   deploy-training-processing:
-    needs: test-training-pipelines
+    needs:
+      - detect-changes
+      - test-cpu-processing-pipelines
     uses: ./.github/workflows/deploy-env.yaml
     with:
       pipelines_json: ${{ needs.detect-changes.outputs.training_pipelines }}
