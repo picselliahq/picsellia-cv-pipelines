@@ -8,7 +8,6 @@ import json
 import os
 import pathlib
 
-# tomllib pour Python 3.11+, tomli fallback sinon
 try:
     import tomllib  # type: ignore[attr-defined]
 except ModuleNotFoundError:
@@ -20,7 +19,7 @@ if not raw:
 else:
     all_pipelines = json.loads(raw)
 
-processing_cpu = []
+cpu_processing = []
 gpu_processing = []
 training = []
 
@@ -62,12 +61,12 @@ for p in all_pipelines:
         if gpu_count > 0:
             gpu_processing.append(p)
         else:
-            processing_cpu.append(p)
+            cpu_processing.append(p)
 
 def emit(name, value):
     print(f"{name}={json.dumps(value)}")
 
-emit("processing_pipelines", processing_cpu)
+emit("processing_pipelines", cpu_processing)
 emit("training_pipelines", training)
 emit("gpu_processing_pipelines", gpu_processing)
 PY
