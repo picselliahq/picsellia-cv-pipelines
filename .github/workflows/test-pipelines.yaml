@@ -13,41 +13,6 @@ jobs:
   detect-changes:
     uses: ./.github/workflows/detect-pipeline-changes.yaml
 
-  check-gpu-runner:
-    name: Check GPU runner availability
-    runs-on: ubuntu-latest
-    needs: detect-changes
-    if: ${{ needs.detect-changes.outputs.gpu_processing_pipelines != '[]' || needs.detect-changes.outputs.training_pipelines != '[]' }}
-    outputs:
-      gpu_online: ${{ steps.check.outputs.gpu_online }}
-    steps:
-      - name: Check if any self-hosted GPU runner is online
-        id: check
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const { owner, repo } = context.repo;
-
-            // Repo-level runners (change to org-level endpoint if you use org runners)
-            const res = await github.request('GET /repos/{owner}/{repo}/actions/runners', { owner, repo });
-
-            const runners = res.data.runners || [];
-            const gpuRunners = runners.filter(r =>
-              r.labels?.some(l => l.name === 'gpu') && r.status === 'online'
-            );
-
-            core.info(`Total runners: ${runners.length}`);
-            core.info(`Online GPU runners: ${gpuRunners.length}`);
-
-            core.setOutput('gpu_online', gpuRunners.length > 0 ? 'true' : 'false');
-
-      - name: Explain if GPU is offline
-        if: ${{ steps.check.outputs.gpu_online != 'true' }}
-        run: |
-          echo "⚠️ No ONLINE self-hosted runner with label 'gpu' found."
-          echo "➡️ GPU jobs will be skipped (no waiting queue)."
-
-
   test-cpu-processing-pipelines:
     needs: detect-changes
     runs-on: ubuntu-latest
@@ -88,13 +53,10 @@ jobs:
             --token "$PXL_API_TOKEN"
 
   test-gpu-processing-pipelines:
-    needs:
-      - detect-changes
-      - check-gpu-runner
+    needs: detect-changes
     runs-on: self-hosted
-    if: ${{ needs.detect-changes.outputs.gpu_processing_pipelines != '' &&
-            needs.detect-changes.outputs.gpu_processing_pipelines != '[]' &&
-            needs.check-gpu-runner.outputs.gpu_online == 'true' }}
+
+    if: ${{ needs.detect-changes.outputs.gpu_processing_pipelines != '' && needs.detect-changes.outputs.gpu_processing_pipelines != '[]' }}
 
     strategy:
       fail-fast: false
@@ -138,13 +100,10 @@ jobs:
             --token "$PXL_API_TOKEN"
 
   test-training-pipelines:
-    needs:
-      - detect-changes
-      - check-gpu-runner
+    needs: detect-changes
     runs-on: self-hosted
-    if: ${{ needs.detect-changes.outputs.training_pipelines != '' &&
-            needs.detect-changes.outputs.training_pipelines != '[]' &&
-            needs.check-gpu-runner.outputs.gpu_online == 'true' }}
+
+    if: ${{ needs.detect-changes.outputs.training_pipelines != '' && needs.detect-changes.outputs.training_pipelines != '[]' }}
 
     strategy:
       fail-fast: false
@@ -208,9 +167,7 @@ jobs:
     needs:
       - detect-changes
       - test-gpu-processing-pipelines
-      - check-gpu-runner
-    if: ${{ needs.test-gpu-processing-pipelines.result == 'success' &&
-            needs.check-gpu-runner.outputs.gpu_online == 'true' }}
+    if: ${{ needs.test-gpu-processing-pipelines.result == 'success' }}
     uses: ./.github/workflows/deploy-env.yaml
     with:
       pipelines_json: ${{ needs.detect-changes.outputs.gpu_processing_pipelines }}
@@ -227,9 +184,7 @@ jobs:
     needs:
       - detect-changes
       - test-training-pipelines
-      - check-gpu-runner
-    if: ${{ needs.test-training-pipelines.result == 'success' &&
-            needs.check-gpu-runner.outputs.gpu_online == 'true' }}
+    if: ${{ needs.test-training-pipelines.result == 'success' }}
     uses: ./.github/workflows/deploy-env.yaml
     with:
       pipelines_json: ${{ needs.detect-changes.outputs.training_pipelines }}
