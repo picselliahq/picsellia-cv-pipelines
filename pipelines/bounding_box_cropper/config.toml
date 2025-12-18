@@ -12,5 +12,5 @@ parameters_class = "utils/parameters.py:ProcessingBoundingBoxCropperParameters"
 [docker]
 image_name = "picsellia/processing-bounding-box-cropper"
 image_tag = "latest"
-cpu = "8"
+cpu = "4"
 gpu = "0"

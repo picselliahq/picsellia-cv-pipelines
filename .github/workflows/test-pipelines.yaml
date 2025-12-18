@@ -1,0 +1,198 @@
+name: Test pipelines
+
+on:
+  pull_request:
+    branches:
+      - main
+
+env:
+  ORGANIZATION: test-account
+  ENVIRONMENT: STAGING
+
+jobs:
+  detect-changes:
+    uses: ./.github/workflows/detect-pipeline-changes.yaml
+
+  test-cpu-processing-pipelines:
+    needs: detect-changes
+    runs-on: ubuntu-latest
+
+    if: ${{ needs.detect-changes.outputs.processing_pipelines != '' && needs.detect-changes.outputs.processing_pipelines != '[]' }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        pipeline: ${{ fromJson(needs.detect-changes.outputs.processing_pipelines) }}
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Install uv
+        run: pip install uv
+
+      - name: Sync project dependencies
+        run: uv sync
+
+      - name: Run CPU-safe processing pipeline tests
+        env:
+          PXL_API_TOKEN: ${{ secrets.PXL_API_TOKEN_STAGING }}
+        run: |
+          PICSELLIA_CONFIG_DIR="$RUNNER_TEMP/picsellia_cfg"
+          mkdir -p "$PICSELLIA_CONFIG_DIR"
+
+          echo "CPU PIPELINE=${{ matrix.pipeline }}"
+          echo "ORG=$ORGANIZATION"
+          echo "ENV=$ENVIRONMENT"
+          echo "PICSELLIA_CONFIG_DIR=$PICSELLIA_CONFIG_DIR"
+
+          uv run bash scripts/test_pipelines.sh \
+            --pipeline "${{ matrix.pipeline }}" \
+            --organization "$ORGANIZATION" \
+            --env "$ENVIRONMENT" \
+            --token "$PXL_API_TOKEN"
+
+  test-gpu-processing-pipelines:
+    needs: detect-changes
+    runs-on: self-hosted
+
+    if: ${{ needs.detect-changes.outputs.gpu_processing_pipelines != '' && needs.detect-changes.outputs.gpu_processing_pipelines != '[]' }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        pipeline: ${{ fromJson(needs.detect-changes.outputs.gpu_processing_pipelines) }}
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Ensure uv is installed
+        shell: bash
+        run: |
+          if command -v uv >/dev/null 2>&1; then
+            echo "✅ uv already available at: $(command -v uv)"
+          else
+            echo "⬇️ Installing uv via curl..."
+            curl -LsSf https://astral.sh/uv/install.sh | sh
+            echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+          fi
+
+      - name: Sync project dependencies
+        run: uv sync
+
+      - name: Run GPU processing pipeline tests
+        env:
+          PXL_API_TOKEN: ${{ secrets.PXL_API_TOKEN_STAGING }}
+        run: |
+          PICSELLIA_CONFIG_DIR="$RUNNER_TEMP/picsellia_cfg"
+          mkdir -p "$PICSELLIA_CONFIG_DIR"
+
+          echo "GPU PIPELINE=${{ matrix.pipeline }}"
+          echo "ORG=$ORGANIZATION"
+          echo "ENV=$ENVIRONMENT"
+          echo "PICSELLIA_CONFIG_DIR=$PICSELLIA_CONFIG_DIR"
+
+          uv run bash scripts/test_pipelines.sh \
+            --pipeline "${{ matrix.pipeline }}" \
+            --organization "$ORGANIZATION" \
+            --env "$ENVIRONMENT" \
+            --token "$PXL_API_TOKEN"
+
+  test-training-pipelines:
+    needs: detect-changes
+    runs-on: self-hosted
+
+    if: ${{ needs.detect-changes.outputs.training_pipelines != '' && needs.detect-changes.outputs.training_pipelines != '[]' }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        pipeline: ${{ fromJson(needs.detect-changes.outputs.training_pipelines) }}
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Ensure uv is installed
+        shell: bash
+        run: |
+          if command -v uv >/dev/null 2>&1; then
+            echo "✅ uv already available at: $(command -v uv)"
+          else
+            echo "⬇️ Installing uv via curl..."
+            curl -LsSf https://astral.sh/uv/install.sh | sh
+            echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+          fi
+
+      - name: Sync project dependencies
+        run: uv sync
+
+      - name: Run training pipeline tests
+        env:
+          PXL_API_TOKEN: ${{ secrets.PXL_API_TOKEN_STAGING }}
+        run: |
+          PICSELLIA_CONFIG_DIR="$RUNNER_TEMP/picsellia_cfg"
+          mkdir -p "$PICSELLIA_CONFIG_DIR"
+
+          echo "TRAINING PIPELINE=${{ matrix.pipeline }}"
+          echo "ORG=$ORGANIZATION"
+          echo "ENV=$ENVIRONMENT"
+          echo "PICSELLIA_CONFIG_DIR=$PICSELLIA_CONFIG_DIR"
+
+          uv run bash scripts/test_pipelines.sh \
+            --pipeline "${{ matrix.pipeline }}" \
+            --organization "$ORGANIZATION" \
+            --env "$ENVIRONMENT" \
+            --token "$PXL_API_TOKEN"
+
+  deploy-cpu-processing:
+    needs:
+      - detect-changes
+      - test-cpu-processing-pipelines
+    if: ${{ needs.test-cpu-processing-pipelines.result == 'success' }}
+    uses: ./.github/workflows/deploy-env.yaml
+    with:
+      pipelines_json: ${{ needs.detect-changes.outputs.processing_pipelines }}
+      organization: test-account
+      environment_name: STAGING
+      bump: rc
+      runs_on: ubuntu-latest
+    secrets:
+      PXL_API_TOKEN: ${{ secrets.PXL_API_TOKEN_STAGING }}
+      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+      DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+
+  deploy-gpu-processing:
+    needs:
+      - detect-changes
+      - test-gpu-processing-pipelines
+    if: ${{ needs.test-gpu-processing-pipelines.result == 'success' }}
+    uses: ./.github/workflows/deploy-env.yaml
+    with:
+      pipelines_json: ${{ needs.detect-changes.outputs.gpu_processing_pipelines }}
+      organization: test-account
+      environment_name: STAGING
+      bump: rc
+      runs_on: self-hosted
+    secrets:
+      PXL_API_TOKEN: ${{ secrets.PXL_API_TOKEN_STAGING }}
+      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+      DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+
+  deploy-training-processing:
+    needs:
+      - detect-changes
+      - test-training-pipelines
+    if: ${{ needs.test-training-pipelines.result == 'success' }}
+    uses: ./.github/workflows/deploy-env.yaml
+    with:
+      pipelines_json: ${{ needs.detect-changes.outputs.training_pipelines }}
+      organization: test-account
+      environment_name: STAGING
+      bump: rc
+      runs_on: self-hosted
+    secrets:
+      PXL_API_TOKEN: ${{ secrets.PXL_API_TOKEN_STAGING }}
+      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+      DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}

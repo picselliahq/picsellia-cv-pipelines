@@ -8,7 +8,6 @@ import json
 import os
 import pathlib
 
-# tomllib for Python 3.11+, tomli fallback otherwise
 try:
     import tomllib  # type: ignore[attr-defined]
 except ModuleNotFoundError:
@@ -20,12 +19,8 @@ if not raw:
 else:
     all_pipelines = json.loads(raw)
 
-# GPU-only processings (by name, e.g. "grounding_dino", "foo/bar" possible)
-gpu_only_raw = os.environ.get("GPU_ONLY", "")
-gpu_only = {name.strip() for name in gpu_only_raw.split(",") if name.strip()}
-
-processing_cpu = []
-processing_gpu = []
+cpu_processing = []
+gpu_processing = []
 training = []
 
 for p in all_pipelines:
@@ -36,24 +31,42 @@ for p in all_pipelines:
         cfg_path = pathlib.Path("pipelines") / p / "config.toml"
 
     ptype = "UNKNOWN"
+    gpu_count = 0
+
     if cfg_path.is_file():
         try:
             with cfg_path.open("rb") as f:
                 data = tomllib.load(f)
             meta = data.get("metadata") or {}
             ptype = meta.get("type", "UNKNOWN")
+
+            docker_cfg = data.get("docker") or {}
+            gpu_raw = docker_cfg.get("gpu", 0)
+
+            if isinstance(gpu_raw, str):
+                try:
+                    gpu_count = int(gpu_raw)
+                except ValueError:
+                    gpu_count = 0
+            elif isinstance(gpu_raw, (int, float)):
+                gpu_count = int(gpu_raw)
+            else:
+                gpu_count = 0
         except Exception:
-            ptype = "UNKNOWN"
+            pass
 
     if ptype == "TRAINING":
         training.append(p)
     else:
-        if p in gpu_only:
-            processing_gpu.append(p)
+        if gpu_count > 0:
+            gpu_processing.append(p)
         else:
-            processing_cpu.append(p)
+            cpu_processing.append(p)
 
-print(f"processing_pipelines={json.dumps(processing_cpu)}")
-print(f"training_pipelines={json.dumps(training)}")
-print(f"gpu_processing_pipelines={json.dumps(processing_gpu)}")
+def emit(name, value):
+    print(f"{name}={json.dumps(value)}")
+
+emit("processing_pipelines", cpu_processing)
+emit("training_pipelines", training)
+emit("gpu_processing_pipelines", gpu_processing)
 PY
