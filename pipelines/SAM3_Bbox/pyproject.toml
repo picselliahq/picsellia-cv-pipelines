@@ -1,0 +1,16 @@
+[project]
+name = "SAM3_Bbox"
+version = "0.1.0"
+description = "Picsellia processing pipeline"
+requires-python = ">=3.10,<3.12"
+
+dependencies = [
+    "picsellia-pipelines-cli",
+    "picsellia-cv-engine[ultralytics]>=0.4.1",
+    "ultralytics",
+    "opencv-python",
+    "transformers>=5.0.0rc1",
+    "huggingface-hub",
+    "torch",
+    "shapely"
+]
