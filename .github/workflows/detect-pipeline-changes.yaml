@@ -99,19 +99,16 @@ jobs:
             exit 0
           fi
 
-          python - <<'PY'
-          import json, os
+          HF_JSON="$(python -c 'import json,os
+          changed=json.loads(os.environ["CHANGED_JSON"])
+          allow=set()
+          with open(".github/hf_pipelines.txt","r",encoding="utf-8") as f:
+              for line in f:
+                  line=line.strip()
+                  if not line or line.startswith("#"):
+                      continue
+                  allow.add(line)
+          print(json.dumps([p for p in changed if p in allow]))
+          ')"
 
-          changed = json.loads(os.environ["CHANGED_JSON"])
-          allow = set()
-
-          with open(".github/hf_pipelines.txt", "r", encoding="utf-8") as f:
-            for line in f:
-              line = line.strip()
-              if not line or line.startswith("#"):
-                continue
-              allow.add(line)
-
-          result = [p for p in changed if p in allow]
-          print(f"hf_token_pipelines={json.dumps(result)}")
-          PY >> "$GITHUB_OUTPUT"
+          echo "hf_token_pipelines=${HF_JSON}" >> "$GITHUB_OUTPUT"
