@@ -101,7 +101,7 @@ jobs:
             --token "$PXL_API_TOKEN"
 
       - name: Run GPU processing pipeline tests (with HF)
-        if: ${{ contains(fromJson(needs.detect-changes.outputs.hf_token_pipelines), matrix.pipeline) && secrets.HF_TOKEN != '' }}
+        if: ${{ contains(fromJson(needs.detect-changes.outputs.hf_token_pipelines), matrix.pipeline) }}
         env:
           PXL_API_TOKEN: ${{ secrets.PXL_API_TOKEN_STAGING }}
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
