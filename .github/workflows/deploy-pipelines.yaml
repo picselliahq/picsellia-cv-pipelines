@@ -15,6 +15,7 @@ jobs:
     uses: ./.github/workflows/deploy-env.yaml
     with:
       pipelines_json: ${{ needs.detect-changes.outputs.processing_pipelines }}
+      hf_token_pipelines_json: ${{ needs.detect-changed-pipelines.outputs.hf_token_pipelines }}
       organization: picsell
       environment_name: PROD
       bump: final
@@ -23,6 +24,7 @@ jobs:
       PXL_API_TOKEN: ${{ secrets.PXL_API_TOKEN_PROD }}
       DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
       DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+      HF_TOKEN: ${{ secrets.HF_TOKEN }}
 
   deploy-gpu-processing:
     needs: detect-changed-pipelines
@@ -30,6 +32,7 @@ jobs:
     uses: ./.github/workflows/deploy-env.yaml
     with:
       pipelines_json: ${{ needs.detect-changes.outputs.gpu_processing_pipelines }}
+      hf_token_pipelines_json: ${{ needs.detect-changed-pipelines.outputs.hf_token_pipelines }}
       organization: picsell
       environment_name: PROD
       bump: final
@@ -38,6 +41,7 @@ jobs:
       PXL_API_TOKEN: ${{ secrets.PXL_API_TOKEN_PROD }}
       DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
       DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+      HF_TOKEN: ${{ secrets.HF_TOKEN }}
 
   deploy-training-processing:
     needs: detect-changed-pipelines
@@ -45,6 +49,7 @@ jobs:
     uses: ./.github/workflows/deploy-env.yaml
     with:
       pipelines_json: ${{ needs.detect-changes.outputs.training_pipelines }}
+      hf_token_pipelines_json: ${{ needs.detect-changed-pipelines.outputs.hf_token_pipelines }}
       organization: picsell
       environment_name: PROD
       bump: final
@@ -53,3 +58,4 @@ jobs:
       PXL_API_TOKEN: ${{ secrets.PXL_API_TOKEN_PROD }}
       DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
       DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+      HF_TOKEN: ${{ secrets.HF_TOKEN }}
