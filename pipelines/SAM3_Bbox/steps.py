@@ -11,7 +11,7 @@ from picsellia_cv_engine.core.contexts import PicselliaDatasetProcessingContext
 from picsellia_cv_engine.decorators.pipeline_decorator import Pipeline
 from picsellia_cv_engine.decorators.step_decorator import step
 from transformers import Sam3Model, Sam3Processor
-from utils.processing import process_images_sam3
+from utils.sam3_processing import process_images_sam3
 
 
 @step
