@@ -1,0 +1,17 @@
+[job]
+type = "PRE_ANNOTATION"
+
+[auth]
+organization_name = "test-account"
+env = "STAGING"
+
+[parameters]
+text_prompt = "car"
+threshold = 0.3
+mask_threshold = 0.5
+
+[input.dataset_version]
+id = "019b6f03-1eed-7137-9b44-35bd2134aa1c"
+
+[input.model_version]
+id = "019b6f01-ab6a-71db-9403-52b899497010"
