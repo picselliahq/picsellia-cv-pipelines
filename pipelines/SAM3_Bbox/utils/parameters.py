@@ -1,5 +1,3 @@
-from typing import List, Optional
-
 from picsellia.types.schemas import LogDataType
 from picsellia_cv_engine.core.parameters import Parameters
 
