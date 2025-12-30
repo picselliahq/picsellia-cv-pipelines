@@ -218,7 +218,7 @@ jobs:
     uses: ./.github/workflows/deploy-env.yaml
     with:
       pipelines_json: ${{ needs.detect-changes.outputs.processing_pipelines }}
-      hf_token_pipelines_json: ${{ needs.detect-changed-pipelines.outputs.hf_token_pipelines }}
+      hf_token_pipelines_json: ${{ needs.detect-changes.outputs.hf_token_pipelines }}
       organization: test-account
       environment_name: STAGING
       bump: rc
@@ -237,7 +237,7 @@ jobs:
     uses: ./.github/workflows/deploy-env.yaml
     with:
       pipelines_json: ${{ needs.detect-changes.outputs.gpu_processing_pipelines }}
-      hf_token_pipelines_json: ${{ needs.detect-changed-pipelines.outputs.hf_token_pipelines }}
+      hf_token_pipelines_json: ${{ needs.detect-changes.outputs.hf_token_pipelines }}
       organization: test-account
       environment_name: STAGING
       bump: rc
@@ -256,7 +256,7 @@ jobs:
     uses: ./.github/workflows/deploy-env.yaml
     with:
       pipelines_json: ${{ needs.detect-changes.outputs.training_pipelines }}
-      hf_token_pipelines_json: ${{ needs.detect-changed-pipelines.outputs.hf_token_pipelines }}
+      hf_token_pipelines_json: ${{ needs.detect-changes.outputs.hf_token_pipelines }}
       organization: test-account
       environment_name: STAGING
       bump: rc
