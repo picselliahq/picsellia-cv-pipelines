@@ -7,6 +7,11 @@ on:
         description: "JSON array of pipeline names"
         required: true
         type: string
+      hf_token_pipelines_json:
+        description: "JSON array of pipelines requiring HF_TOKEN"
+        required: false
+        default: "[]"
+        type: string
       organization:
         description: "Picsellia organization name"
         required: true
@@ -31,6 +36,8 @@ on:
         required: true
       DOCKERHUB_TOKEN:
         required: true
+      HF_TOKEN:
+        required: false
 
 jobs:
   deploy-env:
@@ -74,17 +81,13 @@ jobs:
             -u "$DOCKERHUB_USERNAME" \
             --password-stdin
 
-      - name: Deploy one pipeline
+      - name: Deploy one pipeline (no HF)
+        if: ${{ !contains(fromJson(inputs.hf_token_pipelines_json), matrix.pipeline) }}
         env:
           PXL_API_TOKEN: ${{ secrets.PXL_API_TOKEN }}
         run: |
           PICSELLIA_CONFIG_DIR="$RUNNER_TEMP/picsellia_cfg"
           mkdir -p "$PICSELLIA_CONFIG_DIR"
-
-          echo "Deploying pipeline '${{ matrix.pipeline }}' to $ENVIRONMENT"
-          echo "  ORG=$ORGANIZATION"
-          echo "  BUMP=$BUMP"
-          echo "  Runner: ${{ inputs.runs_on }}"
 
           uv run bash scripts/deploy_pipelines.sh \
             --pipeline "${{ matrix.pipeline }}" \
@@ -92,3 +95,25 @@ jobs:
             --env "$ENVIRONMENT" \
             --token "$PXL_API_TOKEN" \
             --bump "$BUMP"
+
+      - name: Deploy one pipeline (with HF)
+        if: ${{ contains(fromJson(inputs.hf_token_pipelines_json), matrix.pipeline) }}
+        env:
+          PXL_API_TOKEN: ${{ secrets.PXL_API_TOKEN }}
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          if [ -z "${HF_TOKEN:-}" ]; then
+            echo "❌ HF_TOKEN required for ${{ matrix.pipeline }} but not available"
+            exit 1
+          fi
+
+          PICSELLIA_CONFIG_DIR="$RUNNER_TEMP/picsellia_cfg"
+          mkdir -p "$PICSELLIA_CONFIG_DIR"
+
+          uv run bash scripts/deploy_pipelines.sh \
+            --pipeline "${{ matrix.pipeline }}" \
+            --organization "$ORGANIZATION" \
+            --env "$ENVIRONMENT" \
+            --token "$PXL_API_TOKEN" \
+            --bump "$BUMP" \
+            --hf-token "$HF_TOKEN"

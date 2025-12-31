@@ -15,6 +15,10 @@ on:
       gpu_processing_pipelines:
         description: "JSON array of GPU-only processing pipelines that changed"
         value: ${{ jobs.detect.outputs.gpu_processing_pipelines }}
+      hf_token_pipelines:
+        description: "JSON array of pipelines requiring HF_TOKEN"
+        value: ${{ jobs.detect.outputs.hf_token_pipelines }}
+
 
 jobs:
   detect:
@@ -25,7 +29,7 @@ jobs:
       processing_pipelines: ${{ steps.filter.outputs.processing_pipelines }}
       training_pipelines: ${{ steps.filter.outputs.training_pipelines }}
       gpu_processing_pipelines: ${{ steps.filter.outputs.gpu_processing_pipelines }}
-
+      hf_token_pipelines: ${{ steps.hf.outputs.hf_token_pipelines }}
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
@@ -73,3 +77,38 @@ jobs:
         run: |
           echo "All changed pipelines: $ALL_JSON"
           .github/scripts/filter_pipelines_by_type.sh
+
+      - name: Build HF token pipelines list
+        id: hf
+        shell: bash
+        env:
+          CHANGED_JSON: ${{ steps.build-matrix.outputs.pipelines }}
+        run: |
+          set -euo pipefail
+
+          ALLOWLIST_FILE=".github/hf_pipelines.txt"
+
+          if [[ -z "${CHANGED_JSON:-}" || "${CHANGED_JSON}" == "[]" ]]; then
+            echo "hf_token_pipelines=[]" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          if [[ ! -f "$ALLOWLIST_FILE" ]]; then
+            echo "No allowlist file found at $ALLOWLIST_FILE"
+            echo "hf_token_pipelines=[]" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          HF_JSON="$(python -c 'import json,os
+          changed=json.loads(os.environ["CHANGED_JSON"])
+          allow=set()
+          with open(".github/hf_pipelines.txt","r",encoding="utf-8") as f:
+              for line in f:
+                  line=line.strip()
+                  if not line or line.startswith("#"):
+                      continue
+                  allow.add(line)
+          print(json.dumps([p for p in changed if p in allow]))
+          ')"
+
+          echo "hf_token_pipelines=${HF_JSON}" >> "$GITHUB_OUTPUT"

@@ -6,15 +6,16 @@ on:
       - main
 
 jobs:
-  detect-changed-pipelines:
+  detect-changes:
     uses: ./.github/workflows/detect-pipeline-changes.yaml
 
   deploy-cpu-processing:
-    needs: detect-changed-pipelines
-    if: ${{ needs.detect-changed-pipelines.outputs.processing_pipelines != '' && needs.detect-changed-pipelines.outputs.processing_pipelines != '[]' }}
+    needs: detect-changes
+    if: ${{ needs.detect-changes.outputs.processing_pipelines != '' && needs.detect-changes.outputs.processing_pipelines != '[]' }}
     uses: ./.github/workflows/deploy-env.yaml
     with:
       pipelines_json: ${{ needs.detect-changes.outputs.processing_pipelines }}
+      hf_token_pipelines_json: ${{ needs.detect-changes.outputs.hf_token_pipelines }}
       organization: picsell
       environment_name: PROD
       bump: final
@@ -23,13 +24,15 @@ jobs:
       PXL_API_TOKEN: ${{ secrets.PXL_API_TOKEN_PROD }}
       DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
       DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+      HF_TOKEN: ${{ secrets.HF_TOKEN }}
 
   deploy-gpu-processing:
-    needs: detect-changed-pipelines
-    if: ${{ needs.detect-changed-pipelines.outputs.gpu_processing_pipelines != '' && needs.detect-changed-pipelines.outputs.gpu_processing_pipelines != '[]' }}
+    needs: detect-changes
+    if: ${{ needs.detect-changes.outputs.gpu_processing_pipelines != '' && needs.detect-changes.outputs.gpu_processing_pipelines != '[]' }}
     uses: ./.github/workflows/deploy-env.yaml
     with:
       pipelines_json: ${{ needs.detect-changes.outputs.gpu_processing_pipelines }}
+      hf_token_pipelines_json: ${{ needs.detect-changes.outputs.hf_token_pipelines }}
       organization: picsell
       environment_name: PROD
       bump: final
@@ -38,13 +41,15 @@ jobs:
       PXL_API_TOKEN: ${{ secrets.PXL_API_TOKEN_PROD }}
       DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
       DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+      HF_TOKEN: ${{ secrets.HF_TOKEN }}
 
   deploy-training-processing:
-    needs: detect-changed-pipelines
-    if: ${{ needs.detect-changed-pipelines.outputs.training_pipelines != '' && needs.detect-changed-pipelines.outputs.training_pipelines != '[]' }}
+    needs: detect-changes
+    if: ${{ needs.detect-changes.outputs.training_pipelines != '' && needs.detect-changes.outputs.training_pipelines != '[]' }}
     uses: ./.github/workflows/deploy-env.yaml
     with:
       pipelines_json: ${{ needs.detect-changes.outputs.training_pipelines }}
+      hf_token_pipelines_json: ${{ needs.detect-changes.outputs.hf_token_pipelines }}
       organization: picsell
       environment_name: PROD
       bump: final
@@ -53,3 +58,4 @@ jobs:
       PXL_API_TOKEN: ${{ secrets.PXL_API_TOKEN_PROD }}
       DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
       DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+      HF_TOKEN: ${{ secrets.HF_TOKEN }}

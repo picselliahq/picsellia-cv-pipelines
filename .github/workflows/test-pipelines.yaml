@@ -34,7 +34,8 @@ jobs:
       - name: Sync project dependencies
         run: uv sync
 
-      - name: Run CPU-safe processing pipeline tests
+      - name: Run CPU-safe processing pipeline tests (no HF)
+        if: ${{ !contains(fromJson(needs.detect-changes.outputs.hf_token_pipelines), matrix.pipeline) }}
         env:
           PXL_API_TOKEN: ${{ secrets.PXL_API_TOKEN_STAGING }}
         run: |
@@ -42,6 +43,26 @@ jobs:
           mkdir -p "$PICSELLIA_CONFIG_DIR"
 
           echo "CPU PIPELINE=${{ matrix.pipeline }}"
+          echo "ORG=$ORGANIZATION"
+          echo "ENV=$ENVIRONMENT"
+          echo "PICSELLIA_CONFIG_DIR=$PICSELLIA_CONFIG_DIR"
+
+          uv run bash scripts/test_pipelines.sh \
+            --pipeline "${{ matrix.pipeline }}" \
+            --organization "$ORGANIZATION" \
+            --env "$ENVIRONMENT" \
+            --token "$PXL_API_TOKEN"
+
+      - name: Run CPU-safe processing pipeline tests (with HF)
+        if: ${{ contains(fromJson(needs.detect-changes.outputs.hf_token_pipelines), matrix.pipeline) }}
+        env:
+          PXL_API_TOKEN: ${{ secrets.PXL_API_TOKEN_STAGING }}
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          PICSELLIA_CONFIG_DIR="$RUNNER_TEMP/picsellia_cfg"
+          mkdir -p "$PICSELLIA_CONFIG_DIR"
+
+          echo "GPU PIPELINE=${{ matrix.pipeline }}"
           echo "ORG=$ORGANIZATION"
           echo "ENV=$ENVIRONMENT"
           echo "PICSELLIA_CONFIG_DIR=$PICSELLIA_CONFIG_DIR"
@@ -81,7 +102,8 @@ jobs:
       - name: Sync project dependencies
         run: uv sync
 
-      - name: Run GPU processing pipeline tests
+      - name: Run GPU processing pipeline tests (no HF)
+        if: ${{ !contains(fromJson(needs.detect-changes.outputs.hf_token_pipelines), matrix.pipeline) }}
         env:
           PXL_API_TOKEN: ${{ secrets.PXL_API_TOKEN_STAGING }}
         run: |
@@ -98,6 +120,27 @@ jobs:
             --organization "$ORGANIZATION" \
             --env "$ENVIRONMENT" \
             --token "$PXL_API_TOKEN"
+
+      - name: Run GPU processing pipeline tests (with HF)
+        if: ${{ contains(fromJson(needs.detect-changes.outputs.hf_token_pipelines), matrix.pipeline) }}
+        env:
+          PXL_API_TOKEN: ${{ secrets.PXL_API_TOKEN_STAGING }}
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          PICSELLIA_CONFIG_DIR="$RUNNER_TEMP/picsellia_cfg"
+          mkdir -p "$PICSELLIA_CONFIG_DIR"
+
+          echo "GPU PIPELINE=${{ matrix.pipeline }}"
+          echo "ORG=$ORGANIZATION"
+          echo "ENV=$ENVIRONMENT"
+          echo "PICSELLIA_CONFIG_DIR=$PICSELLIA_CONFIG_DIR"
+
+          uv run bash scripts/test_pipelines.sh \
+            --pipeline "${{ matrix.pipeline }}" \
+            --organization "$ORGANIZATION" \
+            --env "$ENVIRONMENT" \
+            --token "$PXL_API_TOKEN"
+
 
   test-training-pipelines:
     needs: detect-changes
@@ -128,9 +171,30 @@ jobs:
       - name: Sync project dependencies
         run: uv sync
 
-      - name: Run training pipeline tests
+      - name: Run training pipeline tests (no HF)
+        if: ${{ !contains(fromJson(needs.detect-changes.outputs.hf_token_pipelines), matrix.pipeline) }}
         env:
           PXL_API_TOKEN: ${{ secrets.PXL_API_TOKEN_STAGING }}
+        run: |
+          PICSELLIA_CONFIG_DIR="$RUNNER_TEMP/picsellia_cfg"
+          mkdir -p "$PICSELLIA_CONFIG_DIR"
+
+          echo "TRAINING PIPELINE=${{ matrix.pipeline }}"
+          echo "ORG=$ORGANIZATION"
+          echo "ENV=$ENVIRONMENT"
+          echo "PICSELLIA_CONFIG_DIR=$PICSELLIA_CONFIG_DIR"
+
+          uv run bash scripts/test_pipelines.sh \
+            --pipeline "${{ matrix.pipeline }}" \
+            --organization "$ORGANIZATION" \
+            --env "$ENVIRONMENT" \
+            --token "$PXL_API_TOKEN"
+
+      - name: Run training pipeline tests (with HF)
+        if: ${{ contains(fromJson(needs.detect-changes.outputs.hf_token_pipelines), matrix.pipeline) }}
+        env:
+          PXL_API_TOKEN: ${{ secrets.PXL_API_TOKEN_STAGING }}
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
           PICSELLIA_CONFIG_DIR="$RUNNER_TEMP/picsellia_cfg"
           mkdir -p "$PICSELLIA_CONFIG_DIR"
@@ -154,6 +218,7 @@ jobs:
     uses: ./.github/workflows/deploy-env.yaml
     with:
       pipelines_json: ${{ needs.detect-changes.outputs.processing_pipelines }}
+      hf_token_pipelines_json: ${{ needs.detect-changes.outputs.hf_token_pipelines }}
       organization: test-account
       environment_name: STAGING
       bump: rc
@@ -162,6 +227,7 @@ jobs:
       PXL_API_TOKEN: ${{ secrets.PXL_API_TOKEN_STAGING }}
       DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
       DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+      HF_TOKEN: ${{ secrets.HF_TOKEN }}
 
   deploy-gpu-processing:
     needs:
@@ -171,6 +237,7 @@ jobs:
     uses: ./.github/workflows/deploy-env.yaml
     with:
       pipelines_json: ${{ needs.detect-changes.outputs.gpu_processing_pipelines }}
+      hf_token_pipelines_json: ${{ needs.detect-changes.outputs.hf_token_pipelines }}
       organization: test-account
       environment_name: STAGING
       bump: rc
@@ -179,6 +246,7 @@ jobs:
       PXL_API_TOKEN: ${{ secrets.PXL_API_TOKEN_STAGING }}
       DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
       DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+      HF_TOKEN: ${{ secrets.HF_TOKEN }}
 
   deploy-training-processing:
     needs:
@@ -188,6 +256,7 @@ jobs:
     uses: ./.github/workflows/deploy-env.yaml
     with:
       pipelines_json: ${{ needs.detect-changes.outputs.training_pipelines }}
+      hf_token_pipelines_json: ${{ needs.detect-changes.outputs.hf_token_pipelines }}
       organization: test-account
       environment_name: STAGING
       bump: rc
@@ -196,3 +265,4 @@ jobs:
       PXL_API_TOKEN: ${{ secrets.PXL_API_TOKEN_STAGING }}
       DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
       DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+      HF_TOKEN: ${{ secrets.HF_TOKEN }}

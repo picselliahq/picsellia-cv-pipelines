@@ -25,6 +25,7 @@ ORG="${ORGANIZATION:-test-account}"
 ENV_NAME="${ENVIRONMENT:-STAGING}"
 BUMP="${PIPELINE_BUMP:-final}"     # patch | minor | major | rc | final
 TOKEN="${PXL_API_TOKEN:-}"         # can also be provided via --token
+HF_TOKEN="${HF_TOKEN:-}"
 
 BASE_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 PIPELINES_DIR_DEFAULT="$BASE_DIR/pipelines"
@@ -42,6 +43,7 @@ while [[ $# -gt 0 ]]; do
     --env)           ENV_NAME="${2:-}"; shift 2 ;;
     --bump)          BUMP="${2:-}"; shift 2 ;;
     --token)         TOKEN="${2:-}"; shift 2 ;;
+    --hf-token)      HF_TOKEN="${2:-}"; shift 2 ;;
     *) echo "Unknown argument: $1"; exit 2 ;;
   esac
 done
@@ -119,6 +121,17 @@ deploy_one() {
     return
   }
 
+  # If HF_TOKEN is provided, create a .env in the pipeline folder
+  # so it gets included in the docker build context and baked into the final image.
+  if [[ -n "${HF_TOKEN:-}" ]]; then
+    echo "🔐 Writing .env with HF token for $PIPELINE_NAME (will be baked into image)"
+    {
+      echo "HF_TOKEN=${HF_TOKEN}"
+      echo "HUGGING_FACE_HUB_TOKEN=${HF_TOKEN}"
+    } > ".env"
+  fi
+
+
   # Build command with optional flags
   CMD=(pxl-pipeline deploy "$PIPELINE_NAME" --bump "$BUMP")
   [[ -n "$ORG"      ]] && CMD+=(--organization "$ORG")
@@ -135,6 +148,11 @@ deploy_one() {
   fi
 
   popd >/dev/null
+
+  if [[ -n "${HF_TOKEN:-}" ]]; then
+    rm -f ".env"
+  fi
+
 }
 
 # ----------------------
