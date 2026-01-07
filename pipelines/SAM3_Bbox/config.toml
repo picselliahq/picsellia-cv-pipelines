@@ -1,7 +1,7 @@
 [metadata]
 name = "SAM3_Bbox"
 version = "1.0.0"
-description = "This pipeline processes data for X."
+description = "This Dataset Processing provides bbox pre-labeling with SAM3"
 type = "PRE_ANNOTATION"
 
 [execution]
