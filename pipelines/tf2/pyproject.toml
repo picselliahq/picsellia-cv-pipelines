@@ -1,0 +1,19 @@
+[project]
+name = "tf2"
+version = "0.1.0"
+description = "TF2 training pipeline"
+requires-python = ">=3.10,<3.12"
+
+dependencies = [
+  "pip",
+  "picsellia-pipelines-cli",
+  "picsellia-cv-engine",
+  "tensorflow-macos==2.15.1; sys_platform == 'darwin' and platform_machine == 'arm64'",
+  "tf-keras==2.15.1",
+  "protobuf==4.25.8",
+  "tf-slim==1.1.0",
+  "tensorflow-io==0.37.1",
+  "scipy",
+  "lvis>=0.5.3",
+  "gin-config"
+]

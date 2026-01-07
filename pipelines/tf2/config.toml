@@ -1,0 +1,20 @@
+[metadata]
+name = "tf2"
+version = "1.0"
+description = "Training pipeline using YOLOV8."
+type = "TRAINING"
+
+[execution]
+pipeline_script = "pipeline.py"
+requirements_file = "pyproject.toml"
+parameters_class = "utils/parameters.py:TrainingHyperParameters"
+
+[docker]
+image_name = "picsellia/training-tf2"
+image_tag = ""
+
+[model_version]
+name = "v1"
+origin_name = "maskrcnn"
+framework = "TENSORFLOW"
+inference_type = "SEGMENTATION"
