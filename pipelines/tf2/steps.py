@@ -1,11 +1,10 @@
-import logging
 import os
 import shutil
 import sys
 import tarfile
 import zipfile
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import Any
 
 import pxl_tf
 import pxl_utils
@@ -35,7 +34,6 @@ def _maybe_unpack_to_dir(artifact_path: str, dst_dir: str) -> str:
     p = Path(artifact_path)
     _safe_mkdir(dst_dir)
 
-    # si le path n'existe pas, on remonte au parent (cas: .../pretrained_weights/saved_model)
     if not p.exists():
         if p.parent.exists():
             p = p.parent
@@ -50,7 +48,17 @@ def _maybe_unpack_to_dir(artifact_path: str, dst_dir: str) -> str:
             zf.extractall(dst_dir)
         return dst_dir
 
-    shutil.copy(str(p), os.path.join(dst_dir, p.name))
+    dst = Path(dst_dir) / p.name
+
+    # ✅ Avoid copying onto itself
+    try:
+        if p.resolve() == dst.resolve():
+            return dst_dir
+    except FileNotFoundError:
+        if str(p) == str(dst):
+            return dst_dir
+
+    shutil.copy(str(p), str(dst))
     return dst_dir
 
 
@@ -72,25 +80,22 @@ def _get_split(ds_col: DatasetCollection[CocoDataset], name: str) -> CocoDataset
     )
 
 
-def _build_labelmap_from_label_names(label_names: List[str]) -> Dict[str, str]:
-    # même convention que l'ancien script (id à partir de 1, clés en str)
+def _build_labelmap_from_label_names(label_names: list[str]) -> dict[str, str]:
     return {str(i + 1): name for i, name in enumerate(label_names)}
 
 
-def _count_annotations_per_label(coco_data: dict, label_names: List[str]) -> Dict[str, int]:
-    """
-    Retourne un dict {label_name: count} sur base des annotations COCO.
-    On s'appuie sur categories + annotations.category_id.
-    """
+def _count_annotations_per_label(
+    coco_data: dict, label_names: list[str]
+) -> dict[str, int]:
     if not coco_data:
-        return {n: 0 for n in label_names}
+        return dict.fromkeys(label_names, 0)
 
-    cat_id_to_name = {}
+    cat_id_to_name: dict[int, str] = {}
     for c in coco_data.get("categories", []):
         if "id" in c and "name" in c:
             cat_id_to_name[int(c["id"])] = c["name"]
 
-    counts = {n: 0 for n in label_names}
+    counts = dict.fromkeys(label_names, 0)
     for ann in coco_data.get("annotations", []):
         cid = ann.get("category_id")
         if cid is None:
@@ -102,40 +107,41 @@ def _count_annotations_per_label(coco_data: dict, label_names: List[str]) -> Dic
             counts[name] = 0
         counts[name] += 1
 
-    # garantit l'ordre/présence
     for n in label_names:
         counts.setdefault(n, 0)
 
     return counts
 
 
-def _split_bar_payload(coco_data: dict, label_names: List[str]) -> dict:
+def _split_bar_payload(coco_data: dict, label_names: list[str]) -> dict:
     counts = _count_annotations_per_label(coco_data, label_names)
     return {"x": label_names, "y": [counts.get(n, 0) for n in label_names]}
 
 
-def _experiment_log(experiment, name: str, data, chart: str, replace: bool = True) -> None:
+def _experiment_log(
+    experiment: Any, name: str, data: Any, chart: str, replace: bool = True
+) -> None:
     if experiment is None:
         return
     if hasattr(experiment, "log"):
         experiment.log(name, data, chart, replace=replace)
 
 
-def _experiment_chapter(experiment, title: str) -> None:
+def _experiment_chapter(experiment: Any, title: str) -> None:
     if experiment is None:
         return
     if hasattr(experiment, "start_logging_chapter"):
         experiment.start_logging_chapter(title)
 
 
-def _experiment_buffer_start(experiment, size: int = 9) -> None:
+def _experiment_buffer_start(experiment: Any, size: int = 9) -> None:
     if experiment is None:
         return
     if hasattr(experiment, "start_logging_buffer"):
         experiment.start_logging_buffer(size)
 
 
-def _experiment_buffer_end(experiment) -> None:
+def _experiment_buffer_end(experiment: Any) -> None:
     if experiment is None:
         return
     if hasattr(experiment, "end_logging_buffer"):
@@ -143,44 +149,46 @@ def _experiment_buffer_end(experiment) -> None:
 
 
 def _experiment_store_like_before(
-    experiment,
+    experiment: Any,
     picsellia_model: Model,
     training_config_dir: str,
     results_dir: str,
     exported_model_dir: str,
 ) -> None:
     if experiment is not None and hasattr(experiment, "store"):
-        # Même appels que l'ancien script
         experiment.store("model-latest")
         experiment.store("config")
         experiment.store("checkpoint-data-latest")
         experiment.store("checkpoint-index-latest")
         return
 
-    # Fallback propre si pas de store dispo
-    # (tu voulais “comme avant”, mais au moins ça ne bloque pas)
     print("⚠️ context.experiment.store() non disponible → fallback upload d'artifacts.")
     try:
-        # saved_model
         saved_model_path = os.path.join(exported_model_dir, "saved_model")
         if os.path.isdir(saved_model_path):
-            tar_path = _tar_dir(saved_model_path, os.path.join(picsellia_model.results_dir, "model-latest.tar.gz"))
+            tar_path = _tar_dir(
+                saved_model_path,
+                os.path.join(picsellia_model.results_dir, "model-latest.tar.gz"),
+            )
             picsellia_model.save_artifact_to_experiment(
                 experiment=experiment,
                 artifact_name="model-latest",
                 artifact_path=tar_path,
             )
 
-        # config
-        tar_cfg = _tar_dir(training_config_dir, os.path.join(picsellia_model.results_dir, "config.tar.gz"))
+        tar_cfg = _tar_dir(
+            training_config_dir,
+            os.path.join(picsellia_model.results_dir, "config.tar.gz"),
+        )
         picsellia_model.save_artifact_to_experiment(
             experiment=experiment,
             artifact_name="config",
             artifact_path=tar_cfg,
         )
 
-        # checkpoints
-        tar_ckpt = _tar_dir(results_dir, os.path.join(picsellia_model.results_dir, "checkpoints.tar.gz"))
+        tar_ckpt = _tar_dir(
+            results_dir, os.path.join(picsellia_model.results_dir, "checkpoints.tar.gz")
+        )
         picsellia_model.save_artifact_to_experiment(
             experiment=experiment,
             artifact_name="checkpoints",
@@ -190,12 +198,12 @@ def _experiment_store_like_before(
         print("⚠️ fallback artifact upload failed:", repr(e))
 
 
-@step()
-def train(picsellia_model: Model, picsellia_datasets: DatasetCollection[CocoDataset]):
-    context = Pipeline.get_active_context()
-    experiment = getattr(context, "experiment", None)
-
-    # ---- 1) COCO splits (train/test/val|eval)
+# -------------------------
+# Train helpers (refacto for C901)
+# -------------------------
+def _load_splits(
+    picsellia_datasets: DatasetCollection[CocoDataset],
+) -> tuple[CocoDataset, CocoDataset, CocoDataset]:
     train_ds = _get_split(picsellia_datasets, "train")
     val_ds = _get_split(picsellia_datasets, "val")
     test_ds = _get_split(picsellia_datasets, "test")
@@ -205,9 +213,20 @@ def train(picsellia_model: Model, picsellia_datasets: DatasetCollection[CocoData
     test_ds.load_coco_file_data()
 
     if not train_ds.images_dir or not val_ds.images_dir or not test_ds.images_dir:
-        raise RuntimeError("images_dir is missing on one of the datasets (train/val/test).")
+        raise RuntimeError(
+            "images_dir is missing on one of the datasets (train/val/test)."
+        )
 
-    # ---- 2) label map pbtxt + logs (comme avant)
+    return train_ds, val_ds, test_ds
+
+
+def _prepare_labelmap_and_logs(
+    experiment: Any,
+    picsellia_model: Model,
+    train_ds: CocoDataset,
+    val_ds: CocoDataset,
+    test_ds: CocoDataset,
+) -> tuple[list[str], dict[str, str], str]:
     label_names = list(train_ds.labelmap.keys()) if train_ds.labelmap else []
     if not label_names:
         cats = (train_ds.coco_data or {}).get("categories", [])
@@ -219,22 +238,54 @@ def train(picsellia_model: Model, picsellia_datasets: DatasetCollection[CocoData
         output_path=picsellia_model.results_dir,
     )
 
-    # logs identiques
     _experiment_log(experiment, "labelmap", labelmap, "labelmap", replace=True)
-    _experiment_log(experiment, "train-split", pxl_utils.sort_split(_split_bar_payload(train_ds.coco_data, label_names), label_names), "bar", replace=True)
-    _experiment_log(experiment, "eval-split",  pxl_utils.sort_split(_split_bar_payload(val_ds.coco_data, label_names), label_names), "bar", replace=True)
-    _experiment_log(experiment, "test-split",  pxl_utils.sort_split(_split_bar_payload(test_ds.coco_data, label_names), label_names), "bar", replace=True)
+    _experiment_log(
+        experiment,
+        "train-split",
+        pxl_utils.sort_split(
+            _split_bar_payload(train_ds.coco_data, label_names), label_names
+        ),
+        "bar",
+        replace=True,
+    )
+    _experiment_log(
+        experiment,
+        "eval-split",
+        pxl_utils.sort_split(
+            _split_bar_payload(val_ds.coco_data, label_names), label_names
+        ),
+        "bar",
+        replace=True,
+    )
+    _experiment_log(
+        experiment,
+        "test-split",
+        pxl_utils.sort_split(
+            _split_bar_payload(test_ds.coco_data, label_names), label_names
+        ),
+        "bar",
+        replace=True,
+    )
 
-    print("\n")
-    _experiment_chapter(experiment, "Create records")
+    return label_names, labelmap, label_path
 
-    # ---- 3) TFRecords (train/test/eval) (comme avant)
+
+def _create_records(
+    context: Any,
+    picsellia_model: Model,
+    train_ds: CocoDataset,
+    val_ds: CocoDataset,
+    test_ds: CocoDataset,
+    label_path: str,
+) -> str:
+    _experiment_chapter(getattr(context, "experiment", None), "Create records")
+
     record_dir = os.path.join(picsellia_model.results_dir, "records")
     _safe_mkdir(record_dir)
 
     pxl_utils.create_record_files(
         train_annotations=train_ds.coco_data,
-        eval_annotations=val_ds.coco_data,   # "eval" = val split
+        eval_annotations=val_ds.coco_data,  # "eval" = val split
         test_annotations=test_ds.coco_data,  # "test" = test split
         label_path=label_path,
         record_dir=record_dir,
@@ -247,7 +298,12 @@ def train(picsellia_model: Model, picsellia_datasets: DatasetCollection[CocoData
         },
     )
 
-    # ---- 4) pipeline.config (training_config_dir + eval_config) (comme avant)
+    return record_dir
+
+
+def _prepare_configs(
+    picsellia_model: Model,
+) -> tuple[str, str, str]:
     if not picsellia_model.config_path:
         raise RuntimeError("No config file found (pipeline.config or zip).")
 
@@ -263,20 +319,27 @@ def train(picsellia_model: Model, picsellia_datasets: DatasetCollection[CocoData
     if not pipeline_config_path:
         raise RuntimeError("pipeline.config not found after unpacking config artifact.")
 
-    # eval_config dir séparé + copie pipeline.config (exactement comme avant)
     eval_config_dir = os.path.join(picsellia_model.results_dir, "eval_config")
     _safe_mkdir(eval_config_dir)
     shutil.copy(pipeline_config_path, os.path.join(eval_config_dir, "pipeline.config"))
 
-    # ---- 5) pretrained weights
-    if not picsellia_model.pretrained_weights_path:
-        raise RuntimeError("No pretrained weights found (checkpoint zip or dir).")
+    return training_config_dir, eval_config_dir, pipeline_config_path
 
-    # IMPORTANT: ton build_model te met déjà les poids dans ces dossiers.
-    checkpoint_dir = picsellia_model.weights_dir  # contient ckpt-0.index + ckpt-0.data...
-    print("✅ checkpoint_dir:", checkpoint_dir)
 
-    # ---- 6) edit training config (train_record + test_record) (comme avant)
+def _edit_configs(
+    context: Any,
+    record_dir: str,
+    checkpoint_dir: str,
+    training_config_dir: str,
+    eval_config_dir: str,
+    label_path: str,
+) -> None:
+    params = (
+        context.hyperparameters.model_dump()
+        if hasattr(context.hyperparameters, "model_dump")
+        else vars(context.hyperparameters)
+    )
+
     pxl_utils.edit_config(
         model_selected=checkpoint_dir,
         input_config_dir=training_config_dir,
@@ -288,12 +351,9 @@ def train(picsellia_model: Model, picsellia_datasets: DatasetCollection[CocoData
         batch_size=context.hyperparameters.batch_size,
         learning_rate=context.hyperparameters.learning_rate,
         annotation_type=context.hyperparameters.annotation_type,
-        parameters=context.hyperparameters.model_dump()
-        if hasattr(context.hyperparameters, "model_dump")
-        else vars(context.hyperparameters),
+        parameters=params,
     )
 
-    # ---- 6bis) edit final test config (train_record + eval_record) (comme avant)
     pxl_utils.edit_config(
         model_selected=checkpoint_dir,
         input_config_dir=eval_config_dir,
@@ -305,31 +365,32 @@ def train(picsellia_model: Model, picsellia_datasets: DatasetCollection[CocoData
         batch_size=context.hyperparameters.batch_size,
         learning_rate=context.hyperparameters.learning_rate,
         annotation_type=context.hyperparameters.annotation_type,
-        parameters=context.hyperparameters.model_dump()
-        if hasattr(context.hyperparameters, "model_dump")
-        else vars(context.hyperparameters),
+        parameters=params,
     )
 
-    print("\n")
+
+def _run_train_and_export(
+    context: Any,
+    picsellia_model: Model,
+    experiment: Any,
+    training_config_dir: str,
+) -> tuple[str, str]:
     _experiment_chapter(experiment, "Start training")
 
-    # ---- 7) train (log_real_time=experiment) (comme avant)
     results_dir = os.path.join(picsellia_model.results_dir, "tf2_results")
     _safe_mkdir(results_dir)
 
     pxl_utils.train(
         model_dir=results_dir,
         config_dir=training_config_dir,
-        log_real_time=experiment,  # <= important: identique à l'ancien
+        log_real_time=experiment,
         evaluate_fn=pxl_utils.evaluate,
         log_metrics=pxl_utils.log_metrics,
         checkpoint_every_n=context.hyperparameters.checkpoint_every_n,
     )
 
-    print("\n")
     _experiment_chapter(experiment, "Store artifacts")
 
-    # ---- 8) export SavedModel (comme avant)
     exported_model_dir = os.path.join(picsellia_model.results_dir, "exported_model")
     _safe_mkdir(exported_model_dir)
 
@@ -339,56 +400,61 @@ def train(picsellia_model: Model, picsellia_datasets: DatasetCollection[CocoData
         config_dir=training_config_dir,
     )
 
-    # ---- 9) store artifacts EXACTEMENT comme avant si possible
-    _experiment_store_like_before(
-        experiment=experiment,
-        picsellia_model=picsellia_model,
-        training_config_dir=training_config_dir,
-        results_dir=results_dir,
-        exported_model_dir=exported_model_dir,
-    )
+    return results_dir, exported_model_dir
 
-    print("\n")
+
+def _compute_metrics_and_confusion(
+    experiment: Any,
+    picsellia_model: Model,
+    record_dir: str,
+    eval_config_dir: str,
+    results_dir: str,
+    exported_model_dir: str,
+    labelmap: dict[str, str],
+) -> None:
     _experiment_chapter(experiment, "Computing metrics on test dataset")
-
     _experiment_buffer_start(experiment, 9)
 
-    # ---- 10) eval TF2 (comme avant)
     eval_metrics_dir = os.path.join(picsellia_model.results_dir, "eval_metrics")
     _safe_mkdir(eval_metrics_dir)
 
     pxl_utils.evaluate(
         metrics_dir=eval_metrics_dir,
-        config=eval_config_dir,     # <= le dossier eval_config
+        config=eval_config_dir,
         ckpt_dir=results_dir,
     )
 
-    metrics = pxl_utils.tf_events_to_dict(os.path.join(eval_metrics_dir, "eval"), "eval")
+    metrics = pxl_utils.tf_events_to_dict(
+        os.path.join(eval_metrics_dir, "eval"), "eval"
+    )
     _experiment_log(experiment, "Evaluation/Metrics", metrics, "table", replace=True)
 
-    # confusion matrix (comme avant)
     conf, _ = pxl_utils.get_confusion_matrix(
         input_tfrecord_path=os.path.join(record_dir, "eval.record"),
         model=os.path.join(exported_model_dir, "saved_model"),
         labelmap=labelmap,
     )
     confusion = {"categories": list(labelmap.values()), "values": conf.tolist()}
-    _experiment_log(experiment, "Evaluation/confusion-matrix", confusion, "heatmap", replace=True)
+    _experiment_log(
+        experiment, "Evaluation/confusion-matrix", confusion, "heatmap", replace=True
+    )
 
     _experiment_buffer_end(experiment)
 
-    print("\n")
+
+def _run_optional_evaluators(experiment: Any, val_ds: CocoDataset) -> None:
     _experiment_chapter(experiment, "Starting Evaluation")
 
-    # ---- 11) Evaluator (comme avant) – best effort (imports optionnels)
     try:
+        from evaluator.tf_evaluator import (
+            DetectionTensorflowEvaluator,
+            SegmentationTensorflowEvaluator,
+        )
         from picsellia.types.enums import InferenceType
-        from evaluator.tf_evaluator import DetectionTensorflowEvaluator, SegmentationTensorflowEvaluator
     except Exception as e:
         print("⚠️ evaluators not available in this environment:", repr(e))
         return
 
-    # on essaye de récupérer le type (comme avant)
     inference_type = None
     try:
         if experiment is not None and hasattr(experiment, "get_base_model_version"):
@@ -396,7 +462,6 @@ def train(picsellia_model: Model, picsellia_datasets: DatasetCollection[CocoData
     except Exception:
         inference_type = None
 
-    # best effort: assets list (selon l'implémentation CocoDataset)
     eval_assets = None
     try:
         if hasattr(val_ds, "list_assets"):
@@ -411,17 +476,77 @@ def train(picsellia_model: Model, picsellia_datasets: DatasetCollection[CocoData
             asset_list=eval_assets,
             confidence_threshold=0.1,
         ).evaluate()
+        return
 
-    elif inference_type == InferenceType.SEGMENTATION:
+    if inference_type == InferenceType.SEGMENTATION:
         SegmentationTensorflowEvaluator(
             experiment=experiment,
             dataset=val_ds,
             asset_list=eval_assets,
             confidence_threshold=0.1,
         ).evaluate()
+        return
 
-    else:
-        print(
-            "The only supported inference types for evaluation are object detection and segmentation. "
-            "Please add inference type to model if you haven't already."
-        )
+    print(
+        "The only supported inference types for evaluation are object detection and segmentation. "
+        "Please add inference type to model if you haven't already."
+    )
+
+
+@step()
+def train(picsellia_model: Model, picsellia_datasets: DatasetCollection[CocoDataset]):
+    context = Pipeline.get_active_context()
+    experiment = getattr(context, "experiment", None)
+
+    train_ds, val_ds, test_ds = _load_splits(picsellia_datasets)
+    _, labelmap, label_path = _prepare_labelmap_and_logs(
+        experiment, picsellia_model, train_ds, val_ds, test_ds
+    )
+
+    record_dir = _create_records(
+        context, picsellia_model, train_ds, val_ds, test_ds, label_path
+    )
+
+    training_config_dir, eval_config_dir, _ = _prepare_configs(picsellia_model)
+
+    if not picsellia_model.pretrained_weights_path:
+        raise RuntimeError("No pretrained weights found (checkpoint zip or dir).")
+
+    checkpoint_dir = picsellia_model.weights_dir
+    print("✅ checkpoint_dir:", checkpoint_dir)
+
+    _edit_configs(
+        context=context,
+        record_dir=record_dir,
+        checkpoint_dir=checkpoint_dir,
+        training_config_dir=training_config_dir,
+        eval_config_dir=eval_config_dir,
+        label_path=label_path,
+    )
+
+    results_dir, exported_model_dir = _run_train_and_export(
+        context=context,
+        picsellia_model=picsellia_model,
+        experiment=experiment,
+        training_config_dir=training_config_dir,
+    )
+
+    _experiment_store_like_before(
+        experiment=experiment,
+        picsellia_model=picsellia_model,
+        training_config_dir=training_config_dir,
+        results_dir=results_dir,
+        exported_model_dir=exported_model_dir,
+    )
+
+    _compute_metrics_and_confusion(
+        experiment=experiment,
+        picsellia_model=picsellia_model,
+        record_dir=record_dir,
+        eval_config_dir=eval_config_dir,
+        results_dir=results_dir,
+        exported_model_dir=exported_model_dir,
+        labelmap=labelmap,
+    )
+
+    _run_optional_evaluators(experiment=experiment, val_ds=val_ds)
