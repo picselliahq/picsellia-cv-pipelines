@@ -34,13 +34,11 @@ ensure_pip() {
 patch_tf_slim() {
   echo "🩹 Patching tf_slim to be compatible with TF >= 2.14 (control_flow_ops.case/cond)..."
 
-  # Locate tf_slim/data/tfexample_decoder.py inside the current interpreter env
   TFSLIM_FILE="$("$PYTHON" - <<'PY'
 import os
 import tf_slim
 base = os.path.dirname(tf_slim.__file__)
-path = os.path.join(base, "data", "tfexample_decoder.py")
-print(path)
+print(os.path.join(base, "data", "tfexample_decoder.py"))
 PY
 )"
 
@@ -50,24 +48,23 @@ PY
     return 0
   fi
 
-  # Idempotency check: if already patched, skip
   if grep -q "control_flow_ops_cond" "$TFSLIM_FILE" && grep -q "control_flow_case" "$TFSLIM_FILE"; then
     echo "✅ tf_slim already patched: $TFSLIM_FILE"
     return 0
   fi
 
-  # Apply patch using python for portability (mac/linux, no sed -i differences)
-  "$PYTHON" - <<'PY'
+  # Pass path via env var to avoid heredoc interpolation issues
+  TFSLIM_FILE="$TFSLIM_FILE" "$PYTHON" - <<'PY'
 from __future__ import annotations
+import os
 from pathlib import Path
 
-path = Path(r"""'"$TFSLIM_FILE"'''""")
+path_str = os.environ["TFSLIM_FILE"]
+path = Path(path_str)
+
 txt = path.read_text(encoding="utf-8")
 
-# 1) Replace imports:
-#    from tensorflow.python.ops import control_flow_ops
-# -> from tensorflow.python.ops import cond as control_flow_ops_cond
-#    from tensorflow.python.ops import control_flow_case
+# Replace imports
 if "from tensorflow.python.ops import control_flow_ops" in txt:
     txt = txt.replace(
         "from tensorflow.python.ops import control_flow_ops",
@@ -75,13 +72,8 @@ if "from tensorflow.python.ops import control_flow_ops" in txt:
         "from tensorflow.python.ops import control_flow_case",
     )
 
-# Some versions may import cond/case differently; we keep it minimal.
-
-# 2) Replace calls:
-#    control_flow_ops.cond(  -> control_flow_ops_cond.cond(
+# Replace call sites
 txt = txt.replace("control_flow_ops.cond(", "control_flow_ops_cond.cond(")
-
-#    control_flow_ops.case(  -> control_flow_case.case(
 txt = txt.replace("control_flow_ops.case(", "control_flow_case.case(")
 
 path.write_text(txt, encoding="utf-8")
@@ -90,6 +82,7 @@ PY
 
   echo "✅ Patched tf_slim file: $TFSLIM_FILE"
 }
+
 
 if [ ! -d "${TF_MODELS_DIR}/research/object_detection" ]; then
   rm -rf "${TF_MODELS_DIR}"
