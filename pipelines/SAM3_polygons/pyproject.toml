@@ -1,0 +1,16 @@
+[project]
+name = "SAM3_polygons"
+version = "0.1.0"
+description = "Picsellia processing pipeline"
+requires-python = ">=3.10,<3.12"
+
+dependencies = [
+    "picsellia-pipelines-cli",
+    "picsellia-cv-engine[ultralytics]>=0.4.1",
+    "ultralytics",
+    "opencv-python",
+    "huggingface-hub>=1.2.4",
+    "torch>=2.7.1",
+    "transformers>=5.0.0rc1",
+    "shapely>=2.1.2",
+]
