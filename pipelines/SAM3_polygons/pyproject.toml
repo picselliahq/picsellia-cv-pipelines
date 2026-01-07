@@ -8,7 +8,7 @@ dependencies = [
     "picsellia-pipelines-cli",
     "picsellia-cv-engine>=0.4.1",
     "opencv-python",
-    "torchvision"
+    "torchvision",
     "huggingface-hub>=1.2.4",
     "torch>=2.7.1",
     "transformers>=5.0.0rc1",
