@@ -7,7 +7,7 @@ class TrainingHyperParameters(HyperParameters):
         super().__init__(log_data=log_data)
         self.steps = self.extract_parameter(["steps"], expected_type=int, default=3)
         self.batch_size = self.extract_parameter(
-            ["batch_size"], expected_type=int, default=1
+            ["batch_size"], expected_type=int, default=4
         )
         self.image_size = self.extract_parameter(
             ["image_size"], expected_type=int, default=640
