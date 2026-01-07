@@ -11,20 +11,17 @@ if [[ -x "${ROOT_DIR}/.venv/bin/python" ]]; then
 fi
 
 ensure_pip() {
-  # pip import check
   if "$PYTHON" -c "import pip" >/dev/null 2>&1; then
     return 0
   fi
 
   echo "⚙️  pip not found for $PYTHON — bootstrapping with ensurepip..."
-  # ensurepip may not exist in some minimal builds, so fallback safely
   if "$PYTHON" -m ensurepip --upgrade >/dev/null 2>&1; then
     :
   else
     echo "⚠️  ensurepip unavailable; trying to proceed anyway."
   fi
 
-  # Try upgrading pip if it now exists
   if "$PYTHON" -c "import pip" >/dev/null 2>&1; then
     "$PYTHON" -m pip install --upgrade pip >/dev/null 2>&1 || true
     return 0
@@ -32,6 +29,66 @@ ensure_pip() {
 
   echo "❌ Could not install pip for $PYTHON"
   exit 1
+}
+
+patch_tf_slim() {
+  echo "🩹 Patching tf_slim to be compatible with TF >= 2.14 (control_flow_ops.case/cond)..."
+
+  # Locate tf_slim/data/tfexample_decoder.py inside the current interpreter env
+  TFSLIM_FILE="$("$PYTHON" - <<'PY'
+import os
+import tf_slim
+base = os.path.dirname(tf_slim.__file__)
+path = os.path.join(base, "data", "tfexample_decoder.py")
+print(path)
+PY
+)"
+
+  if [[ ! -f "$TFSLIM_FILE" ]]; then
+    echo "⚠️  tf_slim file not found at: $TFSLIM_FILE"
+    echo "    Skipping patch."
+    return 0
+  fi
+
+  # Idempotency check: if already patched, skip
+  if grep -q "control_flow_ops_cond" "$TFSLIM_FILE" && grep -q "control_flow_case" "$TFSLIM_FILE"; then
+    echo "✅ tf_slim already patched: $TFSLIM_FILE"
+    return 0
+  fi
+
+  # Apply patch using python for portability (mac/linux, no sed -i differences)
+  "$PYTHON" - <<'PY'
+from __future__ import annotations
+from pathlib import Path
+
+path = Path(r"""'"$TFSLIM_FILE"'''""")
+txt = path.read_text(encoding="utf-8")
+
+# 1) Replace imports:
+#    from tensorflow.python.ops import control_flow_ops
+# -> from tensorflow.python.ops import cond as control_flow_ops_cond
+#    from tensorflow.python.ops import control_flow_case
+if "from tensorflow.python.ops import control_flow_ops" in txt:
+    txt = txt.replace(
+        "from tensorflow.python.ops import control_flow_ops",
+        "from tensorflow.python.ops import cond as control_flow_ops_cond\n"
+        "from tensorflow.python.ops import control_flow_case",
+    )
+
+# Some versions may import cond/case differently; we keep it minimal.
+
+# 2) Replace calls:
+#    control_flow_ops.cond(  -> control_flow_ops_cond.cond(
+txt = txt.replace("control_flow_ops.cond(", "control_flow_ops_cond.cond(")
+
+#    control_flow_ops.case(  -> control_flow_case.case(
+txt = txt.replace("control_flow_ops.case(", "control_flow_case.case(")
+
+path.write_text(txt, encoding="utf-8")
+print(f"patched: {path}")
+PY
+
+  echo "✅ Patched tf_slim file: $TFSLIM_FILE"
 }
 
 if [ ! -d "${TF_MODELS_DIR}/research/object_detection" ]; then
@@ -43,7 +100,11 @@ cd "${TF_MODELS_DIR}/research"
 
 ensure_pip
 
+# (optional) Install whatever you need in the env
 "$PYTHON" -m pip install -q "grpcio-tools==1.59.3"
+
+# ✅ Patch tf_slim *after* deps are installed in the venv
+patch_tf_slim
 
 rm -f object_detection/protos/*_pb2.py object_detection/protos/*_pb2_grpc.py
 
@@ -62,4 +123,4 @@ cp -R "${TF_MODELS_DIR}/research/object_detection" "${ROOT_DIR}/object_detection
 cp -R "${TF_MODELS_DIR}/research/slim" "${ROOT_DIR}/slim"
 cp -R "${TF_MODELS_DIR}/official" "${ROOT_DIR}/official"
 
-echo "✅ setup.sh OK (grpcio-tools 1.59.3)"
+echo "✅ setup.sh OK (grpcio-tools 1.59.3 + tf_slim patch)"
