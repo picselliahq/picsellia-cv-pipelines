@@ -1,7 +1,7 @@
 [metadata]
-name = "SAM3_Bbox"
-version = "1.0.0"
-description = "This Dataset Processing provides bbox pre-labeling with SAM3"
+name = "SAM3_polygons"
+version = "1.0.2"
+description = "This Dataset Processing provides polygons pre-labeling with SAM3"
 type = "PRE_ANNOTATION"
 
 [execution]
@@ -10,7 +10,7 @@ requirements_file = "pyproject.toml"
 parameters_class = "utils/parameters.py:ProcessingParameters"
 
 [docker]
-image_name = "picsellia/sam3-bbox-preannotation"
+image_name = "picsellia/sam3_polygons"
 image_tag = "latest"
 cpu = 4
 gpu = 1
