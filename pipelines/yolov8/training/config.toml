@@ -16,5 +16,5 @@ image_tag = "1.0"
 [model_version]
 name = "v1"
 origin_name = "YOLOV8"
-framework = "PYTORCH"
+framework = "NOT_CONFIGURED"
 inference_type = "OBJECT_DETECTION"
