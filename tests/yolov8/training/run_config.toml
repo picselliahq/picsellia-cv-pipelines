@@ -3,10 +3,6 @@ override_outputs = true
 [job]
 type = "TRAINING"
 
-[auth]
-organization_name = "SoniaGrh"
-env = "PROD"
-
 [hyperparameters]
 batch_size = 8
 close_mosaic = 0
@@ -21,18 +17,10 @@ train_set_split_ratio = 0.8
 validate = false
 
 [input.train_dataset_version]
-id = "9604b5f5-0ab8-4a33-89cd-99ec37329bf0"
-name = "train"
-origin_name = "wine_grape"
-version_name = "train"
-url = "https://app.picsellia.com/dataset/version/9604b5f5-0ab8-4a33-89cd-99ec37329bf0"
+id = "0189df3c-bb5a-75a0-9269-541686ac5b70"
 
 [input.model_version]
-id = "f6e44ac0-1880-4ce6-a5a0-8be8fce8eadb"
-name = "YoloV8-m"
-origin_name = "YoloV8-ObjectDetection"
-url = "https://app.picsellia.com/model/version/f6e44ac0-1880-4ce6-a5a0-8be8fce8eadb"
-visibility = "public"
+id = "019ba344-f9a4-7abe-bf16-9d1b3d5d0255"
 
 [output.experiment]
 name = "yolov8_exp1"
