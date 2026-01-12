@@ -186,7 +186,7 @@ class BaseTilerProcessing(ABC):
         pad_h = max(0, self.tile_height - h)
         pad_w = max(0, self.tile_width - w)
 
-        if self.tiling_mode == TileMode.CONSTANT:
+        if self.tiling_mode.value == TileMode.CONSTANT.value:
             out = np.full(
                 (self.tile_height, self.tile_width, 3),
                 fill_value=self.padding_color_value,
@@ -195,13 +195,13 @@ class BaseTilerProcessing(ABC):
             out[:h, :w, :] = tile
             return out
 
-        if self.tiling_mode == TileMode.REFLECT:
+        if self.tiling_mode.value == TileMode.REFLECT.value:
             return np.pad(tile, ((0, pad_h), (0, pad_w), (0, 0)), mode="reflect")
 
-        if self.tiling_mode == TileMode.EDGE:
+        if self.tiling_mode.value == TileMode.EDGE.value:
             return np.pad(tile, ((0, pad_h), (0, pad_w), (0, 0)), mode="edge")
 
-        if self.tiling_mode == TileMode.WRAP:
+        if self.tiling_mode.value == TileMode.WRAP.value:
             return np.pad(tile, ((0, pad_h), (0, pad_w), (0, 0)), mode="wrap")
 
     def _validate_tile_shape(self, tile: np.ndarray) -> None:
