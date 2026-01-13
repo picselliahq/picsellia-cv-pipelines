@@ -1,7 +1,7 @@
 [metadata]
 name = "yolov8-training"
 version = "1.0"
-description = "This pipeline processes data for X."
+description = "YOLOv8 fine-tuning on your custom dataset"
 type = "TRAINING"
 
 [execution]
@@ -10,11 +10,11 @@ requirements_file = "pyproject.toml"
 parameters_class = "utils/parameters.py:UltralyticsHyperParameters"
 
 [docker]
-image_name = "picsellia/training-paddle-ocr"
+image_name = "picsellia/training-yolov8"
 image_tag = "1.0"
 
 [model_version]
 name = "v1"
 origin_name = "YOLOV8"
 framework = "NOT_CONFIGURED"
-inference_type = "MULTI"
+inference_type = "OBJECT_DETECTION"
