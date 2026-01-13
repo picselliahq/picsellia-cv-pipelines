@@ -10,7 +10,7 @@ requirements_file = "pyproject.toml"
 parameters_class = "utils/parameters.py:UltralyticsHyperParameters"
 
 [docker]
-image_name = "picsellia/training-paddle-ocr"
+image_name = "picsellia/training-yolov8"
 image_tag = "1.0"
 
 [model_version]
