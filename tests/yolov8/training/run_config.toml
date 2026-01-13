@@ -4,8 +4,8 @@ override_outputs = true
 type = "TRAINING"
 
 [auth]
-organization_name = "SoniaGrh"
-env = "PROD"
+organization_name = "test-account"
+env = "STAGING"
 
 [hyperparameters]
 batch_size = 8
