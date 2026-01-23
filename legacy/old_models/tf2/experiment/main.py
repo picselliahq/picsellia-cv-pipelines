@@ -208,6 +208,11 @@ if os.path.isfile(os.path.join(training_config_dir, "pipeline.config")):
         os.path.join(eval_config, "pipeline.config"),
     )
 
+try:
+    input_size = parameters["input_size"]
+except KeyError:
+    input_size = 1024
+
 pxl_utils.edit_config(
     model_selected=experiment.checkpoint_dir,
     input_config_dir=training_config_dir,
@@ -219,6 +224,7 @@ pxl_utils.edit_config(
     batch_size=parameters["batch_size"],
     learning_rate=parameters["learning_rate"],
     annotation_type=parameters["annotation_type"],
+    resizer_size=(input_size, input_size),
     parameters=parameters,
 )
 
@@ -235,6 +241,7 @@ pxl_utils.edit_config(
     batch_size=parameters["batch_size"],
     learning_rate=parameters["learning_rate"],
     annotation_type=parameters["annotation_type"],
+    resizer_size=(input_size, input_size),
     parameters=parameters,
 )
 
