@@ -19,7 +19,7 @@ project_name = "test-maskrcnn"
 
 [hyperparameters]
 epochs = 2
-batch_size = 2
+batch_size = 1
 image_size = 1024
 backbone = "resnet50_v2"
 learning_rate = 5e-4
