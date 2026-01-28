@@ -434,8 +434,8 @@ def _patch_paste_masks_for_device(device: torch.device):
     from torchvision.models.detection import roi_heads
 
     def _onnx_paste_mask_in_image_patched(mask, box, im_h, im_w):
-        one = torch.ones(1, dtype=torch.int64, device=device)
-        zero = torch.zeros(1, dtype=torch.int64, device=device)
+        one = torch.ones(1, dtype=torch.int64, device=box.device)
+        zero = torch.zeros(1, dtype=torch.int64, device=box.device)
 
         w = box[2] - box[0] + one
         h = box[3] - box[1] + one
