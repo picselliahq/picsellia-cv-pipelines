@@ -1,0 +1,30 @@
+override_outputs = true
+
+[job]
+type = "TRAINING"
+
+[auth]
+organization_name = "test-account"
+env = "STAGING"
+
+[input.train_dataset_version]
+id = "01892b85-6cfb-7a42-9c1e-adeff9b2bb9e"
+
+[input.model_version]
+id = "019c04b7-dbc4-76ed-b46e-e39144a1029a"
+
+[output.experiment]
+name = "test-1"
+project_name = "test-maskrcnn"
+
+[hyperparameters]
+epochs = 2
+batch_size = 1
+image_size = 1024
+backbone = "resnet50_v2"
+learning_rate = 5e-4
+weight_decay = 5e-4
+momentum = 0.9
+lr_scheduler_step_size = 5
+lr_scheduler_gamma = 0.1
+transfer_learning = true
