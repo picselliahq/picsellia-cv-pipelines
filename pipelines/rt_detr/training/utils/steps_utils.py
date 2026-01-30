@@ -281,4 +281,5 @@ class PicselliaLogger(TrainerCallback):
         for k in ("loss", "learning_rate", "grad_norm", "eval_loss", "eval_runtime"):
             v = logs.get(k)
             if isinstance(v, int | float):
-                self.experiment.log(name=k, data=float(v), type=LogType.LINE)
+                data = float(v) if math.isfinite(v) else -1.0
+                self.experiment.log(name=k, data=data, type=LogType.LINE)
