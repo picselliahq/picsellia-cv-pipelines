@@ -16,7 +16,6 @@ COPY ./ ./training
 ARG REBUILD_PICSELLIA
 
 RUN uv sync --python=$(which python3.10) --project training
-RUN mkdir -p /workspace /root && chmod -R 777 /workspace /root
 
 ENV PYTHONPATH=":/experiment"
 

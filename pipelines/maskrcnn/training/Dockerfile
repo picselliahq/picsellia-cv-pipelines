@@ -16,6 +16,7 @@ ARG REBUILD_PICSELLIA
 
 # Sync from uv.lock (assumes uv lock has already been created)
 RUN uv sync --python=$(which python3.10) --project training
+RUN mkdir -p /workspace /root && chmod -R 777 /workspace /root
 
 ENV PYTHONPATH=":/experiment"
 
