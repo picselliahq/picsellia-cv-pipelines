@@ -434,6 +434,12 @@ def _patch_paste_masks_for_device(device: torch.device):
     from torchvision.models.detection import roi_heads
 
     def _onnx_paste_mask_in_image_patched(mask, box, im_h, im_w):
+        # Ensure im_h and im_w are on the same device as box
+        if isinstance(im_h, torch.Tensor):
+            im_h = im_h.to(box.device)
+        if isinstance(im_w, torch.Tensor):
+            im_w = im_w.to(box.device)
+
         one = torch.ones(1, dtype=torch.int64, device=box.device)
         zero = torch.zeros(1, dtype=torch.int64, device=box.device)
 
@@ -457,13 +463,13 @@ def _patch_paste_masks_for_device(device: torch.device):
             (y_0 - box[1]) : (y_1 - box[1]), (x_0 - box[0]) : (x_1 - box[0])
         ]
 
-        zeros_y0 = torch.zeros(y_0, im_w, device=device)
-        zeros_y1 = torch.zeros(im_h - y_1, im_w, device=device)
+        zeros_y0 = torch.zeros(y_0, im_w, device=box.device)
+        zeros_y1 = torch.zeros(im_h - y_1, im_w, device=box.device)
         concat_0 = torch.cat(
             (
-                torch.zeros(y_1 - y_0, x_0, device=device),
+                torch.zeros(y_1 - y_0, x_0, device=box.device),
                 unpaded_im_mask,
-                torch.zeros(y_1 - y_0, im_w - x_1, device=device),
+                torch.zeros(y_1 - y_0, im_w - x_1, device=box.device),
             ),
             1,
         )
@@ -471,7 +477,7 @@ def _patch_paste_masks_for_device(device: torch.device):
         return im_mask
 
     def _onnx_paste_masks_in_image_loop_patched(masks, boxes, im_h, im_w):
-        res_append = torch.zeros(0, im_h, im_w, device=device)
+        res_append = torch.zeros(0, im_h, im_w, device=boxes.device)
         for i in range(masks.size(0)):
             mask_res = _onnx_paste_mask_in_image_patched(
                 masks[i][0], boxes[i], im_h, im_w
