@@ -175,7 +175,6 @@ jobs:
         if: ${{ !contains(fromJson(needs.detect-changes.outputs.hf_token_pipelines), matrix.pipeline) }}
         env:
           PXL_API_TOKEN: ${{ secrets.PXL_API_TOKEN_STAGING }}
-          PYTHONPATH: ${{ github.workspace }}
         run: |
           PICSELLIA_CONFIG_DIR="$RUNNER_TEMP/picsellia_cfg"
           mkdir -p "$PICSELLIA_CONFIG_DIR"

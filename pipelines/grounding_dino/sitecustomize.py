@@ -1,30 +1,76 @@
 import sys
-import io
+import builtins
 
-def _wrap_with_isatty(stream):
-    # If the stream already has isatty, nothing to do
-    if hasattr(stream, "isatty"):
-        return stream
+def _ensure_isatty_on_obj(obj):
+    """Ensure obj has isatty(); if it's missing, patch the class (preferred) or the instance."""
+    if obj is None:
+        return
+    if hasattr(obj, "isatty"):
+        return
 
-    # Try to attach isatty dynamically (works for most objects)
+    # Patch the class so any future instance is fixed too.
+    cls = obj.__class__
+    if not hasattr(cls, "isatty"):
+        try:
+            setattr(cls, "isatty", lambda self: False)
+            return
+        except Exception:
+            pass
+
+    # Fallback: patch the instance.
     try:
-        stream.isatty = lambda: False
-        return stream
+        setattr(obj, "isatty", lambda: False)
     except Exception:
-        # Fallback: wrap the stream
-        class StreamWrapper(io.TextIOBase):
-            def __init__(self, s):
-                self._s = s
-            def write(self, data):
-                return self._s.write(data)
-            def flush(self):
-                return self._s.flush()
-            def isatty(self):
-                return False
-            def __getattr__(self, name):
-                return getattr(self._s, name)
+        pass
 
-        return StreamWrapper(stream)
 
-sys.stdout = _wrap_with_isatty(sys.stdout)
-sys.stderr = _wrap_with_isatty(sys.stderr)
+def _patch_module_for_streamtologger(mod):
+    """If a module exposes StreamToLogger class, patch it to have isatty()."""
+    if mod is None:
+        return
+    stl = getattr(mod, "StreamToLogger", None)
+    if stl is None:
+        return
+    # stl is expected to be a class
+    if hasattr(stl, "__mro__") and not hasattr(stl, "isatty"):
+        try:
+            setattr(stl, "isatty", lambda self: False)
+        except Exception:
+            pass
+
+
+# 1) Patch current stdout/stderr immediately (best-effort)
+_ensure_isatty_on_obj(sys.stdout)
+_ensure_isatty_on_obj(sys.stderr)
+
+# 2) Install an import hook to patch StreamToLogger whenever it shows up later
+_real_import = builtins.__import__
+
+def _import_hook(name, globals=None, locals=None, fromlist=(), level=0):
+    mod = _real_import(name, globals, locals, fromlist, level)
+
+    # Patch the top-level module and any fromlist submodules/attrs
+    try:
+        _patch_module_for_streamtologger(mod)
+    except Exception:
+        pass
+
+    if fromlist:
+        for item in fromlist:
+            try:
+                sub = getattr(mod, item, None)
+                _patch_module_for_streamtologger(sub)
+            except Exception:
+                pass
+
+    # Also: in case importing caused stdout/stderr replacement, patch again
+    _ensure_isatty_on_obj(sys.stdout)
+    _ensure_isatty_on_obj(sys.stderr)
+
+    return mod
+
+builtins.__import__ = _import_hook
+
+# 3) Last-chance: if stdout itself is a StreamToLogger instance, patch its class too
+_ensure_isatty_on_obj(sys.stdout)
+_ensure_isatty_on_obj(sys.stderr)
