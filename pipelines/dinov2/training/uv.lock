@@ -187,7 +187,7 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "picsellia-cv-engine" },
-    { name = "picsellia-pipelines-cli", specifier = ">=0.1.2" },
+    { name = "picsellia-pipelines-cli" },
     { name = "transformers", extras = ["torch"], specifier = ">=4.0" },
 ]
 
