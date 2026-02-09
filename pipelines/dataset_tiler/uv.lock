@@ -106,7 +106,7 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
-    { name = "picsellia-cv-engine", specifier = ">=0.5.0" },
+    { name = "picsellia-cv-engine" },
     { name = "picsellia-pipelines-cli" },
 ]
 
