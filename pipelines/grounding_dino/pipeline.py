@@ -20,11 +20,8 @@ from picsellia_cv_engine.steps.grounding_dino.model.predictor import (
 from utils.parameters import ProcessingParameters
 
 if not hasattr(sys.stderr, "isatty") or not hasattr(sys.stdout, "isatty"):
-    try:
-        sys.stderr.isatty = lambda: False
-        sys.stdout.isatty = lambda: False
-    except Exception:
-        pass
+    sys.stderr.isatty = lambda: False
+    sys.stdout.isatty = lambda: False
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--mode", choices=["local", "picsellia"], default="picsellia")
