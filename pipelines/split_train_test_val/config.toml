@@ -1,7 +1,7 @@
 [metadata]
 name = "split_train_test_val"
 version = "1.0"
-description = "This pipeline processes data for X."
+description = "This processings allows the train test val split."
 type = "PRE_ANNOTATION"
 
 [execution]
@@ -10,5 +10,7 @@ requirements_file = "pyproject.toml"
 parameters_class = "utils/parameters.py:ProcessingParameters"
 
 [docker]
-image_name = "valhugnatt/split"
-image_tag = ""
+image_name = "picsellia/split_train_test_val"
+image_tag = "latest"
+cpu = "8"
+gpu = "0"
