@@ -8,7 +8,7 @@ class ProcessingParameters(Parameters):
         self.ratio_train = self.extract_parameter(["ratio_train"], expected_type=float, default=0.7)
         self.ratio_test = self.extract_parameter(["ratio_test"], expected_type=float, default=0.15)
         self.ratio_val = self.extract_parameter(["ratio_val"], expected_type=float, default=0.15)
-        self.embed_asset_without_annotation = self.extract_parameter(["embed_asset_without_annotation"], expected_type=float, default=0.0)
-        self.add_asset_tags = self.extract_parameter(["add_asset_tags"], expected_type=float, default=0.0)
+        self.embed_asset_without_annotation = self.extract_parameter(["embed_asset_without_annotation"], expected_type=bool, default=True)
+        self.add_asset_tags = self.extract_parameter(["add_asset_tags"], expected_type=bool, default=True)
 
 
