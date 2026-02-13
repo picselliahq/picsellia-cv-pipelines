@@ -1,0 +1,16 @@
+[metadata]
+name = "shapes-cropper"
+version = "1.0.4"
+description = "This Picsellia pipeline creates a new dataset by cropping out objects from annotated images. Perfect for creating classification datasets from object detection or segmentation data, extracting specific objects for analysis, or preparing data for specialized models. \n Parameters description: \n'label_name_to_extract': Which label/class to crop; only bounding boxes with this exact label are turned into separate images.\n 'datalake': Which datalake the cropped images are saved into, so you can separate projects or use cases.\n 'data_tag': A tag attached to the cropped images to help organize and find specific runs or purposes later. \n 'fix_annotation': Whether to automatically correct invalid or out‑of‑bounds bounding boxes instead of failing or skipping them."
+type = "DATASET_VERSION_CREATION"
+
+[execution]
+pipeline_script = "pipeline.py"
+requirements_file = "pyproject.toml"
+parameters_class = "utils/parameters.py:ProcessingShapesCropperParameters"
+
+[docker]
+image_name = "picsellia/processing-bounding-box-cropper"
+image_tag = "latest"
+cpu = "4"
+gpu = "0"
