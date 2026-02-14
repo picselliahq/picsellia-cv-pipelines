@@ -99,16 +99,19 @@ def split_and_tag_data() -> bool:
         float(parameters.get("ratio_val")) != 0
         and float(parameters.get("ratio_test")) != 0
     ):
-        train_assets, test_assets, val_assets, _, _, _, _ = (
-            dataset_version.train_test_val_split(
-                ratios=[
-                    parameters.get("ratio_train"),
-                    parameters.get("ratio_test"),
-                    parameters.get("ratio_val"),
-                ]
+        if parameters.get("ratio_val") != 0:
+            train_assets, test_assets, val_assets, _, _, _, _ = (
+                dataset_version.train_test_val_split(
+                    ratios=[
+                        parameters.get("ratio_train"),
+                        parameters.get("ratio_test"),
+                        parameters.get("ratio_val"),
+                    ]
+                )
             )
-        )
-
+        else:
+            train_assets, test_assets, _, _, _ = dataset_version.train_test_split(prop=parameters.get("ratio_train"))
+            val_assets = []
         if len(train_assets) != 0:
             if parameters.get("add_asset_tags") == True:
                 try:
