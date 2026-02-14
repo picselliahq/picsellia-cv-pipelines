@@ -38,8 +38,8 @@ def parameters_sanity_chek() -> bool:
         PicselliaError("The train dataset cannot be empty"),
     )
     assert (
-        parameters.get("ratio_test") >= 0,
-        PicselliaError("The parameter test_ratio must be between 0 and 1."),
+        parameters.get("ratio_test") > 0,
+        PicselliaError("The parameter test_ratio must be greater than 0."),
     )
     assert (
         parameters.get("ratio_val") >= 0,
