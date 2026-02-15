@@ -38,12 +38,16 @@ def parameters_sanity_chek() -> bool:
         PicselliaError("The train dataset cannot be empty"),
     )
     assert (
-        parameters.get("ratio_test") > 0,
+        parameters.get("ratio_test") >= 0,
         PicselliaError("The parameter test_ratio must be greater than 0."),
     )
     assert (
         parameters.get("ratio_val") >= 0,
-        PicselliaError("The parameter val_ratio must be between 0 and 1."),
+        PicselliaError("The parameter val_ratio must be greater than 0."),
+    )
+    assert (
+        parameters.get("ratio_val") + parameters.get("ratio_test") >= 0,
+        PicselliaError("Either ratio_val or ratio_test must be strictly greater then 0"),
     )
     return True
 
@@ -99,128 +103,154 @@ def split_and_tag_data() -> bool:
         float(parameters.get("ratio_val")) != 0
         and float(parameters.get("ratio_test")) != 0
     ):
-        if parameters.get("ratio_val") != 0:
-            train_assets, test_assets, val_assets, _, _, _, _ = (
-                dataset_version.train_test_val_split(
-                    ratios=[
-                        parameters.get("ratio_train"),
-                        parameters.get("ratio_test"),
-                        parameters.get("ratio_val"),
-                    ]
-                )
+        train_assets, test_assets, val_assets, _, _, _, _ = dataset_version.train_test_val_split(ratios=[
+                    parameters.get("ratio_train"),
+                    parameters.get("ratio_test"),
+                    parameters.get("ratio_val"),
+                ]
             )
-        else:
+    elif (
+        float(parameters.get("ratio_val")) == 0
+        and float(parameters.get("ratio_test")) != 0
+    ):
             train_assets, test_assets, _, _, _ = dataset_version.train_test_split(prop=parameters.get("ratio_train"))
             val_assets = []
-        if len(train_assets) != 0:
-            if parameters.get("add_asset_tags") == True:
-                try:
-                    train_assets.add_tags(train_tag)
-                    print(
-                        f"Adding tag {train_tag.name} on {len(train_assets)} Assets from input DatasetVersion"
-                    )
-                except:
-                    pass
-            try:
-                _, job_train = dataset_version.fork(
-                    version=dataset_version_name + "_train",
-                    assets=train_assets,
-                    type=dataset_version.type,
-                    with_tags=False,
-                    with_labels=True,
-                    with_annotations=True,
-                    wait=False,
-                )
-                job_train.wait_for_done(blocking_time_increment=5.0, attempts=360)
-            except ResourceConflictError:
-                print(
-                    f'A DatasetVersion with name "{dataset_version_name}_train" already exists, adding a timestamp to the name of the created DatasetVersion name to ensure unicity'
-                )
-                _, job_train = dataset_version.fork(
-                    version=dataset_version_name
-                    + "_train_"
-                    + str(datetime.now().timestamp()),
-                    assets=train_assets,
-                    type=dataset_version.type,
-                    with_tags=False,
-                    with_labels=True,
-                    with_annotations=True,
-                    wait=False,
-                )
-                job_train.wait_for_done(blocking_time_increment=5.0, attempts=360)
 
-        if len(test_assets) != 0:
-            if parameters.get("add_asset_tags") == True:
-                try:
-                    test_assets.add_tags(test_tag)
-                    print(
-                        f"Adding tag {test_tag.name} on {len(test_assets)} Assets from input DatasetVersion"
-                    )
-                except:
-                    pass
-            try:
-                _, job_test = dataset_version.fork(
-                    version=dataset_version_name + "_test",
-                    assets=test_assets,
-                    type=dataset_version.type,
-                    with_tags=False,
-                    with_labels=True,
-                    with_annotations=True,
-                    wait=False,
-                )
-                job_test.wait_for_done(blocking_time_increment=5.0, attempts=360)
-            except ResourceConflictError:
-                print(
-                    f'A DatasetVersion with name "{dataset_version_name}_test" already exists, adding a timestamp to the name of the created DatasetVersion name to ensure unicity'
-                )
-                _, job_test = dataset_version.fork(
-                    version=dataset_version_name
-                    + "_test_"
-                    + str(datetime.now().timestamp()),
-                    assets=test_assets,
-                    type=dataset_version.type,
-                    with_tags=False,
-                    with_labels=True,
-                    with_annotations=True,
-                    wait=False,
-                )
-                job_test.wait_for_done(blocking_time_increment=5.0, attempts=360)
+    elif (
+        float(parameters.get("ratio_val")) != 0
+        and float(parameters.get("ratio_test")) == 0
+    ):
+            train_assets, val_assets, _, _, _ = dataset_version.train_test_split(prop=parameters.get("ratio_train"))
+            test_assets = []
 
-        if len(val_assets) != 0:
-            if parameters.get("add_asset_tags") == True:
-                try:
-                    val_assets.add_tags(val_tag)
-                    print(
-                        f"Adding tag {val_tag.name} on {len(val_assets)} Assets from input DatasetVersion"
-                    )
-                except:
-                    pass
+
+    if len(train_assets) != 0:
+        if parameters.get("add_asset_tags") == True:
             try:
-                _, job_val = dataset_version.fork(
-                    version=dataset_version_name + "_val",
-                    assets=val_assets,
-                    type=dataset_version.type,
-                    with_tags=False,
-                    with_labels=True,
-                    with_annotations=True,
-                    wait=False,
-                )
-                job_val.wait_for_done(blocking_time_increment=5.0, attempts=360)
-            except ResourceConflictError:
+                train_assets.add_tags(train_tag)
                 print(
-                    f'A DatasetVersion with name "{dataset_version_name}_val" already exists, adding a timestamp to the name of the created DatasetVersion name to ensure unicity'
+                    f"Adding tag {train_tag.name} on {len(train_assets)} Assets from input DatasetVersion"
                 )
-                _, job_val = dataset_version.fork(
-                    version=dataset_version_name
-                    + "_val_"
-                    + str(datetime.now().timestamp()),
-                    assets=val_assets,
-                    type=dataset_version.type,
-                    with_tags=False,
-                    with_labels=True,
-                    with_annotations=True,
-                    wait=False,
+            except:
+                pass
+        try:
+            _, job_train = dataset_version.fork(
+                version=dataset_version_name + "_train",
+                assets=train_assets,
+                type=dataset_version.type,
+                with_tags=False,
+                with_labels=True,
+                with_annotations=True,
+                wait=False,
+            )
+            job_train.wait_for_done(blocking_time_increment=5.0, attempts=360)
+            print(
+                f'DatasetVersion with name "{dataset_version}_train" created.'
+            )
+        except ResourceConflictError:
+            print(
+                f'A DatasetVersion with name "{dataset_version_name}_train" already exists, adding a timestamp to the name of the created DatasetVersion name to ensure unicity'
+            )
+            timestamped_name_train = dataset_version_name + "_train_" + str(datetime.now().timestamp())
+            _, job_train = dataset_version.fork(
+                version=timestamped_name_train,
+                assets=train_assets,
+                type=dataset_version.type,
+                with_tags=False,
+                with_labels=True,
+                with_annotations=True,
+                wait=False,
+            )
+            job_train.wait_for_done(blocking_time_increment=5.0, attempts=360)
+            print(
+                f'DatasetVersion with name "{timestamped_name_train}" created.'
+            )
+
+    if len(test_assets) != 0:
+        if parameters.get("add_asset_tags") == True:
+            try:
+                test_assets.add_tags(test_tag)
+                print(
+                    f"Adding tag {test_tag.name} on {len(test_assets)} Assets from input DatasetVersion"
                 )
-                job_val.wait_for_done(blocking_time_increment=5.0, attempts=360)
+            except:
+                pass
+        try:
+            _, job_test = dataset_version.fork(
+                version=dataset_version_name + "_test",
+                assets=test_assets,
+                type=dataset_version.type,
+                with_tags=False,
+                with_labels=True,
+                with_annotations=True,
+                wait=False,
+            )
+            job_test.wait_for_done(blocking_time_increment=5.0, attempts=360)
+            print(
+                f'DatasetVersion with name "{dataset_version_name}_test" created.'
+            )
+
+        except ResourceConflictError:
+            print(
+                f'A DatasetVersion with name "{dataset_version_name}_test" already exists, adding a timestamp to the name of the created DatasetVersion name to ensure unicity'
+            )
+            timestamped_name_test = dataset_version_name + "_test_" + str(datetime.now().timestamp())
+            _, job_test = dataset_version.fork(
+                version=timestamped_name_test,
+                assets=test_assets,
+                type=dataset_version.type,
+                with_tags=False,
+                with_labels=True,
+                with_annotations=True,
+                wait=False,
+            )
+            job_test.wait_for_done(blocking_time_increment=5.0, attempts=360)
+            print(
+                f'DatasetVersion with name "{timestamped_name_test}" created.'
+            )
+
+
+    if len(val_assets) != 0:
+        if parameters.get("add_asset_tags") == True:
+            try:
+                val_assets.add_tags(val_tag)
+                print(
+                    f"Adding tag {val_tag.name} on {len(val_assets)} Assets from input DatasetVersion"
+                )
+            except:
+                pass
+        try:
+            _, job_val = dataset_version.fork(
+                version=dataset_version_name + "_val",
+                assets=val_assets,
+                type=dataset_version.type,
+                with_tags=False,
+                with_labels=True,
+                with_annotations=True,
+                wait=False,
+            )
+            job_val.wait_for_done(blocking_time_increment=5.0, attempts=360)
+            print(
+                f'DatasetVersion with name "{dataset_version_name}_val" created.'
+            )
+            
+        except ResourceConflictError:
+            print(
+                f'A DatasetVersion with name "{dataset_version_name}_val" already exists, adding a timestamp to the name of the created DatasetVersion name to ensure unicity'
+            )
+            timestamped_name_val = dataset_version_name + "_val_" + str(datetime.now().timestamp())
+            _, job_val = dataset_version.fork(
+                version=timestamped_name_val,
+                assets=val_assets,
+                type=dataset_version.type,
+                with_tags=False,
+                with_labels=True,
+                with_annotations=True,
+                wait=False,
+            )
+            job_val.wait_for_done(blocking_time_increment=5.0, attempts=360)
+            print(
+                f'DatasetVersion with name "{timestamped_name_val}" created.'
+            )
 
         print("End of splitting")
