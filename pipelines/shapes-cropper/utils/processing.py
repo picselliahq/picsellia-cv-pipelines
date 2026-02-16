@@ -12,7 +12,7 @@ def open_image_with_exif_rotation(image_filepath: str) -> Image:
     return ImageOps.exif_transpose(image)
 
 
-class BoundingBoxCropperProcessing:
+class ShapesCropperProcessing:
     """
     This class is used to extract bounding boxes / polygons from images in a dataset version for a specific label.
 
@@ -62,7 +62,7 @@ class BoundingBoxCropperProcessing:
             "info": {},
             "licenses": [],
             "categories": [
-                {"id": 1, "name": self.label_name_to_extract, "supercategory": "none"}
+                {"id": 1, "name": self.label_name_to_extract, "supercategory": ""}
             ],
             "images": [],
             "annotations": [],
