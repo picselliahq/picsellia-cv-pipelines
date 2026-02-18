@@ -1,15 +1,15 @@
-# Bounding Box Cropper Pipeline
+# Shapes Cropper Pipeline
 
-**Extract individual object crops from images based on bounding box annotations.**
+**Extract individual object crops from images based on bounding box / polygons annotations.**
 
-This Picsellia pipeline creates a new dataset by cropping out objects from annotated images. Perfect for creating classification datasets from object detection data, extracting specific objects for analysis, or preparing data for specialized models.
+This Picsellia pipeline creates a new dataset by cropping out objects from annotated images. Perfect for creating classification datasets from object detection or segmentation data, extracting specific objects for analysis, or preparing data for specialized models.
 
 ## What You'll Get
 
 After running this pipeline, you'll have:
 - ✅ A new dataset with cropped object images
-- ✅ One image per bounding box annotation
-- ✅ Images sized to the original bounding box dimensions
+- ✅ One image per bounding box / polygon annotation
+- ✅ Images sized to the original bounding box / polygon dimensions
 - ✅ Organized by label/class
 
 ## Quick Start Guide
@@ -25,7 +25,7 @@ datalake = "default"
 data_tag = "person_crops"
 ```
 
-This will extract all "person" bounding boxes as individual images.
+This will extract all "person" bounding boxes / polygons as individual images.
 
 ### 🎯 Extract for Classification
 
@@ -39,7 +39,7 @@ data_tag = "product_classification"
 fix_annotation = true
 ```
 
-Perfect for building classification datasets from detection data.
+Perfect for building classification datasets from detection or segmentation data.
 
 ---
 
@@ -54,7 +54,7 @@ Perfect for building classification datasets from detection data.
 **Default**: `"car"`
 **Required**: Yes
 
-**How it works**: Only bounding boxes with this exact label will be cropped and saved.
+**How it works**: Only bounding boxes / polygons with this exact label will be cropped and saved.
 
 **Example**:
 ```toml
@@ -111,7 +111,7 @@ data_tag = "person_crops_2024"
 **Default**: `true`
 
 **What it fixes**:
-- Bounding boxes outside image boundaries
+- Bounding boxes / polygons outside image boundaries
 - Invalid coordinates
 - Malformed annotations
 
@@ -212,16 +212,16 @@ fix_annotation = true
 
 ### What Gets Created
 
-For each bounding box with the specified label:
+For each bounding box / polygon with the specified label:
 1. **Cropped image**: Extracted region from original image
-2. **Original dimensions**: Crop size matches bounding box size
+2. **Original dimensions**: Crop size matches bounding box / polygon size
 3. **Metadata preserved**: Links to original image
 
 ### Output Dataset Structure
 
 ```
 Original image: street_scene.jpg
-  └─ Contains 3 "person" bounding boxes
+  └─ Contains 3 "person" bounding boxes / polygons
 
 Output dataset:
   ├─ street_scene_person_001.jpg  (crop 1)
@@ -231,9 +231,9 @@ Output dataset:
 
 ### Crop Sizing
 
-Crops maintain original bounding box dimensions:
-- Small bbox (50x100) → Small crop (50x100)
-- Large bbox (300x400) → Large crop (300x400)
+Crops maintain original bounding box / polygons dimensions:
+- Small shapes (50x100) → Small crop (50x100)
+- Large shapes (300x400) → Large crop (300x400)
 
 **Note**: You may want to resize crops later for model training consistency.
 
@@ -245,18 +245,18 @@ Crops maintain original bounding box dimensions:
 
 **Check**:
 1. Does `label_name_to_extract` exactly match a label in your dataset?
-2. Are there any bounding boxes with that label?
+2. Are there any bounding boxes / polygons with that label?
 3. Check pipeline logs for errors
 4. Verify dataset has annotations
 
 ---
 
-### Issue: Some Bounding Boxes Skipped
+### Issue: Some Bounding Boxes / Polygons Skipped
 
 **Possible causes**:
 1. Bounding boxes outside image boundaries (set `fix_annotation = true`)
 2. Invalid coordinates
-3. Zero-area bounding boxes
+3. Zero-area bounding boxes / polygons
 
 **Solution**:
 ```toml
@@ -267,7 +267,7 @@ fix_annotation = true
 
 ### Issue: Crops Are Different Sizes
 
-**This is expected**: Crops preserve original bounding box dimensions.
+**This is expected**: Crops preserve original bounding box / polygons dimensions.
 
 **Solution**: If you need uniform sizes, resize crops after extraction:
 - Use image processing pipeline
@@ -316,8 +316,8 @@ fix_annotation = true  # Recommended for most cases
 
 ### 4. Common Workflow
 
-1. **Object Detection** → Annotate with bounding boxes
-2. **Bounding Box Cropper** → Extract individual objects
+1. **Object Detection or Segmentation** → Annotate with bounding boxes or polygons
+2. **Shapes Cropper** → Extract individual objects
 3. **Manual Review** → Review extracted crops
 4. **Classification Labeling** → Add classification labels
 5. **Train Classifier** → Train on cropped objects
@@ -335,7 +335,7 @@ datalake = "vehicle-analysis"
 
 ## 🚀 Getting Started Checklist
 
-- [ ] Have dataset with bounding box annotations
+- [ ] Have dataset with bounding box / polygon annotations
 - [ ] Identify label to extract
 - [ ] Verify label name exactly matches dataset
 - [ ] Choose datalake and tag for organization

@@ -12,16 +12,16 @@ def open_image_with_exif_rotation(image_filepath: str) -> Image:
     return ImageOps.exif_transpose(image)
 
 
-class BoundingBoxCropperProcessing:
+class ShapesCropperProcessing:
     """
-    This class is used to extract bounding boxes from images in a dataset version for a specific label.
+    This class is used to extract bounding boxes / polygons from images in a dataset version for a specific label.
 
-    It processes the images in the input dataset version to extract the bounding boxes for the specified label.
+    It processes the images in the input dataset version to extract the bounding boxes / polygons for the specified label.
     The extracted images are saved to the output dataset version.
 
     Attributes:
         dataset_collection (DatasetCollection): The dataset collection containing the input and output dataset versions.
-        label_name_to_extract (str): The name of the label to extract the bounding boxes for.
+        label_name_to_extract (str): The name of the label to extract the bounding boxes / polygons for.
     """
 
     def __init__(
@@ -50,7 +50,7 @@ class BoundingBoxCropperProcessing:
 
     def _process_dataset_collection(self):
         """
-        Processes the images in the input dataset version to extract the bounding boxes for the specified label.
+        Processes the images in the input dataset version to extract the bounding boxes / polygons for the specified label.
         """
         input_json_coco_file = self.dataset_collection["input"].load_coco_file_data()
 
@@ -62,7 +62,7 @@ class BoundingBoxCropperProcessing:
             "info": {},
             "licenses": [],
             "categories": [
-                {"id": 1, "name": self.label_name_to_extract, "supercategory": "none"}
+                {"id": 1, "name": self.label_name_to_extract, "supercategory": ""}
             ],
             "images": [],
             "annotations": [],
@@ -137,7 +137,7 @@ class BoundingBoxCropperProcessing:
 
     def process(self) -> DatasetCollection:
         """
-        Processes the images in the dataset version to extract the bounding boxes for the specified label and adds them to the output dataset version.
+        Processes the images in the dataset version to extract the bounding boxes / polygons for the specified label and adds them to the output dataset version.
         """
         self._update_output_dataset_version()
         self._process_dataset_collection()

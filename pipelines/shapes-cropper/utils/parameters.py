@@ -1,7 +1,7 @@
 from picsellia_cv_engine.core.parameters.base_parameters import Parameters
 
 
-class ProcessingBoundingBoxCropperParameters(Parameters):
+class ProcessingShapesCropperParameters(Parameters):
     def __init__(self, log_data):
         super().__init__(log_data)
 

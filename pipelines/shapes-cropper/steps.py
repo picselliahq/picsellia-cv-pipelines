@@ -7,9 +7,9 @@ from picsellia_cv_engine.core.contexts.processing.dataset.picsellia_context impo
 )
 from picsellia_cv_engine.decorators.pipeline_decorator import Pipeline
 from picsellia_cv_engine.decorators.step_decorator import step
-from utils.data_validator import ProcessingBoundingBoxCropperDataValidator
-from utils.parameters import ProcessingBoundingBoxCropperParameters
-from utils.processing import BoundingBoxCropperProcessing
+from utils.data_validator import ProcessingShapesCropperDataValidator
+from utils.parameters import ProcessingShapesCropperParameters
+from utils.processing import ShapesCropperProcessing
 
 
 @step
@@ -17,10 +17,10 @@ def process(
     dataset_collection: DatasetCollection[CocoDataset],
 ) -> CocoDataset:
     context: PicselliaDatasetProcessingContext[
-        ProcessingBoundingBoxCropperParameters
+        ProcessingShapesCropperParameters
     ] = Pipeline.get_active_context()
 
-    processor = BoundingBoxCropperProcessing(
+    processor = ShapesCropperProcessing(
         dataset_collection=dataset_collection,
         label_name_to_extract=context.processing_parameters.label_name_to_extract,
     )
@@ -29,14 +29,14 @@ def process(
 
 
 @step
-def validate_bounding_box_cropper_data(
+def validate_shapes_cropper_data(
     dataset: CocoDataset,
 ) -> CocoDataset:
     """
-    Validates the dataset for the bounding box cropping process.
+    Validates the dataset for the shapes cropping process.
 
     This function retrieves the active processing context and validates the provided dataset
-    based on the parameters of the bounding box cropping task. It uses the `ProcessingBoundingBoxCropperDataValidator`
+    based on the parameters of the shapes cropping task. It uses the `ProcessingShapesCropperDataValidator`
     to perform the validation, ensuring that the dataset is suitable for processing (e.g., checking for
     correct labels, annotations, etc.). The validated dataset is then returned.
 
@@ -47,10 +47,10 @@ def validate_bounding_box_cropper_data(
         Dataset: The validated dataset, ready for further processing.
     """
     context: PicselliaDatasetProcessingContext[
-        ProcessingBoundingBoxCropperParameters
+        ProcessingShapesCropperParameters
     ] = Pipeline.get_active_context()
 
-    validator = ProcessingBoundingBoxCropperDataValidator(
+    validator = ProcessingShapesCropperDataValidator(
         dataset=dataset,
         client=context.client,
         label_name_to_extract=context.processing_parameters.label_name_to_extract,
