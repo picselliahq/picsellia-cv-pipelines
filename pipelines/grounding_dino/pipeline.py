@@ -1,4 +1,5 @@
 import argparse
+import sys
 
 from picsellia.types.enums import ProcessingType
 from picsellia_cv_engine.core.services.context.unified_context import (
@@ -17,6 +18,10 @@ from picsellia_cv_engine.steps.grounding_dino.model.predictor import (
     run_grounding_dino_inference,
 )
 from utils.parameters import ProcessingParameters
+
+if not hasattr(sys.stderr, "isatty") or not hasattr(sys.stdout, "isatty"):
+    sys.stderr.isatty = lambda: False
+    sys.stdout.isatty = lambda: False
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--mode", choices=["local", "picsellia"], default="picsellia")
