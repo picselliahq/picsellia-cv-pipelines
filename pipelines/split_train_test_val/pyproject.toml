@@ -6,7 +6,7 @@ requires-python = ">=3.10,<3.12"
 
 dependencies = [
     "picsellia-pipelines-cli",
-    "picsellia-cv-engine>=0.5.3",
+    "picsellia-cv-engine",
     "ultralytics",
     "opencv-python"
 ]
