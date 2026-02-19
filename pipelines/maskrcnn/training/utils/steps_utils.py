@@ -47,7 +47,11 @@ class CocoMaskDataset(Dataset):
         self.coco = COCO(ann_json)
         self.transforms = transforms
         self.keep_crowd = keep_crowd
-        self.img_ids: list[int] = list(self.coco.imgs.keys())
+        # self.img_ids: list[int] = list(self.coco.imgs.keys())
+        self.img_ids = []
+        for id, img in self.coco.imgs.items():
+            if os.path.isfile(os.path.join(self.images_dir, img["file_name"])):
+                self.img_ids.append(id)
 
         # Build mapping from COCO category_id to our sequential label (1-indexed for Mask R-CNN)
         # label2id maps label_name -> 0-indexed id, we need +1 for Mask R-CNN (0 = background)
