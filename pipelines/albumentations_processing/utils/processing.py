@@ -315,7 +315,7 @@ def process_images(
     os.makedirs(output_images_dir, exist_ok=True)
 
     # Get all input images
-    image_extensions = ["*.jpg", "*.jpeg", "*.png", "*.bmp", "*.tiff"]
+    image_extensions = ["*.jpg", "*.jpeg", "*.png", "*.bmp", "*.tiff", "*.tif" ]
     image_paths = []
     for ext in image_extensions:
         image_paths.extend(glob(os.path.join(input_images_dir, ext)))
