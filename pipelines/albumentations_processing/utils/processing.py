@@ -303,14 +303,14 @@ def process_images(
 
     Args:
         input_images_dir: Directory containing input images
-        input_coco: Input COCO annotations (None for classification)
+        input_coco: Input COCO annotations (optional for classification)
         parameters: Augmentation parameters
         output_images_dir: Directory for output images
-        output_coco: Output COCO structure (None for classification)
+        output_coco: Output COCO structure (optional for classification)
         inference_type: Type of dataset (classification, bbox, segmentation)
 
     Returns:
-        Updated COCO structure (None for classification)
+        Updated COCO structure (None if output_coco was None)
     """
     os.makedirs(output_images_dir, exist_ok=True)
 
@@ -329,9 +329,36 @@ def process_images(
         img = Image.open(image_path).convert("RGB")
 
         if inference_type == InferenceType.CLASSIFICATION:
-            # Classification: only process the image
+            # Classification: process the image and export annotations if COCO data is provided
             processed_img = apply_classification_augmentation(img, parameters)
             processed_img.save(os.path.join(output_images_dir, image_filename))
+
+            # Export annotations to COCO dataset if provided
+            if input_coco is not None and output_coco is not None:
+                input_image_id = get_image_id_by_filename(input_coco, image_filename)
+                annotations = [
+                    ann
+                    for ann in input_coco["annotations"]
+                    if ann["image_id"] == input_image_id
+                ]
+
+                # Update COCO structure
+                new_image_id = len(output_coco["images"])
+                output_coco["images"].append(
+                    {
+                        "id": new_image_id,
+                        "file_name": image_filename,
+                        "width": processed_img.width,
+                        "height": processed_img.height,
+                    }
+                )
+
+                # Copy annotations with updated IDs
+                for annotation in annotations:
+                    new_annotation = deepcopy(annotation)
+                    new_annotation["image_id"] = new_image_id
+                    new_annotation["id"] = len(output_coco["annotations"])
+                    output_coco["annotations"].append(new_annotation)
 
         elif inference_type == InferenceType.OBJECT_DETECTION:
             # Bbox detection: process image and bounding boxes

@@ -1,7 +1,7 @@
 [metadata]
-name = "albumentations_processing"
+name = "Albumentations"
 version = "1.0.2"
-description = "This pipeline processes data for X."
+description = "This processing implements the Albumentations library for image augmentation purposes. This library is publicly available here: https://github.com/albumentations-team/albumentations.\n\nPlease note that this Processing will create a new DatasetVersion containing all the augmented images. These augmented images will also be stored on the same Datalake of the source DatasetVersion, the tag defined under the parameter 'data_tag' will also be attached to the newly generated and stored Data.\n\nThe processing mainly perfoms the following augmentations: scaling, rotation and noise adding.\n\nHere is the list of parameters that can be defined and modified before launching the processing:\n- data_tag (str): the data_tag name that will be added to the augmented images generated and stored.\n- add_noise (str): This value can be 'False' or 'True', to request the processing to add noise on the augmented images or not\n- scale_max (float): The maximum zoom performed on the augmented images.\n- scale_min (float): The minimum zoom performed on the augmented images. For each image the scale value will be selected randomly between scale_min and scale_max\n- rotate_max (int): The minimum rotation angle in degree, that can be done for each augmentatio\n- rotate_min (int): The maximum rotation angle in degree, that can be done for each augmentation\n- rotate_prob (float): The probability between 0 and 1 that a rotation is applied for each augmented image."
 type = "DATASET_VERSION_CREATION"
 
 [execution]
