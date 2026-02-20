@@ -873,7 +873,7 @@ wheels = [
 
 [[package]]
 name = "picsellia-cv-engine"
-version = "0.5.4"
+version = "0.5.5"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "numpy" },
@@ -884,9 +884,9 @@ dependencies = [
     { name = "tabulate" },
     { name = "toml" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/ff/98/b9fb32dd107e0e7c9a1521312b9ece63497f8f2e879957275eea90bf53ac/picsellia_cv_engine-0.5.4.tar.gz", hash = "sha256:5b5a1d62e3247acaaa68907987070460f71fa76603793aacb818c23248284661", size = 54652571, upload-time = "2026-02-17T10:47:16.648Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/d1/7d/9469485453ee3d163c5da98f6ac529168776cfb1096a9200e85f5a6b3195/picsellia_cv_engine-0.5.5.tar.gz", hash = "sha256:95d1868d603a9eb4b2eda3b263533422d88df6b73efda655452640751c394fc8", size = 54652636, upload-time = "2026-02-20T16:40:29.991Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/62/39/d7cdeb925eb812dc0588cfd90ded4a7addf6eb187566b2f2f973d7298b17/picsellia_cv_engine-0.5.4-py3-none-any.whl", hash = "sha256:6ef7f494cd4fb4a04e11bb68fecff375411550c36af49422de3517cdad064cc6", size = 186139, upload-time = "2026-02-17T10:47:19.065Z" },
+    { url = "https://files.pythonhosted.org/packages/77/2d/5e03655231a504b937bb2b983d077486b928322ab5c7a0a3a3cf12a90e96/picsellia_cv_engine-0.5.5-py3-none-any.whl", hash = "sha256:ad8a5b59c6917fb70c229cb5d9b9316df36c3fe3430c3c3aa3cfb6ea83089a68", size = 186180, upload-time = "2026-02-20T16:40:32.462Z" },
 ]
 
 [[package]]
