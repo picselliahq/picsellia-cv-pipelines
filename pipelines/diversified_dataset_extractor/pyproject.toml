@@ -1,7 +1,7 @@
 [project]
 name = "diversified_dataset_extractor"
 version = "0.1.0"
-description = "Picsellia processing pipeline"
+description = "Diversifier processing"
 requires-python = ">=3.10,<3.12"
 
 dependencies = [
