@@ -1,7 +1,7 @@
 [project]
 name = "diversified_dataset_extractor"
 version = "0.1.0"
-description = "This Picsellia pipeline uses image embeddings to extract a diverse subset of images from a large dataset. By measuring visual similarity through neural network embeddings, it selects images that maximize diversity while maintaining representation of your data distribution. Extended documentation available here: https://github.com/picselliahq/picsellia-cv-pipelines/blob/main/pipelines/diversified_dataset_extractor/README.md "
+description = "Diversifier processing"
 requires-python = ">=3.10,<3.12"
 
 dependencies = [
