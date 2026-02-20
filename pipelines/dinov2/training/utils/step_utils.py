@@ -99,10 +99,19 @@ class DinoDataset(Dataset):
     def __init__(
         self, df: pd.DataFrame, image_dir: str, model_key: str, use_geom: bool
     ):
-        self.df = df.reset_index(drop=True)
         self.image_dir = image_dir
         self.model_key = model_key
         self.use_geom = use_geom
+
+        valid_rows = []
+        for idx, row in df.iterrows():
+            image_path = os.path.join(image_dir, row["file_name"])
+            if os.path.exists(image_path):
+                valid_rows.append(row)
+            else:
+                print(f"⚠️ Missing image: {image_path}")
+        self.df = pd.DataFrame(valid_rows).reset_index(drop=True)
+
 
     def __len__(self) -> int:
         return len(self.df)
