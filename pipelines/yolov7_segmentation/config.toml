@@ -1,7 +1,7 @@
 [metadata]
 name = "yolov7_segmentation"
 version = "1.0.1"
-description = ""
+description = "This Picsellia pipeline trains YOLOv7 models for instance segmentation, detecting objects and generating pixel-perfect masks. YOLOv7 combines fast inference with accurate segmentation, making it ideal for real-time applications requiring both object detection and precise boundaries. Extended documentation is available here: https://github.com/picselliahq/picsellia-cv-pipelines/blob/main/pipelines/yolov7_segmentation/README.md"
 type = "TRAINING"
 
 [execution]
