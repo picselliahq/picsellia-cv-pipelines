@@ -1,7 +1,7 @@
 [metadata]
 name = "fine_tuning"
 version = "1.0.5"
-description = "Training pipeline using SAM2."
+description = "This Picsellia pipeline fine-tunes SAM 2 models on your custom segmentation dataset. SAM 2 is Meta's advanced segmentation model that can segment any object with minimal prompting. Fine-tuning it on your specific domain improves accuracy for your use case while maintaining its powerful zero-shot capabilities. Extended documentation is available here: https://github.com/picselliahq/picsellia-cv-pipelines/blob/main/pipelines/sam_2/fine_tuning/README.md"
 type = "TRAINING"
 
 [execution]
