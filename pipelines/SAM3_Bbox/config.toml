@@ -1,7 +1,7 @@
 [metadata]
 name = "SAM3_Bbox"
 version = "1.0.0"
-description = "This Dataset Processing provides bbox pre-labeling with SAM3"
+description = "This Picsellia pipeline uses Meta's SAM-3 (Segment Anything Model 3) to generate high-quality object detection annotations without requiring any training. Simply describe what you want to detect, and SAM-3 will find and segment those objects across your entire dataset. Extended documentation is available here: https://github.com/picselliahq/picsellia-cv-pipelines/blob/main/pipelines/SAM3_Bbox/README.md "
 type = "PRE_ANNOTATION"
 
 [execution]
