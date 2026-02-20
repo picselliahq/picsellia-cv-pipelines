@@ -1,7 +1,7 @@
 [metadata]
 name = "training"
 version = "1.0.2"
-description = "Training pipeline using RT DETR and HuggingFace."
+description = "This Picsellia pipeline trains RT-DETR models using the Hugging Face Transformers library. RT-DETR is a real-time object detector that achieves excellent accuracy while maintaining high inference speed, making it ideal for production deployments. Extended documentation avaible here: https://github.com/picselliahq/picsellia-cv-pipelines/blob/main/pipelines/rt_detr/training/README.md"
 type = "TRAINING"
 
 [execution]
