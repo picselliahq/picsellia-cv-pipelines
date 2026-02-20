@@ -1,7 +1,7 @@
 [metadata]
 name = "dataset-tiler"
 version = "1.0"
-description = "This pipeline processes data for X."
+description = "This Picsellia pipeline divides large images into smaller, uniformly-sized tiles, automatically adjusting bounding boxes and segmentation masks to fit the new tile boundaries. Perfect for satellite imagery, aerial photos, gigapixel images, or any high-resolution datasets where objects are small relative to image size. Extended documentation is available here: https://github.com/picselliahq/picsellia-cv-pipelines/blob/main/pipelines/dataset_tiler/README.md"
 type = "DATASET_VERSION_CREATION"
 
 [execution]
