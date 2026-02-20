@@ -103,7 +103,6 @@ class DinoDataset(Dataset):
         self.model_key = model_key
         self.use_geom = use_geom
 
-        # Vérifie l'existence de chaque image
         valid_rows = []
         for idx, row in df.iterrows():
             image_path = os.path.join(image_dir, row["file_name"])
