@@ -1,0 +1,19 @@
+[project]
+name = "yoloX-training"
+version = "0.1.0"
+description = "YOLOX training pipeline"
+requires-python = ">=3.10"
+
+dependencies = [
+    "picsellia-pipelines-cli",
+    "picsellia-cv-engine",
+    "torch>=2.0.0",
+    "torchvision>=0.15.0",
+    "opencv-python>=4.8.0",
+    "pycocotools",
+    "onnx>=1.15.0",
+    "loguru",
+    "imgaug",
+    "tabulate",
+    "packaging",
+]
