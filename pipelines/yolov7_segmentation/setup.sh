@@ -25,6 +25,6 @@ git clone --branch "$BRANCH" "$REPO_URL" "$TARGET_REPO"
 # 4. Copy custom segmentation code
 echo "📁 Copying custom segmentation files to: $TARGET_REPO/seg/"
 mkdir -p "$TARGET_REPO/seg"
-cp -r "$CUSTOM_SEG_DIR/"* "$TARGET_REPO/seg/"
+cp -r "$CUSTOM_SEG_DIR/" "$TARGET_REPO/seg/"
 
 echo "✅ Setup complete. Yolov7 + segmentation is ready in $TARGET_REPO"
