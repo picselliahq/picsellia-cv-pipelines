@@ -77,7 +77,11 @@ class Yolov7ModelTrainer:
         )
 
         venv_python = os.path.abspath("yolov7_segmentation/.venv/bin/python")
-
+        print(f"cwd: {os.getcwd()}")
+        print(f"venv_python: {venv_python}")
+        print(f"train_file_path: {train_file_path}")
+        print(f"venv exists: {os.path.exists(venv_python)}")
+        print(f"train exists: {os.path.exists(train_file_path)}")
         command = [
             venv_python,
             train_file_path,
