@@ -126,7 +126,7 @@ def train(
         experiment=experiment,
         split_name="val",
     )
-    save_experiment_artifacts(picsellia_model=picsellia_model, experiment=experiment)
+    save_experiment_artifacts(picsellia_model=picsellia_model)
     print("✅ Training and validation complete.")
 
 
