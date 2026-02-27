@@ -71,12 +71,16 @@ class Yolov7ModelTrainer:
 
         project_dir = os.path.join(self.model.results_dir, "training")
         os.makedirs(project_dir, exist_ok=True)
+        _pipeline_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        # .../yolov7_segmentation/utils/model_training.py → .../yolov7_segmentation/
 
-        train_file_path = os.path.abspath(
-            "yolov7_segmentation/yolov7/seg/segment/train.py"
-        )
-
-        venv_python = os.path.abspath("yolov7_segmentation/.venv/bin/python")
+        train_file_path = os.path.join(_pipeline_dir, "yolov7/seg/segment/train.py")
+        venv_python = os.path.join(_pipeline_dir, ".venv/bin/python")
+        # train_file_path = os.path.abspath(
+        #     "yolov7_segmentation/yolov7/seg/segment/train.py"
+        # )
+        #
+        # venv_python = os.path.abspath("yolov7_segmentation/.venv/bin/python")
         print(f"cwd: {os.getcwd()}")
         print(f"venv_python: {venv_python}")
         print(f"train_file_path: {train_file_path}")
