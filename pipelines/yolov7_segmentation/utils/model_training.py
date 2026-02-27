@@ -94,6 +94,11 @@ class Yolov7ModelTrainer:
         # causing "No module named 'utils.dataloaders'".
         env["PYTHONPATH"] = yolov7_seg_dir
         print(f"PYTHONPATH: {env.get('PYTHONPATH', 'NOT SET')}")
+        utils_dir = os.path.join(_pipeline_dir, "yolov7/seg/utils")
+        if os.path.exists(utils_dir):
+            print(f"yolov7/seg/utils/ contents: {os.listdir(utils_dir)}")
+        else:
+            print("yolov7/seg/utils/ does NOT exist")
         command = [
             venv_python,
             train_file_path,
