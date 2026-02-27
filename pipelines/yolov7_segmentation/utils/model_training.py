@@ -94,7 +94,7 @@ class Yolov7ModelTrainer:
             if existing_pythonpath
             else yolov7_seg_dir
         )
-
+        print(f"PYTHONPATH: {env.get('PYTHONPATH', 'NOT SET')}")
         command = [
             venv_python,
             train_file_path,
