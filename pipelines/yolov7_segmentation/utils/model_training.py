@@ -99,6 +99,27 @@ class Yolov7ModelTrainer:
             print(f"yolov7/seg/utils/ contents: {os.listdir(utils_dir)}")
         else:
             print("yolov7/seg/utils/ does NOT exist")
+
+        diag = subprocess.run(
+            [
+                venv_python, "-c",
+                "import sys, traceback\n"
+                f"sys.path.insert(0, '{yolov7_seg_dir}')\n"
+                "print('sys.path[:3]:', sys.path[:3])\n"
+                "try:\n"
+                "    import utils; print('utils.__path__:', list(utils.__path__))\n"
+                "except Exception: traceback.print_exc()\n"
+                "try:\n"
+                "    import utils.dataloaders; print('utils.dataloaders OK')\n"
+                "except Exception: traceback.print_exc()\n",
+            ],
+            env=env, capture_output=True, text=True,
+        )
+        print("--- import diag stdout ---")
+        print(diag.stdout)
+        print("--- import diag stderr ---")
+        print(diag.stderr)
+
         command = [
             venv_python,
             train_file_path,
