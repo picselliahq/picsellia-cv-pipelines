@@ -187,12 +187,11 @@ def evaluate_model(
     print(f"✅ Eval done on {split_name} — accuracy={acc:.4f}")
 
 
-def save_experiment_artifacts(picsellia_model: Model, experiment: Experiment) -> None:
+def save_experiment_artifacts(picsellia_model: Model) -> None:
     """Upload only model weights as 'model-latest' artifact."""
     weights_path = os.path.join(picsellia_model.results_dir, "best_dino_classifier.pt")
     if os.path.exists(weights_path):
         picsellia_model.save_artifact_to_experiment(
-            experiment=experiment,
             artifact_name="model-latest",
             artifact_path=weights_path,
         )
