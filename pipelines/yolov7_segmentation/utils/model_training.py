@@ -86,6 +86,15 @@ class Yolov7ModelTrainer:
         print(f"train_file_path: {train_file_path}")
         print(f"venv exists: {os.path.exists(venv_python)}")
         print(f"train exists: {os.path.exists(train_file_path)}")
+        yolov7_seg_dir = os.path.join(_pipeline_dir, "yolov7/seg")
+        env = os.environ.copy()
+        existing_pythonpath = env.get("PYTHONPATH", "")
+        env["PYTHONPATH"] = (
+            f"{yolov7_seg_dir}:{existing_pythonpath}"
+            if existing_pythonpath
+            else yolov7_seg_dir
+        )
+
         command = [
             venv_python,
             train_file_path,
@@ -119,7 +128,7 @@ class Yolov7ModelTrainer:
             str(experiment_id),
         ]
 
-        process = subprocess.Popen(command, stdout=None, stderr=None, text=True)
+        process = subprocess.Popen(command, stdout=None, stderr=None, text=True, env=env)
 
         return_code = process.wait()
         if return_code != 0:
