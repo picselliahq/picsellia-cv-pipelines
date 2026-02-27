@@ -88,12 +88,11 @@ class Yolov7ModelTrainer:
         print(f"train exists: {os.path.exists(train_file_path)}")
         yolov7_seg_dir = os.path.join(_pipeline_dir, "yolov7/seg")
         env = os.environ.copy()
-        existing_pythonpath = env.get("PYTHONPATH", "")
-        env["PYTHONPATH"] = (
-            f"{yolov7_seg_dir}:{existing_pythonpath}"
-            if existing_pythonpath
-            else yolov7_seg_dir
-        )
+        # Set PYTHONPATH to only yolov7/seg — do NOT inherit existing PYTHONPATH.
+        # The pipeline's utils/ package (yolov7_segmentation/utils/) is a regular
+        # package that would shadow yolov7's utils/ namespace package if included,
+        # causing "No module named 'utils.dataloaders'".
+        env["PYTHONPATH"] = yolov7_seg_dir
         print(f"PYTHONPATH: {env.get('PYTHONPATH', 'NOT SET')}")
         command = [
             venv_python,

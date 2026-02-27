@@ -5,10 +5,9 @@ set -e  # Exit on error
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 WORKDIR="$SCRIPT_DIR"
 TARGET_REPO="$WORKDIR/yolov7"
-TARGET_REPO="$WORKDIR/yolov7"
 BRANCH="u7"
 REPO_URL="https://github.com/WongKinYiu/yolov7"
-CUSTOM_SEG_DIR="./yolov7_changes"
+CUSTOM_SEG_DIR="$SCRIPT_DIR/yolov7_changes"
 
 # 1. Cleanup previous clone if exists
 echo "🚧 Checking if $TARGET_REPO already exists..."
