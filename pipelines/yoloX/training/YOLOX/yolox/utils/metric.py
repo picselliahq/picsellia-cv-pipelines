@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) Megvii Inc. All rights reserved.
 import functools
-import os
 import time
 from collections import defaultdict, deque
 
@@ -21,15 +20,13 @@ __all__ = [
 
 
 def get_total_and_free_memory_in_Mb(cuda_device):
-    devices_info_str = os.popen(
-        "nvidia-smi --query-gpu=memory.total,memory.used --format=csv,nounits,noheader"
-    )
-    devices_info = devices_info_str.read().strip().split("\n")
-    if "CUDA_VISIBLE_DEVICES" in os.environ:
-        visible_devices = os.environ["CUDA_VISIBLE_DEVICES"].split(",")
-        cuda_device = int(visible_devices[cuda_device])
-    total, used = devices_info[int(cuda_device)].split(",")
-    return int(total), int(used)
+    """Get total and used GPU memory in MB using torch.cuda API."""
+    if not torch.cuda.is_available():
+        raise RuntimeError("CUDA is not available, cannot query GPU memory.")
+    device = torch.device(f"cuda:{cuda_device}")
+    total = torch.cuda.get_device_properties(device).total_mem // (1024 * 1024)
+    reserved = torch.cuda.memory_reserved(device) // (1024 * 1024)
+    return total, reserved
 
 
 def occupy_mem(cuda_device, mem_ratio=0.9):

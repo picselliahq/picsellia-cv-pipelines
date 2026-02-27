@@ -10,9 +10,7 @@ class TrainingHyperParameters(HyperParameters):
             expected_type=str,
             default="yolox-s",
         )
-        self.epochs = self.extract_parameter(
-            ["epochs"], expected_type=int, default=100
-        )
+        self.epochs = self.extract_parameter(["epochs"], expected_type=int, default=100)
         self.batch_size = self.extract_parameter(
             ["batch_size"], expected_type=int, default=8
         )
@@ -30,6 +28,9 @@ class TrainingHyperParameters(HyperParameters):
         )
         self.evaluation_batch_size = self.extract_parameter(
             ["evaluation_batch_size"], expected_type=int, default=8
+        )
+        self.transfer_learning = self.extract_parameter(
+            ["transfer_learning"], expected_type=bool, default=False
         )
 
 

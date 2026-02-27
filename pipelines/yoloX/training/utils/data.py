@@ -1,7 +1,7 @@
 import os
 
-from picsellia_cv_engine.core.data.dataset.dataset_collection import DatasetCollection
 from picsellia_cv_engine.core.data.dataset.coco_dataset import CocoDataset
+from picsellia_cv_engine.core.data.dataset.dataset_collection import DatasetCollection
 
 
 def prepare_coco_directories(
@@ -26,10 +26,11 @@ def prepare_coco_directories(
         ("val", "val2017"),
         ("test", "test2017"),
     ]:
-        if split_name not in picsellia_datasets:
+        try:
+            ds = picsellia_datasets[split_name]
+        except KeyError:
             continue
 
-        ds = picsellia_datasets[split_name]
         source_dir = ds.images_dir
         target_dir = os.path.join(base_path, coco_name)
 
@@ -38,8 +39,11 @@ def prepare_coco_directories(
                 f"Source directory for '{split_name}' split does not exist: {source_dir}"
             )
 
-        if not os.path.exists(target_dir):
-            os.symlink(source_dir, target_dir)
+        # YOLOX expects images at {data_dir}/{split}/images/{file_name}
+        images_link = os.path.join(target_dir, "images")
+        if not os.path.exists(images_link):
+            os.makedirs(target_dir, exist_ok=True)
+            os.symlink(source_dir, images_link)
 
     return base_path
 
@@ -57,7 +61,9 @@ def get_annotation_paths(
     """
     paths = {}
     for split_name in ["train", "val", "test"]:
-        if split_name in picsellia_datasets:
+        try:
             ds = picsellia_datasets[split_name]
             paths[split_name] = ds.coco_file_path
+        except KeyError:
+            continue
     return paths

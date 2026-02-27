@@ -1,10 +1,15 @@
 import cv2
+import numpy as np
+
+# imgaug uses deprecated np.bool removed in NumPy 1.24+
+if not hasattr(np, "bool"):
+    np.bool = np.bool_
+
 import imgaug.augmenters as iaa
 import matplotlib.patches as patches
 import matplotlib.pyplot as plt
-import numpy as np
-from YOLOX.yolox.utils import xyxy2cxcywh
 from imgaug.augmentables.bbs import BoundingBox, BoundingBoxesOnImage
+from YOLOX.yolox.utils import xyxy2cxcywh
 
 
 def preproc(img, input_size, swap=(2, 0, 1)):

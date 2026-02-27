@@ -3,6 +3,7 @@
 # Copyright (c) Megvii, Inc. and its affiliates.
 
 import torch
+from loguru import logger
 
 
 class DataPrefetcher:
@@ -36,8 +37,12 @@ class DataPrefetcher:
         torch.cuda.current_stream().wait_stream(self.stream)
         input = self.next_input
         target = self.next_target
-        if input is not None:
-            self.record_stream(input)
+        if input is None:
+            logger.warning(
+                "DataPrefetcher returned None. The dataloader may be exhausted."
+            )
+            return input, target
+        self.record_stream(input)
         if target is not None:
             target.record_stream(torch.cuda.current_stream())
         self.preload()

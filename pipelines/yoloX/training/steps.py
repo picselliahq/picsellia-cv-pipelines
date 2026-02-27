@@ -15,7 +15,6 @@ from picsellia_cv_engine import Pipeline, step
 from picsellia_cv_engine.core import CocoDataset, DatasetCollection, Model
 from picsellia_cv_engine.core.models import PicselliaRectanglePrediction
 from picsellia_cv_engine.core.services.model.utils import evaluate_model_impl
-
 from utils.data import get_annotation_paths, prepare_coco_directories
 from utils.steps_utils import (
     build_label_maps,
@@ -120,14 +119,27 @@ def train(
     for split, path in annotation_paths.items():
         print(f"  - {split} annotations: {path}")
 
-    # 3. Resolve pretrained weights
-    print("\n[3/7] Resolving pretrained weights...")
-    pretrained_weights_path = picsellia_model.pretrained_weights_path
-    if pretrained_weights_path and os.path.isfile(pretrained_weights_path):
-        print(f"  - Using pretrained weights: {pretrained_weights_path}")
-    else:
-        pretrained_weights_path = None
-        print("  - No pretrained weights found, training from scratch")
+    # 3. Resolve weights (transfer learning uses best_ckpt.pth, else pretrained-weights)
+    print("\n[3/7] Resolving weights...")
+    weights_path = None
+    if hp.transfer_learning:
+        trained_weights_path = picsellia_model.trained_weights_path
+        if trained_weights_path and os.path.isfile(trained_weights_path):
+            weights_path = trained_weights_path
+            print(f"  - Transfer learning: using trained weights: {weights_path}")
+        else:
+            print(
+                "  - Transfer learning enabled but best_ckpt.pth not found, "
+                "falling back to pretrained weights..."
+            )
+
+    if weights_path is None:
+        pretrained_weights_path = picsellia_model.pretrained_weights_path
+        if pretrained_weights_path and os.path.isfile(pretrained_weights_path):
+            weights_path = pretrained_weights_path
+            print(f"  - Using pretrained weights: {weights_path}")
+        else:
+            print("  - No weights found, training from scratch")
 
     # 4. Configure YOLOX experiment
     print(f"\n[4/7] Configuring YOLOX experiment ({hp.architecture})...")
@@ -138,11 +150,11 @@ def train(
         annotation_paths=annotation_paths,
         num_classes=num_classes,
         experiment=ctx.experiment,
-        pretrained_weights_path=pretrained_weights_path,
+        pretrained_weights_path=weights_path,
     )
 
-    from YOLOX.yolox.exp.build import get_exp_by_name
     from YOLOX.yolox.exp import check_exp_value
+    from YOLOX.yolox.exp.build import get_exp_by_name
     from YOLOX.yolox.utils import configure_module, get_num_devices
 
     configure_module()
@@ -204,7 +216,7 @@ def train(
     file_name = os.path.join(exp.output_dir, args.experiment_name)
     best_ckpt_path = os.path.join(file_name, "best_ckpt.pth")
     if os.path.isfile(best_ckpt_path):
-        ckpt = torch.load(best_ckpt_path, map_location="cpu")
+        ckpt = torch.load(best_ckpt_path, map_location="cpu", weights_only=False)
         _TrainerProxy.best_epoch = ckpt.get("start_epoch", "best")
 
     save_and_upload_artifacts(
@@ -275,7 +287,7 @@ def evaluate(
     print(f"  - Checkpoint: {ckpt_file}")
 
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-    ckpt = torch.load(ckpt_file, map_location=device)
+    ckpt = torch.load(ckpt_file, map_location=device, weights_only=False)
 
     model = exp.get_model()
     model.load_state_dict(ckpt["model"])
@@ -328,11 +340,11 @@ def evaluate(
         if pred:
             predictions.append(pred)
 
-    mean_inference_time_ms = (
-        (sum(inference_times) / len(inference_times)) * 1000
-        if inference_times
-        else 0.0
-    )
+    if len(inference_times) > 2:
+        trimmed = sorted(inference_times)[1:-1]
+    else:
+        trimmed = inference_times
+    mean_inference_time_ms = (sum(trimmed) / len(trimmed)) * 1000 if trimmed else 0.0
 
     print(f"\n  Inference complete:")
     print(f"  - Images with predictions: {len(predictions)}/{total_assets}")

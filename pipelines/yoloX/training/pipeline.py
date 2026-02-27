@@ -7,7 +7,6 @@ from picsellia_cv_engine.core.services.context.unified_context import (
 )
 from picsellia_cv_engine.steps.base.dataset.loader import load_coco_datasets
 from picsellia_cv_engine.steps.base.model.builder import build_model
-
 from steps import evaluate, train
 from utils.parameters import TrainingHyperParameters, YOLOXExportParameters
 
@@ -28,7 +27,13 @@ context = create_training_context_from_config(
 @pipeline(context=context, log_folder_path="logs/", remove_logs_on_completion=False)
 def yolox_training_pipeline():
     picsellia_datasets = load_coco_datasets()
-    picsellia_model = build_model(pretrained_weights_name="pretrained-weights")
+    trained_weights_name = (
+        "best_ckpt.pth" if context.hyperparameters.transfer_learning else None
+    )
+    picsellia_model = build_model(
+        pretrained_weights_name="pretrained-weights",
+        trained_weights_name=trained_weights_name,
+    )
     train(picsellia_model=picsellia_model, picsellia_datasets=picsellia_datasets)
     evaluate(picsellia_model=picsellia_model, picsellia_datasets=picsellia_datasets)
 

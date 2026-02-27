@@ -145,9 +145,12 @@ class COCODataset(CacheDataset):
         img_file = os.path.join(self.data_dir, self.name, "images", file_name)
 
         img = cv2.imread(img_file)
+        if img is None:
+            raise FileNotFoundError(
+                f"Failed to load image: '{img_file}'. "
+                f"Check that the file exists and is a valid image."
+            )
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-
-        assert img is not None, f"file named {img_file} not found"
 
         return img
 

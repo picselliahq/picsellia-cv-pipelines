@@ -6,6 +6,7 @@ import contextlib
 import io
 import itertools
 import json
+import os
 import tempfile
 import time
 from collections import ChainMap, defaultdict
@@ -305,22 +306,30 @@ class COCOEvaluator:
         # Evaluate the Dt (detection) json comparing with the ground truth
         if len(data_dict) > 0:
             cocoGt = self.dataloader.dataset.coco
-            # TODO: since pycocotools can't process dict in py36, write data to json file.
             if self.testdev:
-                json.dump(data_dict, open("./yolox_testdev_2017.json", "w"))
-                cocoDt = cocoGt.loadRes("./yolox_testdev_2017.json")
+                testdev_path = "./yolox_testdev_2017.json"
+                with open(testdev_path, "w") as f:
+                    json.dump(data_dict, f)
+                cocoDt = cocoGt.loadRes(testdev_path)
             else:
-                _, tmp = tempfile.mkstemp()
-                json.dump(data_dict, open(tmp, "w"))
-                cocoDt = cocoGt.loadRes(tmp)
+                tmp = tempfile.NamedTemporaryFile(
+                    mode="w", suffix=".json", delete=False
+                )
+                try:
+                    json.dump(data_dict, tmp)
+                    tmp.close()
+                    cocoDt = cocoGt.loadRes(tmp.name)
+                finally:
+                    os.unlink(tmp.name)
             try:
                 from YOLOX.yolox.layers import COCOeval_opt as COCOeval
-            except ImportError:
+
+                cocoEval = COCOeval(cocoGt, cocoDt, annType[1])
+            except (ImportError, RuntimeError):
                 from pycocotools.cocoeval import COCOeval
 
                 logger.warning("Use standard COCOeval.")
-
-            cocoEval = COCOeval(cocoGt, cocoDt, annType[1])
+                cocoEval = COCOeval(cocoGt, cocoDt, annType[1])
             cocoEval.evaluate()
             cocoEval.accumulate()
             redirect_string = io.StringIO()

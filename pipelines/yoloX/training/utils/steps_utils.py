@@ -72,6 +72,7 @@ def open_asset_as_array(asset) -> np.ndarray:
     image = Image.open(requests.get(asset.reset_url(), stream=True).raw)
     if hasattr(image, "_getexif") and image._getexif():
         from PIL import ImageOps
+
         image = ImageOps.exif_transpose(image)
     if image.mode != "RGB":
         image = image.convert("RGB")
@@ -143,7 +144,9 @@ def run_inference_on_asset(
         if w <= 0 or h <= 0:
             continue
 
-        rect = PicselliaRectangle(int(round(x1)), int(round(y1)), int(round(w)), int(round(h)))
+        rect = PicselliaRectangle(
+            int(round(x1)), int(round(y1)), int(round(w)), int(round(h))
+        )
         name = id2label[cls_id]
         label = PicselliaLabel(ds.dataset_version.get_or_create_label(name))
         conf = PicselliaConfidence(confidence)
@@ -238,14 +241,24 @@ def save_and_upload_artifacts(
     final_dir = os.path.join(out_dir, "final")
     Path(final_dir).mkdir(parents=True, exist_ok=True)
 
-    # Load best checkpoint
+    # Load best checkpoint (try best → last_epoch → latest)
     file_name = os.path.join(exp.output_dir, args.experiment_name)
-    ckpt_file = os.path.join(file_name, "best_ckpt.pth")
-    if not os.path.isfile(ckpt_file):
-        ckpt_file = os.path.join(file_name, "last_epoch_ckpt.pth")
+    ckpt_file = None
+    for candidate in ("best_ckpt.pth", "last_epoch_ckpt.pth", "latest_ckpt.pth"):
+        path = os.path.join(file_name, candidate)
+        if os.path.isfile(path):
+            ckpt_file = path
+            break
 
+    if ckpt_file is None:
+        raise FileNotFoundError(
+            f"No checkpoint found in '{file_name}'. "
+            "Expected one of: best_ckpt.pth, last_epoch_ckpt.pth, latest_ckpt.pth"
+        )
+
+    print(f"  - Loading checkpoint: {ckpt_file}")
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-    ckpt = torch.load(ckpt_file, map_location=device)
+    ckpt = torch.load(ckpt_file, map_location=device, weights_only=False)
 
     model = exp.get_model()
     model.load_state_dict(ckpt["model"])
@@ -260,7 +273,6 @@ def save_and_upload_artifacts(
 
     # Upload ONNX model
     picsellia_model.save_artifact_to_experiment(
-        experiment=experiment,
         artifact_name="model-latest",
         artifact_path=onnx_path,
     )
@@ -268,10 +280,8 @@ def save_and_upload_artifacts(
     # Upload best checkpoint
     best_checkpoint_path = os.path.join(file_name, "best_ckpt.pth")
     if os.path.isfile(best_checkpoint_path):
-        best_epoch = getattr(trainer, "best_epoch", "unknown")
         picsellia_model.save_artifact_to_experiment(
-            experiment=experiment,
-            artifact_name=f"best-ckpt-{best_epoch}",
+            artifact_name="best_ckpt.pth",
             artifact_path=best_checkpoint_path,
         )
 
@@ -279,7 +289,6 @@ def save_and_upload_artifacts(
     latest_checkpoint_path = os.path.join(file_name, "last_epoch_ckpt.pth")
     if os.path.isfile(latest_checkpoint_path):
         picsellia_model.save_artifact_to_experiment(
-            experiment=experiment,
             artifact_name="last-epoch-ckpt",
             artifact_path=latest_checkpoint_path,
         )

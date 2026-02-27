@@ -318,14 +318,13 @@ class YOLOXHead(nn.Module):
                         obj_preds,
                     )
                 except RuntimeError as e:
-                    # TODO: the string might change, consider a better way
-                    if "CUDA out of memory. " not in str(e):
-                        raise  # RuntimeError might not caused by CUDA OOM
+                    if "out of memory" not in str(e).lower():
+                        raise
 
                     logger.error(
-                        "OOM RuntimeError is raised due to the huge memory cost during label assignment. \
-                           CPU mode is applied in this batch. If you want to avoid this issue, \
-                           try to reduce the batch size or image size."
+                        f"CUDA OOM during label assignment (batch_idx={batch_idx}, "
+                        f"num_gt={num_gt}). Falling back to CPU for this batch. "
+                        f"Consider reducing batch size or image size. Error: {e}"
                     )
                     torch.cuda.empty_cache()
                     (
@@ -433,7 +432,7 @@ class YOLOXHead(nn.Module):
         mode="gpu",
     ):
         if mode == "cpu":
-            print("-----------Using CPU for the Current Batch-------------")
+            logger.warning("Using CPU for the current batch (OOM fallback)")
             gt_bboxes_per_image = gt_bboxes_per_image.cpu().float()
             bboxes_preds_per_image = bboxes_preds_per_image.cpu().float()
             gt_classes = gt_classes.cpu().float()
@@ -467,7 +466,7 @@ class YOLOXHead(nn.Module):
         if mode == "cpu":
             cls_preds_, obj_preds_ = cls_preds_.cpu(), obj_preds_.cpu()
 
-        with torch.cuda.amp.autocast(enabled=False):
+        with torch.amp.autocast("cuda", enabled=False):
             cls_preds_ = (
                 cls_preds_.float().sigmoid_() * obj_preds_.float().sigmoid_()
             ).sqrt()

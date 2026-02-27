@@ -177,16 +177,6 @@ class Exp(BaseExp):
             YoloBatchSampler,
             worker_init_reset_seed,
         )
-        from YOLOX.yolox.utils import wait_for_the_master
-
-        # if cache is True, we will create self.dataset before launch
-        # else we will create self.dataset after launch
-        if self.dataset is None:
-            with wait_for_the_master():
-                assert cache_img is None, (
-                    "cache_img must be None if you didn't create self.dataset before launch"
-                )
-                self.dataset = self.get_dataset(cache=False, cache_type=cache_img)
 
         self.dataset = COCODataset(
             data_dir=self.data_dir,
@@ -359,8 +349,5 @@ class Exp(BaseExp):
 
 def check_exp_value(exp: Exp):
     h, w = exp.input_size
-    assert h % 32 == 0 and w % 32 == 0, "input size must be multiples of 32"
-
-
-def my_collate_fn(batch):
-    return batch
+    if h % 32 != 0 or w % 32 != 0:
+        raise ValueError(f"Input size must be multiples of 32, got ({h}, {w})")

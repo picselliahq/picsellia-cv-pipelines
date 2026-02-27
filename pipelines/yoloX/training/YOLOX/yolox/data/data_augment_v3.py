@@ -12,12 +12,17 @@ http://arxiv.org/abs/1512.02325
 import random
 
 import cv2
+import numpy as np
+
+# imgaug uses deprecated np.bool removed in NumPy 1.24+
+if not hasattr(np, "bool"):
+    np.bool = np.bool_
+
 import imgaug.augmenters as iaa
 import matplotlib.patches as patches
 import matplotlib.pyplot as plt
-import numpy as np
-from YOLOX.yolox.utils import xyxy2cxcywh
 from loguru import logger
+from YOLOX.yolox.utils import xyxy2cxcywh
 
 
 def mirror(image, boxes, prob=0.5):

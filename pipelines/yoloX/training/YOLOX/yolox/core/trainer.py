@@ -6,6 +6,10 @@ import os
 import time
 
 import torch
+from loguru import logger
+from picsellia.types.enums import LogType
+from torch.nn.parallel import DistributedDataParallel as DDP
+from torch.utils.tensorboard import SummaryWriter
 from YOLOX.yolox.data import DataPrefetcher
 from YOLOX.yolox.exp import Exp
 from YOLOX.yolox.utils import (
@@ -27,10 +31,6 @@ from YOLOX.yolox.utils import (
     setup_logger,
     synchronize,
 )
-from loguru import logger
-from picsellia.types.enums import LogType
-from torch.nn.parallel import DistributedDataParallel as DDP
-from torch.utils.tensorboard import SummaryWriter
 
 
 class Trainer:
@@ -43,7 +43,7 @@ class Trainer:
         # training related attr
         self.max_epoch = exp.max_epoch
         self.amp_training = args.fp16
-        self.scaler = torch.cuda.amp.GradScaler(enabled=args.fp16)
+        self.scaler = torch.amp.GradScaler("cuda", enabled=args.fp16)
         self.is_distributed = get_world_size() > 1
         self.rank = get_rank()
         self.local_rank = get_local_rank()
@@ -79,7 +79,8 @@ class Trainer:
         self.before_train()
         try:
             self.train_in_epoch()
-        except Exception:
+        except Exception as e:
+            logger.error(f"Training failed at epoch {getattr(self, 'epoch', '?')}: {e}")
             raise
         finally:
             self.after_train()
@@ -106,7 +107,7 @@ class Trainer:
         inps, targets = self.exp.preprocess(inps, targets, self.input_size)
         data_end_time = time.time()
 
-        with torch.cuda.amp.autocast(enabled=self.amp_training):
+        with torch.amp.autocast("cuda", enabled=self.amp_training):
             outputs = self.model(inps, targets)
 
         loss = outputs["total_loss"]
@@ -213,27 +214,19 @@ class Trainer:
     def before_epoch(self):
         logger.info("---> start train epoch{}".format(self.epoch + 1))
 
-        # if self.epoch + 1 == self.max_epoch - self.exp.no_aug_epochs:
-        #     logger.info("--->No aug now!")
-        #     os.environ["disable_aug"] = "1"
-        #
-        #     logger.info("--->Add additional L1 loss now!")
-        #     if self.is_distributed:
-        #         self.model.module.head.use_l1 = True
-        #     else:
-        #         self.model.head.use_l1 = True
-
     def after_epoch(self):
         self.save_ckpt(ckpt_name="latest")
 
         for k, v in self.metrics_dict.items():
             try:
+                mean_value = sum(v) / len(v) if v else 0.0
                 self.picsellia_experiment.log(
-                    name="train/" + k, type=LogType.LINE, data=float(v[0])
+                    name="train/" + k, type=LogType.LINE, data=float(mean_value)
                 )
             except Exception as e:
-                logger.info(
-                    f"Couldn't log metric {'train/' + k} to Picsellia because: {str(e)}"
+                logger.warning(
+                    f"Failed to log metric 'train/{k}' to Picsellia "
+                    f"(epoch {self.epoch + 1}): {e}"
                 )
 
         if (self.epoch + 1) % self.exp.eval_interval == 0:
@@ -313,18 +306,21 @@ class Trainer:
 
     def resume_train(self, model):
         if self.args.resume:
-            logger.info("resume training")
             if self.args.ckpt is None:
-                ckpt_file = os.path.join(self.file_name, "latest" + "_ckpt.pth")
+                ckpt_file = os.path.join(self.file_name, "latest_ckpt.pth")
             else:
                 ckpt_file = self.args.ckpt
 
-            ckpt = torch.load(ckpt_file, map_location=self.device)
-            # resume the model/optimizer state dict
+            if not os.path.isfile(ckpt_file):
+                raise FileNotFoundError(
+                    f"Cannot resume training: checkpoint not found at '{ckpt_file}'"
+                )
+
+            logger.info(f"Resuming training from checkpoint: {ckpt_file}")
+            ckpt = torch.load(ckpt_file, map_location=self.device, weights_only=False)
             model.load_state_dict(ckpt["model"])
             self.optimizer.load_state_dict(ckpt["optimizer"])
             self.best_ap = ckpt.pop("best_ap", 0)
-            # resume the training states variables
             start_epoch = (
                 self.args.start_epoch - 1
                 if self.args.start_epoch is not None
@@ -332,15 +328,19 @@ class Trainer:
             )
             self.start_epoch = start_epoch
             logger.info(
-                "loaded checkpoint '{}' (epoch {})".format(
-                    self.args.resume, self.start_epoch
-                )
-            )  # noqa
+                f"Loaded checkpoint '{ckpt_file}' (resuming from epoch {self.start_epoch})"
+            )
         else:
             if self.args.ckpt is not None:
-                logger.info("loading checkpoint for fine tuning")
                 ckpt_file = self.args.ckpt
-                ckpt = torch.load(ckpt_file, map_location=self.device)["model"]
+                if not os.path.isfile(ckpt_file):
+                    raise FileNotFoundError(
+                        f"Cannot fine-tune: checkpoint not found at '{ckpt_file}'"
+                    )
+                logger.info(f"Loading checkpoint for fine-tuning: {ckpt_file}")
+                ckpt = torch.load(
+                    ckpt_file, map_location=self.device, weights_only=False
+                )["model"]
                 model = load_ckpt(model, ckpt)
             self.start_epoch = 0
 
