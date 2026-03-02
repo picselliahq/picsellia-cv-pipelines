@@ -1,0 +1,31 @@
+override_outputs = true
+
+[job]
+type = "TRAINING"
+
+
+[input.experiment]
+id = "019c9fe1-839b-7521-b89d-1be5f04de736"
+
+[input.model_version]
+id = "0196a0f3-37f5-7b20-9f22-c3445452aeba"
+
+[input.train_dataset_version]
+id = "01892b88-8dac-7664-96ee-16d05aa599c9"
+
+
+[output.experiment]
+id = "019c9fe1-839b-7521-b89d-1be5f04de736"
+
+[hyperparameters]
+architecture = "yolox-s"
+epochs = 10
+batch_size = 8
+image_size = 640
+learning_rate = 0.01
+eval_interval = 2
+enable_weather_transform = false
+evaluation_batch_size = 8
+
+[export_parameters]
+enable_dynamic_axis = false

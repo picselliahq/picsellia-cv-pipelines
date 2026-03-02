@@ -1,0 +1,13 @@
+.venv/
+venv/
+__pycache__/
+*.pyc
+*.pyo
+.DS_Store
+*.log
+runs/
+YOLOX/tests/
+YOLOX/.git/
+*.md
+.pytest_cache/
+.mypy_cache/
