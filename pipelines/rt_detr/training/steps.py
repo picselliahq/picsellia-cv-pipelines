@@ -41,7 +41,7 @@ def train(
         id2label=id2label,
         label2id=label2id,
     )
-    train_ds, val_ds = build_datasets(picsellia_datasets, processor)
+    train_ds, val_ds = build_datasets(picsellia_datasets, processor, label2id)
     out_dir = os.path.join(picsellia_model.results_dir, picsellia_model.name)
     args = build_training_args(
         out_dir=out_dir,

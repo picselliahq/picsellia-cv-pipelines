@@ -32,13 +32,24 @@ class CocoHFDataset(Dataset):
     """HF-ready dataset from COCO JSON and image directory."""
 
     def __init__(
-        self, images_dir: str, ann_json: str, processor: Any, keep_crowd: bool = False
+        self,
+        images_dir: str,
+        ann_json: str,
+        processor: Any,
+        label2id: dict[str, int],
+        keep_crowd: bool = False,
     ) -> None:
         self.images_dir = images_dir
         self.coco = COCO(ann_json)
         self.processor = processor
         self.keep_crowd = keep_crowd
         self.img_ids: list[int] = list(self.coco.imgs.keys())
+        # Remap COCO category IDs to the model's contiguous 0-indexed label space
+        self.coco_to_contiguous: dict[int, int] = {
+            coco_id: label2id[cat["name"]]
+            for coco_id, cat in self.coco.cats.items()
+            if cat["name"] in label2id
+        }
 
     def __len__(self) -> int:
         return len(self.img_ids)
@@ -60,7 +71,7 @@ class CocoHFDataset(Dataset):
                 "annotations": [
                     {
                         "bbox": a["bbox"],
-                        "category_id": int(a["category_id"]),
+                        "category_id": self.coco_to_contiguous[int(a["category_id"])],
                         "area": float(a.get("area", a["bbox"][2] * a["bbox"][3])),
                         "iscrowd": int(a.get("iscrowd", 0)),
                     }
@@ -111,18 +122,22 @@ def load_processor_and_model(
 
 
 def build_datasets(
-    datasets: DatasetCollection[CocoDataset], processor: Any
+    datasets: DatasetCollection[CocoDataset],
+    processor: Any,
+    label2id: dict[str, int],
 ) -> tuple[CocoHFDataset, CocoHFDataset]:
     """Create train and validation datasets from a DatasetCollection."""
     train_ds = CocoHFDataset(
         images_dir=datasets["train"].images_dir,
         ann_json=datasets["train"].coco_file_path,
         processor=processor,
+        label2id=label2id,
     )
     val_ds = CocoHFDataset(
         images_dir=datasets["val"].images_dir,
         ann_json=datasets["val"].coco_file_path,
         processor=processor,
+        label2id=label2id,
     )
     return train_ds, val_ds
 
@@ -172,7 +187,6 @@ def save_and_upload_artifacts(
     if not os.path.isfile(archive_path):
         raise FileNotFoundError(f"Archive not created: {archive_path}")
     picsellia_model.save_artifact_to_experiment(
-        experiment=experiment,
         artifact_name="model-latest",
         artifact_path=archive_path,
     )
