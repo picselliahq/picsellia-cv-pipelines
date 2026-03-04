@@ -1,0 +1,22 @@
+override_outputs = true
+
+[job]
+type = "DATASET_VERSION_CREATION"
+
+
+[parameters]
+data_tag = "processed"
+datalake = "default"
+fix_annotation = true
+label_name_to_extract = "car"
+
+[auth]
+organization_name = "test-account"
+env = "STAGING"
+host = "https://staging.picsellia.com"
+
+[input.dataset_version]
+id = "019cb91b-1d2c-718c-ae41-be7abadadeed"
+
+[output.dataset_version]
+name = "test_shapes-cropper-output"
