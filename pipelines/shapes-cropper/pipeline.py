@@ -34,6 +34,5 @@ def shapes_cropper_processing_pipeline() -> None:
     output_dataset = process(dataset_collection=dataset_collection)
     upload_full_dataset(dataset=output_dataset, use_id=False)
 
-
 if __name__ == "__main__":
     shapes_cropper_processing_pipeline()
