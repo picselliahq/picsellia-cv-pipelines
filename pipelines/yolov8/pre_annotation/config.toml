@@ -1,7 +1,7 @@
 [metadata]
 name = "yolov8-pre-annotation"
 version = "1.0.11"
-description = "This pipeline processes data for X."
+description = "This Processing can be used to pre-annotate your Dataset by using a YOLOV8 Model Versions, a .pt file will be used to load the model and perform the infereces, this file will be retrieved though the parameter 'model_file_name'"
 type = "PRE_ANNOTATION"
 
 [execution]
