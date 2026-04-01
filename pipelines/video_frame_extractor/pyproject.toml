@@ -1,0 +1,11 @@
+[project]
+name = "video_frame_extractor"
+version = "0.1.0"
+description = "Picsellia processing pipeline to extract frames from videos"
+requires-python = ">=3.10"
+
+dependencies = [
+    "picsellia-pipelines-cli",
+    "picsellia-cv-engine>=0.4.1",
+    "opencv-python-headless>=4.8.0",
+]

@@ -1,0 +1,16 @@
+[metadata]
+name = "video_frame_extractor"
+version = "1.0.3"
+description = "Processes a dataset version containing video files (.mp4, .avi, .mov, etc.) by extracting frames at a configurable interval. Extracted frames are uploaded as images to the datalake and added to a new output dataset version, enabling downstream annotation and training workflows on video content.\n\nParameters:\n- datalake (str, default: \"default\"): Name of the target datalake where extracted frames will be uploaded.\n- data_tag (str, default: \"video-frames\"): Tag applied to the uploaded data in the datalake for easy filtering.\n- frame_interval (int, default: 30): Extract one frame every N frames from each video. For example, 30 means one frame per second for a 30fps video.\n- max_frames_per_video (int, default: 0): Maximum number of frames to extract per video. Set to 0 for no limit."
+type = "DATASET_VERSION_CREATION"
+
+[execution]
+pipeline_script = "pipeline.py"
+requirements_file = "pyproject.toml"
+parameters_class = "utils/parameters.py:ProcessingParameters"
+
+[docker]
+image_name = "tibpicsell/video-frame-extractor"
+image_tag = "latest"
+cpu = 8
+gpu = 0
