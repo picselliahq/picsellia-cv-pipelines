@@ -1,0 +1,20 @@
+override_outputs = true
+
+[job]
+type = "TRAINING"
+
+[hyperparameters]
+close_mosaic = 0
+export_format = "onnx"
+patience = 100
+save_period = 100
+
+[input.train_dataset_version]
+id = "0189df3c-bb5a-75a0-9269-541686ac5b70"
+
+[input.model_version]
+id = "019ba344-f9a4-7abe-bf16-9d1b3d5d0255"
+
+[output.experiment]
+name = "yolov8_fast_training_exp1"
+project_name = "yoloV8_fast_training"
