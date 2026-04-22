@@ -28,12 +28,11 @@ context = create_processing_context_from_config(
     log_folder_path="logs/",
     remove_logs_on_completion=False,
 )
-def albumentations_processing_pipeline():
+def albumentations_processing_pipeline() -> None:
     dataset_collection = load_coco_datasets()
-    dataset_collection["output"] = process(
-        dataset_collection["input"], dataset_collection["output"]
-    )
-    upload_full_dataset(dataset_collection["output"], use_id=False)
+    output_dataset = process(dataset_collection=dataset_collection)
+    datalake = context.client.get_datalake(id=context.inputs.get("datalake"))
+    upload_full_dataset(dataset=output_dataset, datalake=datalake, use_id=False)
 
 
 if __name__ == "__main__":
