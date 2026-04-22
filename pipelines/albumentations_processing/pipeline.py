@@ -6,7 +6,6 @@ from picsellia_cv_engine.core.services.context.unified_context import (
 )
 from picsellia_cv_engine.decorators.pipeline_decorator import pipeline
 from picsellia_cv_engine.steps.base.dataset.loader import load_coco_datasets
-
 from steps import process, upload
 from utils.parameters import ProcessingParameters
 

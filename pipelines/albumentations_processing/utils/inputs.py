@@ -10,3 +10,8 @@ class ProcessingInputs(PipelineInputs):
             input_type=ProcessingInputType.DATALAKE,
             required=True,
         )
+        self.define_input(
+            name="target_version_name",
+            input_type=ProcessingInputType.TEXT,
+            required=True,
+        )
