@@ -64,6 +64,16 @@ Strong transformations with added noise for robustness.
 
 ---
 
+## 🔌 Inputs
+
+When deploying this processing on Picsellia, you will be asked to select the following input directly in the UI — no need to type anything manually.
+
+| Input | Description |
+|-------|-------------|
+| **Datalake** | The datalake in which the augmented images will be stored. Select it from the list of available datalakes in your organization. |
+
+---
+
 ## 📋 Complete Parameter Reference
 
 ### 🔵 Rotation Parameters
@@ -224,22 +234,6 @@ add_noise = true
 
 ### 🔵 Storage Parameters
 
-#### `datalake`
-**What it does**: Name of the datalake to store augmented images.
-
-**Type**: String
-**Default**: `"default"`
-
-**Example**:
-```toml
-datalake = "default"
-
-# Custom datalake
-datalake = "augmented-data"
-```
-
----
-
 #### `data_tag`
 **What it does**: Tag to apply to augmented images.
 
@@ -270,7 +264,6 @@ scale_min = 0.85
 scale_max = 1.15
 rotate_prob = 1.0
 add_noise = true
-datalake = "default"
 data_tag = "augmented"
 ```
 
@@ -296,7 +289,6 @@ scale_min = 0.95
 scale_max = 1.05
 rotate_prob = 1.0
 add_noise = true
-datalake = "default"
 data_tag = "medical_augmented"
 ```
 
@@ -320,7 +312,6 @@ scale_min = 0.9
 scale_max = 1.1
 rotate_prob = 1.0
 add_noise = false
-datalake = "default"
 data_tag = "aerial_augmented"
 ```
 
@@ -343,7 +334,6 @@ scale_min = 0.98
 scale_max = 1.02
 rotate_prob = 0.5
 add_noise = false
-datalake = "default"
 data_tag = "product_augmented"
 ```
 
@@ -367,7 +357,6 @@ scale_min = 0.9
 scale_max = 1.1
 rotate_prob = 1.0
 add_noise = true
-datalake = "default"
 data_tag = "street_augmented"
 ```
 
@@ -390,7 +379,6 @@ scale_min = 0.95
 scale_max = 1.05
 rotate_prob = 1.0
 add_noise = true
-datalake = "default"
 data_tag = "document_augmented"
 ```
 
@@ -473,7 +461,7 @@ You can combine both for training or use augmented data separately.
 
 **Check**:
 1. Are parameters within valid ranges?
-2. Is datalake accessible?
+2. Is the selected datalake accessible and correctly configured in Picsellia?
 3. Check pipeline logs
 4. Verify input dataset has images
 
@@ -537,6 +525,7 @@ Clear tags help organize and track different augmentation strategies.
 ## 🚀 Getting Started Checklist
 
 - [ ] Have annotated dataset in Picsellia
+- [ ] Select the target datalake in the Picsellia processing UI (input selection)
 - [ ] Decide on rotation range based on domain
 - [ ] Set appropriate scaling range
 - [ ] Decide if noise is beneficial
