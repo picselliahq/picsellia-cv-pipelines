@@ -297,6 +297,7 @@ def process_images(
     output_images_dir: str,
     output_coco: dict[str, Any] | None,
     inference_type: InferenceType,
+    asset_ids: list[str] | None = None,
 ) -> dict[str, Any] | None:
     """
     Process images and their annotations using Albumentations augmentations.
@@ -314,12 +315,17 @@ def process_images(
     """
     os.makedirs(output_images_dir, exist_ok=True)
 
-    # Get all input images
-    image_extensions = ["*.jpg", "*.jpeg", "*.png", "*.bmp", "*.tiff", "*.tif" ]
+    image_extensions = ["*.jpg", "*.jpeg", "*.png", "*.bmp", "*.tiff", "*.tif"]
     image_paths = []
     for ext in image_extensions:
         image_paths.extend(glob(os.path.join(input_images_dir, ext)))
         image_paths.extend(glob(os.path.join(input_images_dir, ext.upper())))
+
+    if asset_ids is not None:
+        asset_id_set = set(asset_ids)
+        image_paths = [
+            p for p in image_paths if os.path.splitext(os.path.basename(p))[0] in asset_id_set
+        ]
 
     print(f"Found {len(image_paths)} images to process")
 

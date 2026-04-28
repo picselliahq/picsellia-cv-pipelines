@@ -6,8 +6,7 @@ from picsellia_cv_engine.core.services.context.unified_context import (
 )
 from picsellia_cv_engine.decorators.pipeline_decorator import pipeline
 from picsellia_cv_engine.steps.base.dataset.loader import load_coco_datasets
-from picsellia_cv_engine.steps.base.dataset.uploader import upload_full_dataset
-from steps import process
+from steps import process, upload
 from utils.parameters import ProcessingParameters
 
 parser = argparse.ArgumentParser()
@@ -28,12 +27,10 @@ context = create_processing_context_from_config(
     log_folder_path="logs/",
     remove_logs_on_completion=False,
 )
-def albumentations_processing_pipeline():
+def albumentations_processing_pipeline() -> None:
     dataset_collection = load_coco_datasets()
-    dataset_collection["output"] = process(
-        dataset_collection["input"], dataset_collection["output"]
-    )
-    upload_full_dataset(dataset_collection["output"], use_id=False)
+    output_dataset = process(dataset_collection=dataset_collection)
+    upload(dataset=output_dataset)
 
 
 if __name__ == "__main__":
