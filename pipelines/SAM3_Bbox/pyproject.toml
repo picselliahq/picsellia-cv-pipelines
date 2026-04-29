@@ -2,7 +2,7 @@
 name = "SAM3_Bbox"
 version = "0.1.0"
 description = "Picsellia processing pipeline with SAM3 for bbox"
-requires-python = ">=3.10,<3.12"
+requires-python = ">=3.14"
 
 dependencies = [
     "picsellia-pipelines-cli",
