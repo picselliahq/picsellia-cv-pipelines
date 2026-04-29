@@ -6,7 +6,7 @@ requires-python = ">=3.14"
 
 dependencies = [
     "picsellia-pipelines-cli",
-    "picsellia-cv-engine",
+    "picsellia-cv-engine @ git+https://github.com/picselliahq/picsellia-cv-engine.git@fix/handle-local-context-for-preannotation-without-modle-as-input",
     "opencv-python",
     "transformers>=5.0.0rc1",
     "huggingface-hub",
