@@ -103,15 +103,10 @@ def process(
         CocoDataset: The processed dataset with segmentation annotations.
     """
 
-    # Get processing parameters from the user-defined configuration
     context: PicselliaDatasetProcessingContext = Pipeline.get_active_context()
-    parameters = context.processing_parameters.to_dict()
+    parameters = context.processing_parameters
 
-    # Validate required parameters
-    text_prompt = parameters.get("text_prompt")
-    box_prompt = parameters.get("box_prompt")
-
-    if text_prompt is None and box_prompt is None:
+    if parameters.text_prompt is None and parameters.box_prompt is None:
         raise ValueError(
             "❌ At least one of 'text_prompt' or 'box_prompt' must be provided in processing parameters.\n"
             "Example parameters:\n"
@@ -135,7 +130,7 @@ def process(
         sam3_model=model,
         sam3_processor=processor,
         picsellia_dataset=picsellia_dataset,
-        parameters=parameters,
+        parameters=parameters.to_dict(),
     )
 
     # Assign processed data to output dataset
