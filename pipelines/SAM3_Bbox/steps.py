@@ -106,7 +106,7 @@ def process(
     context: PicselliaDatasetProcessingContext = Pipeline.get_active_context()
     parameters = context.processing_parameters
 
-    if parameters.text_prompt is None and parameters.box_prompt is None:
+    if parameters.text_prompt is None and parameters.to_dict().get("box_prompt") is None:
         raise ValueError(
             "❌ At least one of 'text_prompt' or 'box_prompt' must be provided in processing parameters.\n"
             "Example parameters:\n"

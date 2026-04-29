@@ -12,10 +12,6 @@ class ProcessingParameters(Parameters):
             default="person, car, skateboard",
         )
 
-        self.box_prompt = self.extract_parameter(
-            ["box_prompt"], expected_type=list, default=None
-        )
-
         self.threshold = self.extract_parameter(
             ["threshold"], expected_type=float, default=0.5
         )
