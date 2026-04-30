@@ -6,17 +6,12 @@ class ProcessingInputs(PipelineInputs):
     def __init__(self):
         super().__init__()
         self.define_input(
-            name="input",
-            input_type=ProcessingInputType.DATASET_VERSION,
-            required=True,
-        )
-        self.define_input(
             name="text_prompt",
             input_type=ProcessingInputType.TEXT,
-            required=False,
+            required=True,
         )
         self.define_input(
             name="label_name",
             input_type=ProcessingInputType.TEXT,
-            required=False,
+            required=True,
         )
