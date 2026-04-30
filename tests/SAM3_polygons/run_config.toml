@@ -15,6 +15,3 @@ deduplication_strategy = "keep_smaller"
 
 [input.dataset_version]
 id = "019b98d1-a1af-7190-be36-883dea2cc50a"
-
-[input.model_version]
-id = "019b6f01-ab6a-71db-9403-52b899497010"
