@@ -6,22 +6,12 @@ class ProcessingParameters(Parameters):
     def __init__(self, log_data: LogDataType):
         super().__init__(log_data=log_data)
 
-        self.text_prompt = self.extract_parameter(
-            ["text_prompt"],
-            expected_type=str,
-            default="person, car, skateboard",
-        )
-
         self.threshold = self.extract_parameter(
             ["threshold"], expected_type=float, default=0.5
         )
 
         self.mask_threshold = self.extract_parameter(
             ["mask_threshold"], expected_type=float, default=0.7
-        )
-
-        self.label_name = self.extract_parameter(
-            ["label_name"], expected_type=str, default="waste"
         )
 
         self.min_area = self.extract_parameter(
