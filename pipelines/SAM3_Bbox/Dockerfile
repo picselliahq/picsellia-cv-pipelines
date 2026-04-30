@@ -14,7 +14,7 @@ COPY ./uv.lock SAM3_Bbox/uv.lock
 COPY ./pyproject.toml SAM3_Bbox/pyproject.toml
 
 # Sync from uv.lock (assumes uv lock has already been created)
-RUN uv sync --python=$(which python3.10) --project SAM3_Bbox  --prerelease allow
+RUN uv sync --python=$(which python3.14) --project SAM3_Bbox  --prerelease allow
 
 COPY ./ SAM3_Bbox
 
@@ -31,4 +31,4 @@ RUN mkdir -p /experiment/.cache/huggingface/transformers \
 
 ENV PYTHONPATH="/experiment"
 
-ENTRYPOINT ["run", "python3.10", "SAM3_Bbox/pipeline.py"]
+ENTRYPOINT ["run", "python3.14", "SAM3_Bbox/pipeline.py"]
