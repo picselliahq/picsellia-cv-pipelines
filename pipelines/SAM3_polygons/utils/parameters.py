@@ -8,13 +8,6 @@ class ProcessingParameters(Parameters):
 
         # SAM-3 Segmentation Parameters
 
-        # Text prompt for segmentation (e.g., "waste", "plastic bag", "person")
-        self.text_prompt = self.extract_parameter(
-            ["text_prompt"],
-            expected_type=str,
-            default="waste",
-        )
-
         # Detection confidence threshold (0.0 - 1.0)
         # Higher values = fewer but more confident detections
         self.threshold = self.extract_parameter(
@@ -25,12 +18,6 @@ class ProcessingParameters(Parameters):
         # Higher values = tighter/smaller masks
         self.mask_threshold = self.extract_parameter(
             ["mask_threshold"], expected_type=float, default=0.7
-        )
-
-        # Label name for the category in COCO annotations
-        # All detected objects will be assigned this label
-        self.label_name = self.extract_parameter(
-            ["label_name"], expected_type=str, default="waste"
         )
 
         # Post-processing parameters
