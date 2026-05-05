@@ -8,6 +8,7 @@ type = "PRE_ANNOTATION"
 pipeline_script = "pipeline.py"
 requirements_file = "pyproject.toml"
 parameters_class = "utils/parameters.py:ProcessingParameters"
+inputs_class = "utils/inputs.py:ProcessingInputs"
 
 [docker]
 image_name = "picsellia/sam3-bbox-preannotation"

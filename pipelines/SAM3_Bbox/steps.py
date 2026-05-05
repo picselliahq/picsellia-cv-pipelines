@@ -103,15 +103,12 @@ def process(
         CocoDataset: The processed dataset with segmentation annotations.
     """
 
-    # Get processing parameters from the user-defined configuration
     context: PicselliaDatasetProcessingContext = Pipeline.get_active_context()
-    parameters = context.processing_parameters.to_dict()
+    parameters = context.processing_parameters
+    text_prompt = context.inputs.get("text_prompt")
+    label_name = context.inputs.get("label_name")
 
-    # Validate required parameters
-    text_prompt = parameters.get("text_prompt")
-    box_prompt = parameters.get("box_prompt")
-
-    if text_prompt is None and box_prompt is None:
+    if text_prompt is None and parameters.to_dict().get("box_prompt") is None:
         raise ValueError(
             "❌ At least one of 'text_prompt' or 'box_prompt' must be provided in processing parameters.\n"
             "Example parameters:\n"
@@ -130,12 +127,16 @@ def process(
             destination_dir=picsellia_dataset.annotations_dir, use_id=True
         )
 
+    params = parameters.to_dict()
+    params["text_prompt"] = text_prompt
+    params["label_name"] = label_name
+
     # Call the helper function to process images with SAM-3
     output_coco = process_images_sam3(
         sam3_model=model,
         sam3_processor=processor,
         picsellia_dataset=picsellia_dataset,
-        parameters=parameters,
+        parameters=params,
     )
 
     # Assign processed data to output dataset
