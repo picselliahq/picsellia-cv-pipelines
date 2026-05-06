@@ -31,6 +31,7 @@ class ShapesCropperProcessing:
     ):
         self.dataset_collection = dataset_collection
         self.label_name_to_extract = label_name_to_extract
+        self.labels_to_extract = [l.strip() for l in label_name_to_extract.split(",") if l.strip()]
 
     def _update_output_dataset_version(self):
         """
@@ -38,11 +39,12 @@ class ShapesCropperProcessing:
         """
         output_dataset_type = InferenceType.CLASSIFICATION
         input_dataset = self.dataset_collection["input"]
+        labels_str = ", ".join(f"'{l}'" for l in self.labels_to_extract)
         output_dataset_description = (
             f"Dataset extracted from dataset version "
             f"'{input_dataset.dataset_version.version}' "
             f"(id: {input_dataset.dataset_version.id}) in dataset "
-            f"'{input_dataset.dataset_version.name}' with label '{self.label_name_to_extract}'."
+            f"'{input_dataset.dataset_version.name}' with labels {labels_str}."
         )
         self.dataset_collection["output"].dataset_version.update(
             description=output_dataset_description, type=output_dataset_type
@@ -57,12 +59,16 @@ class ShapesCropperProcessing:
         category_id_to_name = {
             cat["id"]: cat["name"] for cat in input_json_coco_file["categories"]
         }
+        label_to_category_id = {
+            label: idx + 1 for idx, label in enumerate(self.labels_to_extract)
+        }
 
         self.output_coco_data = {
             "info": {},
             "licenses": [],
             "categories": [
-                {"id": 1, "name": self.label_name_to_extract, "supercategory": ""}
+                {"id": label_to_category_id[label], "name": label, "supercategory": ""}
+                for label in self.labels_to_extract
             ],
             "images": [],
             "annotations": [],
@@ -75,10 +81,8 @@ class ShapesCropperProcessing:
         )
 
         for input_annotation in input_json_coco_file["annotations"]:
-            if (
-                category_id_to_name[input_annotation["category_id"]]
-                == self.label_name_to_extract
-            ):
+            annotation_label = category_id_to_name[input_annotation["category_id"]]
+            if annotation_label in self.labels_to_extract:
                 image_info = next(
                     img
                     for img in input_json_coco_file["images"]
@@ -102,7 +106,7 @@ class ShapesCropperProcessing:
                             .dataset_version.list_assets(ids=[image_asset_id])[0]
                             .data_id
                         )
-                        output_filename = f"{image_data_id}_{self.label_name_to_extract}_{x}_{y}_{width}_{height}{image_extension}"
+                        output_filename = f"{image_data_id}_{annotation_label}_{x}_{y}_{width}_{height}{image_extension}"
 
                         output_image_path = os.path.join(
                             self.dataset_collection["output"].images_dir,
@@ -122,7 +126,7 @@ class ShapesCropperProcessing:
                             {
                                 "id": annotation_id,
                                 "image_id": annotation_id,
-                                "category_id": 1,
+                                "category_id": label_to_category_id[annotation_label],
                                 "bbox": [],
                             }
                         )
