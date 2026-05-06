@@ -64,13 +64,36 @@ Strong transformations with added noise for robustness.
 
 ---
 
-## 🔌 Inputs
+## Inputs vs Parameters
 
-When deploying this processing on Picsellia, you will be asked to select the following input directly in the UI — no need to type anything manually.
+| Mechanism | Set when | Examples |
+|-----------|----------|---------|
+| **Inputs** | Launching the job on Picsellia | target dataset version name, datalake |
+| **Parameters** | Configuring the processing | rotation angles, scale range, noise |
 
-| Input | Description |
-|-------|-------------|
-| **Datalake** | The datalake in which the augmented images will be stored. Select it from the list of available datalakes in your organization. |
+---
+
+## 📥 Inputs Reference
+
+Inputs are configured when launching the processing job from the Picsellia platform.
+
+### `target_version_name`
+**What it does**: Name of the output dataset version to create (or reuse if it already exists). The augmented images will be stored in this new version.
+
+**Type**: Text
+**Required**: Yes
+
+**Example**: `augmented_v1`, `rotation_45_scaled`
+
+---
+
+### `datalake`
+**What it does**: The datalake where augmented images will be uploaded before being attached to the output dataset version.
+
+**Type**: Datalake
+**Required**: Yes
+
+Select the datalake from your Picsellia workspace.
 
 ---
 
@@ -525,7 +548,8 @@ Clear tags help organize and track different augmentation strategies.
 ## 🚀 Getting Started Checklist
 
 - [ ] Have annotated dataset in Picsellia
-- [ ] Select the target datalake in the Picsellia processing UI (input selection)
+- [ ] Set `target_version_name` input (name for the output dataset version)
+- [ ] Select the target datalake input in the Picsellia processing UI
 - [ ] Decide on rotation range based on domain
 - [ ] Set appropriate scaling range
 - [ ] Decide if noise is beneficial
