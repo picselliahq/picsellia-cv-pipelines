@@ -11,7 +11,7 @@ class ProcessingInputs(PipelineInputs):
             required=True,
         )
         self.define_input(
-            name="target_dataset_version_name",
+            name="target_version_name",
             input_type=ProcessingInputType.TEXT,
             required=True,
         )
