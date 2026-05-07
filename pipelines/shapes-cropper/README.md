@@ -7,105 +7,100 @@ This Picsellia pipeline creates a new dataset by cropping out objects from annot
 ## What You'll Get
 
 After running this pipeline, you'll have:
-- ✅ A new dataset with cropped object images
-- ✅ One image per bounding box / polygon annotation
-- ✅ Images sized to the original bounding box / polygon dimensions
-- ✅ Organized by label/class
+- A new dataset with cropped object images
+- One image per bounding box / polygon annotation for each extracted label
+- Images sized to the original bounding box / polygon dimensions
+- Support for extracting multiple labels in a single run
 
 ## Quick Start Guide
 
-### 🎯 Extract Single Class
+### Extract a Single Class
 
 **Goal**: Crop all instances of one object class.
 
 ```toml
-[parameters]
+[inputs]
 label_name_to_extract = "person"
-datalake = "default"
+datalake = "<your-datalake-id>"
+
+[parameters]
 data_tag = "person_crops"
 ```
 
-This will extract all "person" bounding boxes / polygons as individual images.
+### Extract Multiple Classes
 
-### 🎯 Extract for Classification
-
-**Goal**: Create a classification dataset from detection annotations.
+**Goal**: Crop all instances of several object classes in one run.
 
 ```toml
+[inputs]
+label_name_to_extract = "car,truck,bus"
+datalake = "<your-datalake-id>"
+
 [parameters]
-label_name_to_extract = "product"
-datalake = "default"
-data_tag = "product_classification"
+data_tag = "vehicle_crops"
 fix_annotation = true
 ```
 
-Perfect for building classification datasets from detection or segmentation data.
+Each label is extracted and preserved with its own category in the output dataset.
 
 ---
 
-## 📋 Complete Parameter Reference
+## Complete Reference
 
-### 🔵 Essential Parameters
+### Inputs
+
+Inputs are user-defined values selected at pipeline launch time (e.g. via the Picsellia UI or CLI).
+
+---
 
 #### `label_name_to_extract`
-**What it does**: Name of the label/class to extract crops from.
+**What it does**: Name(s) of the label(s) to extract crops from. Accepts a single label or a comma-separated list.
 
-**Type**: String
-**Default**: `"car"`
+**Type**: Text
 **Required**: Yes
 
-**How it works**: Only bounding boxes / polygons with this exact label will be cropped and saved.
-
-**Example**:
-```toml
-# Extract all persons
-label_name_to_extract = "person"
-
-# Extract all vehicles
-label_name_to_extract = "car"
-
-# Extract products
-label_name_to_extract = "bottle"
+**Examples**:
+```
+person
+car,truck,bus
+product
 ```
 
-**Important**: The label name must exactly match a label in your dataset.
+All provided labels must exist in the source dataset's labelmap. Labels are case-sensitive.
 
 ---
 
 #### `datalake`
-**What it does**: Name of the datalake to store cropped images.
+**What it does**: The datalake where cropped images will be stored.
 
-**Type**: String
-**Default**: `"default"`
+**Type**: Datalake
+**Required**: Yes
 
-**Example**:
-```toml
-datalake = "default"
+Select the target datalake from the Picsellia UI when launching the pipeline.
 
-# Custom datalake
-datalake = "object-crops"
-```
+---
+
+### Parameters
+
+Parameters control the processing behaviour and can be set in the pipeline configuration.
 
 ---
 
 #### `data_tag`
-**What it does**: Tag to apply to cropped images for organization.
+**What it does**: Tag applied to cropped images in the datalake for organization.
 
 **Type**: String
 **Default**: `"processed"`
 
 **Example**:
 ```toml
-data_tag = "processed"
-
-# Descriptive tag
-data_tag = "person_crops_2024"
+data_tag = "vehicle_crops_2024"
 ```
 
 ---
 
 #### `fix_annotation`
-**What it does**: Attempt to fix invalid annotations during processing.
+**What it does**: Automatically correct invalid or out-of-bounds annotations instead of failing.
 
 **Type**: Boolean
 **Default**: `true`
@@ -115,7 +110,6 @@ data_tag = "person_crops_2024"
 - Invalid coordinates
 - Malformed annotations
 
-**Example**:
 ```toml
 # Fix issues automatically (recommended)
 fix_annotation = true
@@ -126,227 +120,157 @@ fix_annotation = false
 
 ---
 
-## 🎓 Real-World Configuration Examples
+## Configuration Examples
 
-### Example 1: Person Detection → Person Classification
+### Person Crops for Classification
 
 **Goal**: Extract person crops for age/gender classification.
 
 ```toml
-[parameters]
+[inputs]
 label_name_to_extract = "person"
-datalake = "default"
+datalake = "<your-datalake-id>"
+
+[parameters]
 data_tag = "person_crops_for_classification"
 fix_annotation = true
 ```
 
-**Result**: Individual person images ready for classification labeling.
-
 ---
 
-### Example 2: Product Extraction from Shelf Images
+### Multi-Class Vehicle Extraction
 
-**Goal**: Extract individual products from retail shelf photos.
-
-```toml
-[parameters]
-label_name_to_extract = "product"
-datalake = "retail-products"
-data_tag = "individual_products"
-fix_annotation = true
-```
-
-**Result**: Each product as a separate image for catalog or quality control.
-
----
-
-### Example 3: Vehicle Analysis
-
-**Goal**: Extract vehicle crops for make/model classification.
+**Goal**: Extract all vehicle types in a single run.
 
 ```toml
+[inputs]
+label_name_to_extract = "car,truck,motorcycle,bus"
+datalake = "<your-datalake-id>"
+
 [parameters]
-label_name_to_extract = "car"
-datalake = "default"
 data_tag = "vehicle_crops"
 fix_annotation = true
 ```
 
-**Result**: Individual vehicle images for detailed analysis.
+Each vehicle type is saved with its own category in the output COCO file.
 
 ---
 
-### Example 4: Document Fields Extraction
+### Product Extraction from Shelf Images
+
+**Goal**: Extract individual products from retail shelf photos.
+
+```toml
+[inputs]
+label_name_to_extract = "product"
+datalake = "<your-datalake-id>"
+
+[parameters]
+data_tag = "individual_products"
+fix_annotation = true
+```
+
+---
+
+### Document Fields Extraction
 
 **Goal**: Extract specific fields from document images.
 
 ```toml
+[inputs]
+label_name_to_extract = "signature,stamp"
+datalake = "<your-datalake-id>"
+
 [parameters]
-label_name_to_extract = "signature"
-datalake = "default"
-data_tag = "signature_crops"
+data_tag = "document_fields"
 fix_annotation = true
 ```
 
-**Result**: Isolated signature regions from documents.
-
 ---
 
-### Example 5: Wildlife Camera Traps
+## Understanding Your Results
 
-**Goal**: Extract animal crops from camera trap images.
+### Output Naming
 
-```toml
-[parameters]
-label_name_to_extract = "animal"
-datalake = "wildlife"
-data_tag = "animal_crops_2024"
-fix_annotation = true
+Each cropped image is named using the pattern:
+
+```
+{data_id}_{label}_{x}_{y}_{width}_{height}{extension}
 ```
 
-**Result**: Individual animal images from wide-angle camera trap photos.
-
----
-
-## 📊 Understanding Your Results
-
-### What Gets Created
-
-For each bounding box / polygon with the specified label:
-1. **Cropped image**: Extracted region from original image
-2. **Original dimensions**: Crop size matches bounding box / polygon size
-3. **Metadata preserved**: Links to original image
+For example: `abc123_car_120_45_200_150.jpg`
 
 ### Output Dataset Structure
 
 ```
 Original image: street_scene.jpg
-  └─ Contains 3 "person" bounding boxes / polygons
+  └─ Contains 2 "car" and 1 "person" bounding boxes
 
-Output dataset:
-  ├─ street_scene_person_001.jpg  (crop 1)
-  ├─ street_scene_person_002.jpg  (crop 2)
-  └─ street_scene_person_003.jpg  (crop 3)
+Output dataset (label_name_to_extract = "car,person"):
+  ├─ abc123_car_120_45_200_150.jpg
+  ├─ abc123_car_300_60_180_130.jpg
+  └─ abc123_person_500_20_80_200.jpg
 ```
 
 ### Crop Sizing
 
-Crops maintain original bounding box / polygons dimensions:
-- Small shapes (50x100) → Small crop (50x100)
-- Large shapes (300x400) → Large crop (300x400)
-
-**Note**: You may want to resize crops later for model training consistency.
+Crops maintain original bounding box / polygon dimensions. You may want to resize them after extraction for model training consistency.
 
 ---
 
-## ❓ Troubleshooting Guide
+## Troubleshooting
 
-### Issue: No Crops Created
+### No Crops Created
 
-**Check**:
-1. Does `label_name_to_extract` exactly match a label in your dataset?
-2. Are there any bounding boxes / polygons with that label?
-3. Check pipeline logs for errors
-4. Verify dataset has annotations
+1. Does `label_name_to_extract` exactly match a label in your dataset? Labels are case-sensitive.
+2. Are there annotations with that label in the dataset?
+3. Verify dataset has annotations.
 
 ---
 
-### Issue: Some Bounding Boxes / Polygons Skipped
+### Some Annotations Skipped
 
 **Possible causes**:
-1. Bounding boxes outside image boundaries (set `fix_annotation = true`)
-2. Invalid coordinates
-3. Zero-area bounding boxes / polygons
-
-**Solution**:
-```toml
-fix_annotation = true
-```
+- Bounding boxes outside image boundaries → set `fix_annotation = true`
+- Invalid or zero-area coordinates
 
 ---
 
-### Issue: Crops Are Different Sizes
+### Crops Are Different Sizes
 
-**This is expected**: Crops preserve original bounding box / polygons dimensions.
-
-**Solution**: If you need uniform sizes, resize crops after extraction:
-- Use image processing pipeline
-- Resize during training
-- Use padding to standardize
+This is expected — crops preserve original bounding box / polygon dimensions. Resize crops after extraction if uniform sizes are needed.
 
 ---
 
-### Issue: Wrong Objects Extracted
+## Best Practices
 
-**Check**:
-1. Verify `label_name_to_extract` spelling
-2. Check label names are correct in dataset
-3. Review original annotations
+1. **Check label names** — Labels are case-sensitive. `"Person"` and `"person"` are different.
+2. **Extract multiple labels at once** — Use `"car,truck"` instead of running the pipeline twice.
+3. **Use descriptive tags** — `data_tag = "vehicle_crops_retail_2024"` is more useful than `"processed"`.
+4. **Enable fix_annotation** — Recommended for most datasets.
 
----
+### Typical Workflow
 
-## 💡 Best Practices
-
-### 1. Verify Label Name
-
-```toml
-# Check exact label name in your dataset first
-# Labels are case-sensitive!
-label_name_to_extract = "Person"  # ❌ if dataset has "person"
-label_name_to_extract = "person"  # ✅ exact match
-```
-
-### 2. Use Descriptive Tags
-
-```toml
-# Good tags
-data_tag = "person_crops_retail_2024"
-data_tag = "vehicle_front_view"
-
-# Less helpful tags
-data_tag = "crops"
-data_tag = "processed"
-```
-
-### 3. Fix Annotations Automatically
-
-```toml
-fix_annotation = true  # Recommended for most cases
-```
-
-### 4. Common Workflow
-
-1. **Object Detection or Segmentation** → Annotate with bounding boxes or polygons
-2. **Shapes Cropper** → Extract individual objects
-3. **Manual Review** → Review extracted crops
-4. **Classification Labeling** → Add classification labels
-5. **Train Classifier** → Train on cropped objects
-
-### 5. Organize by Datalake
-
-```toml
-# Use different datalakes for different projects
-datalake = "person-classification"
-datalake = "product-catalog"
-datalake = "vehicle-analysis"
-```
+1. Annotate with bounding boxes or polygons (Object Detection or Segmentation)
+2. Run Shapes Cropper to extract individual objects
+3. Review extracted crops
+4. Add classification labels
+5. Train a classifier on the cropped objects
 
 ---
 
-## 🚀 Getting Started Checklist
+## Getting Started Checklist
 
-- [ ] Have dataset with bounding box / polygon annotations
-- [ ] Identify label to extract
-- [ ] Verify label name exactly matches dataset
-- [ ] Choose datalake and tag for organization
-- [ ] Enable fix_annotation (recommended)
-- [ ] Run pipeline
-- [ ] Review extracted crops
-- [ ] Use crops for downstream tasks
+- [ ] Dataset has bounding box / polygon annotations
+- [ ] Identified the label(s) to extract
+- [ ] Label names exactly match the dataset labelmap
+- [ ] Target datalake selected
+- [ ] `data_tag` set for organization
+- [ ] `fix_annotation = true` (recommended)
 
 ---
 
-## 🔗 Related Pipelines
+## Related Pipelines
 
 - **Dataset Tiler**: Alternative for large images
 - **YOLOv8 Pre-Annotation**: Generate bounding boxes first
@@ -354,31 +278,7 @@ datalake = "vehicle-analysis"
 
 ---
 
-## 🎯 Use Cases
-
-### Object Classification
-Start with detection annotations → Extract crops → Label for classification → Train classifier
-
-### Quality Control
-Extract products → Review for defects → Automated QC system
-
-### Data Analysis
-Extract specific objects → Analyze characteristics → Generate insights
-
-### Dataset Curation
-Extract objects → Filter/sort → Build specialized datasets
-
----
-
-## 📞 Support
-
-**Need help?**
-- Picsellia platform questions → Contact your Picsellia support team
-- Pipeline configuration help → Refer to this guide
-
----
-
-**Pipeline Version**: 1.0.4
+**Pipeline Version**: 1.0.6
 **Type**: Dataset Version Creation
-**Supported Types**: Object Detection
-**Last Updated**: 2026-01-08
+**Supported Annotation Types**: Object Detection, Segmentation
+**Last Updated**: 2026-05-06

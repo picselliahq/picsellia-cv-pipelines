@@ -1,7 +1,8 @@
-FROM picsellia/cpu:python3.10
+FROM picsellia/cpu:python3.14
 
 RUN apt-get update && apt-get install -y \
-    libgl1-mesa-glx \
+    libgl1 \
+    git \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /experiment
@@ -15,8 +16,8 @@ ARG REBUILD_ALL
 COPY ./ ./shapes-cropper
 ARG REBUILD_PICSELLIA
 
-RUN uv sync --python=$(which python3.10) --project shapes-cropper
+RUN uv sync --python=$(which python3.14) --project shapes-cropper
 
 ENV PYTHONPATH="/experiment"
 
-ENTRYPOINT ["run", "python3.10", "shapes-cropper/pipeline.py"]
+ENTRYPOINT ["run", "python3.14", "shapes-cropper/pipeline.py"]

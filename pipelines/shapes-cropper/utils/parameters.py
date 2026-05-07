@@ -1,19 +1,13 @@
-from picsellia_cv_engine.core.parameters.base_parameters import Parameters
+from picsellia.types.schemas import LogDataType
+from picsellia_cv_engine.core.parameters import Parameters
 
 
-class ProcessingShapesCropperParameters(Parameters):
-    def __init__(self, log_data):
-        super().__init__(log_data)
-
-        self.datalake = self.extract_parameter(
-            keys=["datalake"], expected_type=str, default="default"
-        )
-        self.label_name_to_extract = self.extract_parameter(
-            keys=["label_name_to_extract"], expected_type=str, default="car"
-        )
+class ProcessingParameters(Parameters):
+    def __init__(self, log_data: LogDataType):
+        super().__init__(log_data=log_data)
         self.data_tag = self.extract_parameter(
-            keys=["data_tag"], expected_type=str, default="processed"
+            ["data_tag"], expected_type=str, default="processed"
         )
         self.fix_annotation = self.extract_parameter(
-            keys=["fix_annotation"], expected_type=bool, default=True
+            ["fix_annotation"], expected_type=bool, default=True
         )
