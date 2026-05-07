@@ -8,6 +8,7 @@ type = "DATASET_VERSION_CREATION"
 pipeline_script = "pipeline.py"
 requirements_file = "pyproject.toml"
 parameters_class = "utils/parameters.py:ProcessingTilerParameters"
+inputs_class = "utils/inputs.py:ProcessingInputs"
 
 [docker]
 image_name = "picsellia/processing-dataset-tiler"

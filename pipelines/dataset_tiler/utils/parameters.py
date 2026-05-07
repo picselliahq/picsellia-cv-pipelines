@@ -15,24 +15,6 @@ class ProcessingTilerParameters(Parameters):
     def __init__(self, log_data):
         super().__init__(log_data)
 
-        self.datalake = self.extract_parameter(
-            keys=["datalake"], expected_type=str, default="default"
-        )
-        self.data_tag = self.extract_parameter(
-            keys=["data_tag"], expected_type=str, default="tiled_data"
-        )
-        self.tile_height = self.extract_parameter(
-            keys=["tile_height"],
-            expected_type=int,
-            range_value=(0, float("inf")),
-            default=640,
-        )
-        self.tile_width = self.extract_parameter(
-            keys=["tile_width"],
-            expected_type=int,
-            range_value=(0, float("inf")),
-            default=640,
-        )
         self.overlap_height_ratio = self.extract_parameter(
             keys=["overlap_height_ratio"],
             expected_type=float,
@@ -62,11 +44,6 @@ class ProcessingTilerParameters(Parameters):
             expected_type=int | None,
             default=0,
             range_value=(0, float("inf")),
-        )
-        self.tiling_mode = self.extract_parameter(
-            keys=["tiling_mode", "mode"],
-            expected_type=TileMode,
-            default=TileMode.CONSTANT,
         )
         self.padding_color_value = self.extract_parameter(
             keys=["padding_color_value"],

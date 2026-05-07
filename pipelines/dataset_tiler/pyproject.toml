@@ -2,7 +2,7 @@
 name = "dataset_tiler"
 version = "0.1.0"
 description = "Picsellia processing pipeline"
-requires-python = ">=3.10,<3.12"
+requires-python = ">=3.14"
 
 dependencies = [
     "picsellia-cv-engine",
