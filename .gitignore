@@ -174,3 +174,4 @@ cython_debug/
 # Folders specific to processing or training runs
 
 pipelines/**/runs/
+.DS_Store

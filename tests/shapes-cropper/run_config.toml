@@ -6,7 +6,7 @@ type = "DATASET_VERSION_CREATION"
 [parameters]
 data_tag = "processed"
 fix_annotation = true
-target_version_name = "test-cropped"
+
 [auth]
 organization_name = "test-account"
 env = "STAGING"
@@ -19,3 +19,4 @@ id = "019cb91b-1d2c-718c-ae41-be7abadadeed"
 [inputs]
 datalake = "0189266d-6675-775a-985c-441b2820bdc9"
 label_name_to_extract = "car,bicycle"
+target_version_name = "test-cropped"
