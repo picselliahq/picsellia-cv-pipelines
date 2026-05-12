@@ -6,7 +6,7 @@ type = "DATASET_VERSION_CREATION"
 [parameters]
 data_tag = "processed"
 fix_annotation = true
-
+target_version_name = "test-cropped"
 [auth]
 organization_name = "test-account"
 env = "STAGING"
@@ -15,8 +15,6 @@ host = "https://staging.picsellia.com"
 [input.dataset_version]
 id = "019cb91b-1d2c-718c-ae41-be7abadadeed"
 
-[output.dataset_version]
-name = "test_shapes-cropper-output"
 
 [inputs]
 datalake = "0189266d-6675-775a-985c-441b2820bdc9"

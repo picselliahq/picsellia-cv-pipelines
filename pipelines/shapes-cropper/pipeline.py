@@ -1,5 +1,6 @@
 import argparse
 
+from picsellia.exceptions import ResourceConflictError
 from picsellia.types.enums import ProcessingType
 from picsellia_cv_engine.core.services.context.unified_context import (
     create_processing_context_from_config,
@@ -28,6 +29,24 @@ context = create_processing_context_from_config(
     remove_logs_on_completion=False,
 )
 def shapes_cropper_processing_pipeline() -> None:
+    # _load_legacy_inputs looks for 'target_version_name' but the platform sends
+    # the value under the input's declared name (e.g. 'Target_Dataset_Version_name').
+    # Resolve the output dataset version here before load_coco_datasets() is called.
+    if context.output_dataset_version.id == context.input_dataset_version.id:
+        target_version_name = (
+            context.inputs.get("Target_Dataset_Version_name")
+            or context.inputs.get("target_version_name")
+        )
+        if not target_version_name:
+            raise RuntimeError(
+                f"Cannot resolve output dataset version. Current inputs: {context.inputs}"
+            )
+        dataset = context.client.get_dataset(name=context.input_dataset_version.name)
+        try:
+            context.output_dataset_version = dataset.create_version(version=target_version_name)
+        except ResourceConflictError:
+            context.output_dataset_version = dataset.get_version(version=target_version_name)
+
     dataset_collection = load_coco_datasets()
     validate_shapes_cropper_data(dataset=dataset_collection["input"])
     output_dataset = process(dataset_collection=dataset_collection)

@@ -6,6 +6,11 @@ class ProcessingInputs(PipelineInputs):
     def __init__(self):
         super().__init__()
         self.define_input(
+            name="target_version_name",
+            input_type=ProcessingInputType.TEXT,
+            required=True,
+        )
+        self.define_input(
             name="label_name_to_extract",
             input_type=ProcessingInputType.TEXT,
             required=True,
