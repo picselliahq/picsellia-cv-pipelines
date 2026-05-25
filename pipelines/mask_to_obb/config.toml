@@ -1,0 +1,16 @@
+[metadata]
+name = "mask_to_obb"
+version = "1.0"
+description = "Convert polygon annotations to oriented bounding boxes (stored as 4-point polygons)."
+type = "DATASET_VERSION_CREATION"
+
+[execution]
+pipeline_script = "pipeline.py"
+requirements_file = "pyproject.toml"
+parameters_class = "utils/parameters.py:ProcessingParameters"
+
+[docker]
+image_name = "tibpicsell/mask_to_obb"
+image_tag = ""
+cpu = 4
+gpu = 0
