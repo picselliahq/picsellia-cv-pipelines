@@ -1,0 +1,19 @@
+override_outputs = true
+
+[job]
+type = "DATASET_VERSION_CREATION"
+
+[auth]
+organization_name = "test-account"
+env = "STAGING"
+host = "https://staging.picsellia.com"
+
+[input.dataset_version]
+id = "019e5ded-a54b-71f3-bf79-ff3865fae24b"
+
+[output.dataset_version]
+name = "test_mask_to_obb"
+
+[parameters]
+datalake = "default"
+data_tag = "processed"
