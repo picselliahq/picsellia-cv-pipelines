@@ -1,0 +1,20 @@
+[metadata]
+name = "YOLOv8_OBB"
+version = "1.0"
+description = "Training pipeline using YOLOV8."
+type = "TRAINING"
+
+[execution]
+pipeline_script = "pipeline.py"
+requirements_file = "pyproject.toml"
+parameters_class = "utils/parameters.py:TrainingHyperParameters"
+
+[docker]
+image_name = ""
+image_tag = ""
+
+[model_version]
+name = "v1"
+origin_name = "YOLOv8-OBB"
+framework = "ONNX"
+inference_type = "SEGMENTATION"

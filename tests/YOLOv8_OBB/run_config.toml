@@ -1,0 +1,21 @@
+override_outputs = true
+
+[job]
+type = "TRAINING"
+
+[hyperparameters]
+batch_size = 8
+device = "cuda:0"
+epochs = 2
+image_size = 640
+
+
+[input.train_dataset_version]
+id = "0191b736-7eb5-7bbe-b0d1-9f1d96cfc8d0"
+
+[input.model_version]
+id = "019e6345-3fa2-7627-b6f7-da660cc0442f"
+
+[output.experiment]
+name = "yolov8_obb_exp1"
+project_name = "test_models"
