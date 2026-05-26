@@ -11,11 +11,11 @@ image_size = 640
 
 
 [input.train_dataset_version]
-id = "0191b736-7eb5-7bbe-b0d1-9f1d96cfc8d0"
+id = "01892b87-34ec-73a6-8035-e5ef7bba15f7"
 
 [input.model_version]
 id = "019e6345-3fa2-7627-b6f7-da660cc0442f"
 
 [output.experiment]
-name = "yolov8_obb_exp1"
+name = "yolov8_obb_exp2"
 project_name = "test_models"
