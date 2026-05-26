@@ -10,8 +10,8 @@ requirements_file = "pyproject.toml"
 parameters_class = "utils/parameters.py:TrainingHyperParameters"
 
 [docker]
-image_name = ""
-image_tag = ""
+image_name = "picsellia/training-yolov8-obb"
+image_tag = "1.0"
 
 [model_version]
 name = "v1"
