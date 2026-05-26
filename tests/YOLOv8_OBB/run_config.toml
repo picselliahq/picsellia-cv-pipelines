@@ -14,7 +14,7 @@ image_size = 640
 id = "01892b87-34ec-73a6-8035-e5ef7bba15f7"
 
 [input.model_version]
-id = "019e6345-3fa2-7627-b6f7-da660cc0442f"
+id = "019e6375-9c01-73dd-ab79-260217706785"
 
 [output.experiment]
 name = "yolov8_obb_exp2"
