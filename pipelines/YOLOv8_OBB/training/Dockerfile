@@ -13,9 +13,7 @@ RUN sed -i '1 a source /experiment/./training/.venv/bin/activate' /experiment/ru
 COPY ./ ./training
 
 # Sync from uv.lock (assumes uv lock has already been created)
-RUN uv sync --python=$(which python3.10) --project YOLOv8_OBB
-
-COPY .. YOLOv8_OBB
+RUN uv sync --python=$(which python3.10) --project training
 
 ENV PYTHONPATH=":/experiment"
 
