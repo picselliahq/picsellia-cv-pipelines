@@ -143,6 +143,7 @@ def process(
     params["text_prompt"] = text_prompt
     params["label_name"] = label_name
 
+    print("PARAMS:", params)
     # Call the helper function to process images with SAM-3
     output_coco = process_images_sam3(
         sam3_model=model,
