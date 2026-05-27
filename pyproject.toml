@@ -11,6 +11,7 @@ readme = "README.md"
 dependencies = [
     "picsellia-pipelines-cli",
     "picsellia-cv-engine",
+    "picsellia>=6.31.0",
 ]
 
 [dependency-groups]

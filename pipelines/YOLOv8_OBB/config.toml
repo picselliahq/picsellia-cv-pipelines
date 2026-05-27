@@ -1,6 +1,6 @@
 [metadata]
 name = "YOLOv8_OBB"
-version = "1.0"
+version = "1.0.1"
 description = "Training pipeline using YOLOV8."
 type = "TRAINING"
 
@@ -11,7 +11,7 @@ parameters_class = "utils/parameters.py:TrainingHyperParameters"
 
 [docker]
 image_name = "picsellia/training-yolov8-obb"
-image_tag = "1.0"
+image_tag = "latest"
 
 [model_version]
 name = "v1"

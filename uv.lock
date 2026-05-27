@@ -447,6 +447,7 @@ name = "picsellia-cv-pipelines"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
+    { name = "picsellia" },
     { name = "picsellia-cv-engine" },
     { name = "picsellia-pipelines-cli" },
 ]
@@ -458,6 +459,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
+    { name = "picsellia", specifier = ">=6.31.0" },
     { name = "picsellia-cv-engine" },
     { name = "picsellia-pipelines-cli" },
 ]
