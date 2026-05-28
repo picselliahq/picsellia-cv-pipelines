@@ -60,7 +60,7 @@ def _ensure_label_and_category(
         categories.append(
             cast(
                 dict[str, Any],
-                {"id": next_category_id, "name": prompt, "supercategory": "object"},
+                {"id": next_category_id, "name": prompt, "supercategory": ""},
             )
         )
         return next_category_id + 1

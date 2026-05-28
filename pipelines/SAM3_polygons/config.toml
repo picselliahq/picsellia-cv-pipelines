@@ -1,6 +1,6 @@
 [metadata]
 name = "SAM3_polygons"
-version = "1.0.2"
+version = "1.0.7"
 description = "This Dataset Processing provides polygons pre-labeling with SAM3"
 type = "PRE_ANNOTATION"
 
