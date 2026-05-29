@@ -1,0 +1,21 @@
+override_outputs = true
+[job]
+type = "PRE_ANNOTATION"
+
+[parameters]
+add_asset_tags = true
+embed_asset_without_annotation = true
+
+[inputs]
+ratio_train = 0.5
+ratio_test = 0.25
+ratio_val = 0.25
+
+
+[auth]
+organization_name = "test-account"
+env = "STAGING"
+host = "https://staging.picsellia.com"
+
+[input.dataset_version]
+id = "019e7456-e66f-741e-8f0b-25164286d144"
