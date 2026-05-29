@@ -1,0 +1,22 @@
+[metadata]
+name = "SAM_3"
+version = "1.0.0"
+description = "This Picsellia pipeline fine-tunes Meta's SAM 3 promptable concept-segmentation model on a custom Picsellia segmentation dataset. Each label name is used as a text prompt and the model is trained with a DETR-style set-prediction loss (Hungarian matching + classification, box and mask losses)."
+type = "TRAINING"
+
+[execution]
+pipeline_script = "pipeline.py"
+requirements_file = "pyproject.toml"
+parameters_class = "utils/parameters.py:TrainingHyperParameters"
+
+[docker]
+image_name = "picsellia/training-sam3"
+image_tag = "1.0.0"
+cpu = 8
+gpu = 1
+
+[model_version]
+name = "v1"
+origin_name = "SAM3"
+framework = "PYTORCH"
+inference_type = "SEGMENTATION"
