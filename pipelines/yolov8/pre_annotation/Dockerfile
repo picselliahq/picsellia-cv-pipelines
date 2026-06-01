@@ -1,4 +1,4 @@
-FROM picsellia/cuda:12.6.3-cudnn-ubuntu24.04-python3.13
+FROM picsellia/cuda:12.6.3-cudnn-ubuntu24.04-python3.10
 
 RUN apt-get update && apt-get install -y \
     libgl1 \
@@ -14,10 +14,10 @@ RUN sed -i '1 a source /experiment/pre_annotation/.venv/bin/activate' /experimen
 COPY ./uv.lock pre_annotation/uv.lock
 COPY ./pyproject.toml pre_annotation/pyproject.toml
 
-RUN uv sync --python=$(which python3.13) --project pre_annotation
+RUN uv sync --python=$(which python3.10) --project pre_annotation
 
 COPY ./ pre_annotation
 
 ENV PYTHONPATH="/experiment"
 
-ENTRYPOINT ["run", "python3.13", "pre_annotation/pipeline.py"]
+ENTRYPOINT ["run", "python3.10", "pre_annotation/pipeline.py"]
