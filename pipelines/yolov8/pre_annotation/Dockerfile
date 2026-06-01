@@ -1,4 +1,4 @@
-FROM picsellia/cuda:12.6.3-cudnn-ubuntu24.04-python3.10
+FROM picsellia/cuda:11.8.0-cudnn8-ubuntu20.04-python3.10
 
 RUN apt-get update && apt-get install -y \
     libgl1 \
