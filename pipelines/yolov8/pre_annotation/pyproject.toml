@@ -5,7 +5,8 @@ description = "Picsellia processing pipeline"
 requires-python = ">=3.14"
 
 dependencies = [
-    "picsellia-cv-engine[ultralytics]",
+    "picsellia-cv-engine",
     "picsellia-pipelines-cli",
-    "onnx"
+    "onnx",
+    "ultralytics"
 ]
