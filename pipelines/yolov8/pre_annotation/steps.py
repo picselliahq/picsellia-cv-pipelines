@@ -29,7 +29,7 @@ def get_model() -> UltralyticsModel:
         model_version=model_version,
         trained_weights_name=context.inputs.get("model_file_name"),
     )
-    model.download_weights(destination_dir=os.path.join(context.working_dir, "model"))
+    model.download_model_weights(destination_dir=os.path.join(context.working_dir, "model"))
     return model
 
 
