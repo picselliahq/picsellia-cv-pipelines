@@ -1,7 +1,7 @@
 FROM picsellia/cuda:11.8.0-cudnn8-ubuntu20.04-python3.10
 
 RUN apt-get update && apt-get install -y \
-    libgl1-mesa-glx \
+    libgl1 \
     git \
     && rm -rf /var/lib/apt/lists/*
 
@@ -9,13 +9,14 @@ WORKDIR /experiment
 
 RUN git clone --depth 1 https://github.com/picselliahq/picsellia-cv-base-docker.git /tmp/base-docker &&     cp -r /tmp/base-docker/base/. /experiment
 
-RUN sed -i '1 a source /experiment/./pre_annotation/.venv/bin/activate' /experiment/run.sh
+RUN sed -i '1 a source /experiment/pre_annotation/.venv/bin/activate' /experiment/run.sh
 
-ARG REBUILD_ALL
-COPY ./ ./pre_annotation
-ARG REBUILD_PICSELLIA
+COPY ./uv.lock pre_annotation/uv.lock
+COPY ./pyproject.toml pre_annotation/pyproject.toml
 
 RUN uv sync --python=$(which python3.10) --project pre_annotation
+
+COPY ./ pre_annotation
 
 ENV PYTHONPATH="/experiment"
 

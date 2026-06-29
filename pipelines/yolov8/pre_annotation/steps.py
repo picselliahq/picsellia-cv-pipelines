@@ -27,9 +27,9 @@ def get_model() -> UltralyticsModel:
     model = UltralyticsModel(
         name=model_version.name,
         model_version=model_version,
-        trained_weights_name=context.processing_parameters.model_file_name,
+        trained_weights_name=context.inputs.get("model_file_name"),
     )
-    model.download_weights(destination_dir=os.path.join(context.working_dir, "model"))
+    model.download_model_weights(destination_dir=os.path.join(context.working_dir, "model"))
     return model
 
 
@@ -82,7 +82,7 @@ def process(model: UltralyticsModel, dataset: CocoDataset) -> CocoDataset:
     pre_annotator.setup_preannotation_job()
 
     dataset.coco_data = pre_annotator.preannotate(
-        confidence_threshold=context.processing_parameters.confidence_threshold,
+        confidence_threshold=float(context.inputs.get("confidence_threshold")),
         agnostic_nms=context.processing_parameters.agnostic_nms,
     )
 
