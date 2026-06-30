@@ -1,0 +1,17 @@
+[metadata]
+name = "polygons_to_RLE_mask"
+version = "1.0"
+description = "Convert polygon segmentation annotations into COCO RLE-encoded masks and create a MASK-type dataset version."
+type = "DATASET_VERSION_CREATION"
+
+[execution]
+pipeline_script = "pipeline.py"
+requirements_file = "pyproject.toml"
+parameters_class = "utils/parameters.py:ProcessingParameters"
+inputs_class = "utils/inputs.py:ProcessingInputs"
+
+[docker]
+image_name = "picsellia/polygons_to_rle_mask"
+image_tag = "1.0"
+cpu = 4
+gpu = 0

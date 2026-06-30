@@ -1,0 +1,14 @@
+override_outputs = true
+
+[job]
+type = "DATASET_VERSION_CREATION"
+
+[auth]
+organization_name = "test-account"
+env = "STAGING"
+
+[inputs]
+output_dataset_version_name = "masked"
+
+[input.dataset_version]
+id = "019c9a68-5480-7690-b7e0-be023bbde367"
