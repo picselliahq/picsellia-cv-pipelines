@@ -18,7 +18,7 @@ from transformers import (
 from utils.steps_utils import (
     PicselliaLogger,
     build_datasets,
-    build_label_maps,
+    build_label_maps_from_coco,
     build_training_args,
     hf_collate,
     load_processor_and_model,
@@ -34,12 +34,15 @@ def train(
     """Train RT-DETR(v2) on COCO datasets and upload zipped weights."""
     ctx = Pipeline.get_active_context()
     hp = ctx.hyperparameters
-    id2label, label2id = build_label_maps(ds=picsellia_datasets["train"])
+    id2label, label2id = build_label_maps_from_coco(
+        picsellia_datasets["train"].coco_file_path
+    )
     processor, model = load_processor_and_model(
         hf_ckpt=hp.model_name,
         num_labels=len(id2label),
         id2label=id2label,
         label2id=label2id,
+        image_size=hp.image_size,
     )
     train_ds, val_ds = build_datasets(picsellia_datasets, processor)
     out_dir = os.path.join(picsellia_model.results_dir, picsellia_model.name)
@@ -76,7 +79,10 @@ def evaluate(
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model.to(device).eval()
     ds = picsellia_datasets["test"]
-    id2label, _ = build_label_maps(ds)
+    # Use the label space the model was actually trained with (baked into its config),
+    # not one rebuilt from the test set — test-set label ordering is not guaranteed to
+    # match the training categories.
+    id2label = {int(k): v for k, v in model.config.id2label.items()}
     predictions: list[PicselliaRectanglePrediction] = []
     for asset in ds.assets:
         pred = run_inference_on_asset(

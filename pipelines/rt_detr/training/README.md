@@ -53,7 +53,7 @@ Shorter training for rapid iteration.
 **What it does**: Number of complete passes through the training dataset.
 
 **Type**: Integer
-**Default**: `3`
+**Default**: `50`
 **Recommended range**: `10` to `100`
 
 **Example**:

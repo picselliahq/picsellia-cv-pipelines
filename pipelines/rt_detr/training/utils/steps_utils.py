@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import math
 import os
 import shutil
@@ -88,18 +89,42 @@ def hf_collate(batch: list[dict[str, Any]]) -> dict[str, Any]:
     return {"pixel_values": pixel_values, "labels": labels}
 
 
-def build_label_maps(ds: CocoDataset) -> tuple[dict[int, str], dict[str, int]]:
-    """Return id2label and label2id mappings from a CocoDataset labelmap."""
-    id2label = dict(enumerate(ds.labelmap.keys()))
-    label2id = {v: k for k, v in id2label.items()}
+def build_label_maps_from_coco(
+    coco_file_path: str,
+) -> tuple[dict[int, str], dict[str, int]]:
+    """Build id2label/label2id from a COCO file's ``categories``.
+
+    The model is trained on the raw ``category_id`` values taken from this exact COCO
+    file (the HF processor uses ``category_id`` directly as ``class_labels``), so the
+    label space MUST be derived from the same file's categories. Building it from a
+    separately fetched ``labelmap`` is unsafe: nothing guarantees that the labelmap
+    ordering matches the COCO category ids, which silently mislabels every class.
+    """
+    with open(coco_file_path) as f:
+        categories = json.load(f).get("categories", [])
+    id2label = {
+        int(c["id"]): c["name"] for c in sorted(categories, key=lambda c: c["id"])
+    }
+    if set(id2label) != set(range(len(id2label))):
+        raise ValueError(
+            f"Expected contiguous 0-indexed COCO category ids, got {sorted(id2label)}. "
+            "RT-DETR requires class labels in [0, num_labels)."
+        )
+    label2id = {name: idx for idx, name in id2label.items()}
     return id2label, label2id
 
 
 def load_processor_and_model(
-    hf_ckpt: str, num_labels: int, id2label: dict[int, str], label2id: dict[str, int]
+    hf_ckpt: str,
+    num_labels: int,
+    id2label: dict[int, str],
+    label2id: dict[str, int],
+    image_size: int = 640,
 ):
     """Instantiate processor and model for object detection with a custom label space."""
-    processor = AutoImageProcessor.from_pretrained(hf_ckpt)
+    processor = AutoImageProcessor.from_pretrained(
+        hf_ckpt, size={"height": image_size, "width": image_size}
+    )
     model = AutoModelForObjectDetection.from_pretrained(
         hf_ckpt,
         ignore_mismatched_sizes=True,
