@@ -1,0 +1,12 @@
+[project]
+name = "convert_videos_to_frames"
+version = "0.1.0"
+description = "Split annotated video dataset versions into individual frames, upload them to the datalake and create a new image dataset version with converted COCO annotations."
+requires-python = ">=3.10"
+
+dependencies = [
+    "picsellia-pipelines-cli",
+    "picsellia-cv-engine",
+    "opencv-python",
+]
+
