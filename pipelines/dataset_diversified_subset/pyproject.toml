@@ -1,0 +1,13 @@
+[project]
+name = "dataset_diversified_subset"
+version = "0.1.0"
+description = "Extracts a diverse, representative subset of a dataset version from its Visual Search embeddings. Supports two selection algorithms via the 'algorithm' input: 'fps' (Farthest Point Sampling) and 'kmeans' (K-means clustering)."
+requires-python = ">=3.10"
+
+dependencies = [
+    "picsellia-pipelines-cli",
+    "picsellia-cv-engine",
+    "numpy",
+    "scikit-learn",
+]
+

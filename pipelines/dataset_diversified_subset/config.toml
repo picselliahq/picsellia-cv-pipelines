@@ -1,0 +1,17 @@
+[metadata]
+name = "dataset_diversified_subset"
+version = "1.0"
+description = "Extracts a diverse, representative subset of a dataset version using the embeddings already computed by the platform's Visual Search. The 'algorithm' input selects how the subset is picked: 'fps' (Farthest Point Sampling, a greedy algorithm that maximizes the minimum distance between selected images) or 'kmeans' (K-means clustering, which groups images into clusters and keeps the one closest to each cluster centroid). The selected images are forked into a new dataset version."
+type = "DATASET_VERSION_CREATION"
+
+[execution]
+pipeline_script = "pipeline.py"
+requirements_file = "pyproject.toml"
+parameters_class = "utils/parameters.py:ProcessingParameters"
+inputs_class = "utils/inputs.py:ProcessingInputs"
+
+[docker]
+image_name = "picsellia/dataset_diversified_subset"
+image_tag = "1.0.0"
+cpu = "8"
+gpu = "0"
