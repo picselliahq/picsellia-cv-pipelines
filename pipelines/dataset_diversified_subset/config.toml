@@ -13,3 +13,5 @@ inputs_class = "utils/inputs.py:ProcessingInputs"
 [docker]
 image_name = "picsellia/dataset_diversified_subset"
 image_tag = "1.0.0"
+cpu = "8"
+gpu = "0"
