@@ -9,7 +9,7 @@ class ProcessingParameters(Parameters):
         super().__init__(log_data=log_data)
         self.embedder_key = self.extract_parameter(
             ["embedder_key"],
-            expected_type=Union[str, None],
+            expected_type=Union[str, None],  # noqa: UP007 - `X | None` breaks Parameters' optional detection here
             default=None,
         )
         self.with_annotations = self.extract_parameter(

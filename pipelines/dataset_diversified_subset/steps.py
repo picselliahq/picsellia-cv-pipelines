@@ -62,23 +62,23 @@ def select_diverse_subset(data_ids: list[str], vectors: np.ndarray) -> list[str]
     return [data_ids[i] for i in selected_indices]
 
 
-
 @step
 def create_subset_dataset_version(selected_data_ids: list[str]) -> DatasetVersion:
     """
     Fork the target dataset version, keeping only the selected assets, into a
-    new dataset version named after the 'target_version_name' input.
+    new dataset version named after the 'new_version_name' input.
     """
     context: PicselliaDatasetProcessingContext = Pipeline.get_active_context()
     parameters = context.processing_parameters
     dataset_version = context.target
 
-    target_version_name = context.inputs.get("target_version_name")
+    new_version_name = context.inputs.get("new_version_name")
 
     return fork_dataset_subset(
+        client=context.client,
         dataset_version=dataset_version,
         selected_data_ids=selected_data_ids,
-        new_version_name=target_version_name,
+        new_version_name=new_version_name,
         with_annotations=parameters.with_annotations,
         with_tags=parameters.with_tags,
     )
