@@ -1,0 +1,17 @@
+[metadata]
+name = "convert_videos_to_frames"
+version = "1.0"
+description = "Split annotated videos into individual frames, reupload them to the datalake and create a new image dataset version with converted COCO annotations."
+type = "DATASET_VERSION_CREATION"
+
+[execution]
+pipeline_script = "pipeline.py"
+requirements_file = "pyproject.toml"
+parameters_class = "utils/parameters.py:ProcessingParameters"
+inputs_class = "utils/inputs.py:ProcessingInputs"
+
+[docker]
+image_name = "picsellia/convert_videos_to_frames"
+image_tag = "1.0"
+cpu = 4
+gpu = 0
