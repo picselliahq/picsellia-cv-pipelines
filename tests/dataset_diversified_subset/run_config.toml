@@ -1,0 +1,19 @@
+override_outputs = true
+target_id = "0189df3b-3e0e-7977-847a-b152c539b4cd"
+
+[job]
+type = "DATASET_VERSION_CREATION"
+
+[inputs]
+new_version_name = "diversed"
+algorithm = "fps"
+n_samples = "50"
+
+[parameters]
+seed = 0
+with_annotations = true
+with_tags = true
+
+[auth]
+organization_name = "test-account"
+env = "STAGING"
