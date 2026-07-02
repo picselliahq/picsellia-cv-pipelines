@@ -1,5 +1,4 @@
 override_outputs = true
-target_id = "0189df3b-3e0e-7977-847a-b152c539b4cd"
 
 [job]
 type = "DATASET_VERSION_CREATION"
@@ -8,6 +7,9 @@ type = "DATASET_VERSION_CREATION"
 new_version_name = "diversed"
 algorithm = "fps"
 n_samples = "50"
+
+[input.dataset_version]
+id = "0189df3b-3e0e-7977-847a-b152c539b4cd"
 
 [parameters]
 seed = 0
