@@ -1,0 +1,11 @@
+[project]
+name = "split_video"
+version = "0.1.0"
+description = "Cut video dataset versions into shorter video segments of a fixed frame count, upload them to the datalake and create a new video dataset version, keeping any existing track annotations remapped onto the segments."
+requires-python = ">=3.10"
+
+dependencies = [
+    "picsellia-pipelines-cli",
+    "picsellia-cv-engine",
+    "opencv-python",
+]

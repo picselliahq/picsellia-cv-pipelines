@@ -1,0 +1,17 @@
+[metadata]
+name = "split_video"
+version = "1.0"
+description = "Cut video dataset versions into shorter video segments of a fixed frame count, reupload them to the datalake and create a new video dataset version, keeping any existing track annotations remapped onto the segments."
+type = "DATASET_VERSION_CREATION"
+
+[execution]
+pipeline_script = "pipeline.py"
+requirements_file = "pyproject.toml"
+parameters_class = "utils/parameters.py:ProcessingParameters"
+inputs_class = "utils/inputs.py:ProcessingInputs"
+
+[docker]
+image_name = "picsellia/split_video"
+image_tag = "1.0"
+cpu = 4
+gpu = 0
