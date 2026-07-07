@@ -1,0 +1,16 @@
+override_outputs = true
+
+[auth]
+organization_name = "test-account"
+env = "STAGING"
+
+[job]
+type = "DATASET_VERSION_CREATION"
+
+[inputs]
+output_dataset_version_name = "Video_sliced"
+datalake = "default"
+frames_per_segment = "50"
+
+[input.dataset_version]
+id = "019f21dd-6102-76f2-bafb-4658d00a5c31"
