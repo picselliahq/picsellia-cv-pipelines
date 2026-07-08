@@ -129,6 +129,8 @@ def upload_segments_and_create_dataset(
     if not version_name:
         raise ValueError("Input 'output_dataset_version_name' is required.")
 
+    print(f"input datalake: {context.inputs.get('datalake')}")
+
     datalake = context.client.get_datalake(id=context.inputs.get("datalake"))
     print(f"Using datalake '{datalake.name}' (id: {datalake.id}).")
 
