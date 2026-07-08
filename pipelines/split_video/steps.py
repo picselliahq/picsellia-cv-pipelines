@@ -57,7 +57,7 @@ def download_videos() -> tuple[list, str, dict[str, Any], dict[str, list[str]]]:
     video_tags: dict[str, list[str]] = {}
     for asset in video_assets:
         asset.download(target_path=videos_dir, force_replace=True)
-        video_tags[asset.filename] = [tag.name for tag in asset.get_tags()]
+        video_tags[asset.filename] = [tag.name for tag in asset.get_data_tags()]
     print(f"Downloaded {len(video_assets)} video(s) to '{videos_dir}'.")
 
     coco_dir = os.path.join(context.working_dir, "annotations", "input")
