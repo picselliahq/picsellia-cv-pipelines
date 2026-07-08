@@ -159,7 +159,9 @@ def upload_segments_and_create_dataset(
             custom_metadata=batch_metadata,
             wait_for_unprocessable_data=False,
         )
-        uploaded_data.wait_for_upload_done(blocking_time_increment=60.0, attempts=60)
+        batch_uploaded_data.wait_for_upload_done(
+            blocking_time_increment=60.0, attempts=60
+        )
         if uploaded_data is None:
             uploaded_data = batch_uploaded_data
         else:
