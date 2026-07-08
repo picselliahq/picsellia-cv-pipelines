@@ -8,7 +8,7 @@ This Picsellia pipeline downloads video assets from a dataset version, cuts each
 
 After running this pipeline, you'll have:
 - A new video dataset version containing all the video segments
-- Segments uploaded to the datalake with the tag `video_segment` and `source_video` custom metadata
+- Segments uploaded to the datalake with the tag `video_segment` and `source_video`/`source_video_tags` custom metadata
 - If the source videos had track annotations, they are preserved: each keyframe is reassigned to the segment that now contains it, with its frame index shifted to be relative to that segment. A track that spans a cut point is split into two independent tracks, one per segment.
 
 ---
@@ -60,7 +60,7 @@ This pipeline has no configurable parameters.
 The pipeline runs four steps in sequence, handling every VIDEO-type asset in the dataset version:
 
 ### Step 1 — `download_videos`
-Lists all assets in the input dataset version and filters for VIDEO-type assets. If specific asset IDs are selected in the processing job, only those assets are used. Downloads the video files locally, then exports their COCO annotations using the video COCO format (`export_video=True`), which includes track-based annotations with a `frame_id`/`track_id` per keyframe.
+Lists all assets in the input dataset version and filters for VIDEO-type assets. If specific asset IDs are selected in the processing job, only those assets are used. Downloads the video files locally, reads each video's tags (`asset.get_tags()`), then exports their COCO annotations using the video COCO format (`export_video=True`), which includes track-based annotations with a `frame_id`/`track_id` per keyframe.
 
 ### Step 2 — `split_videos`
 For every downloaded video, opens it with OpenCV (`cv2.VideoCapture`) and reads its FPS, width and height. Writes consecutive segments of `frames_per_segment` frames each with `cv2.VideoWriter`, named `{video_stem}_part_{index:03d}.mp4`. Each segment's absolute `[start_frame, end_frame)` range in its source video is tracked for annotation remapping. Videos are processed independently, so a dataset with several videos of different lengths produces a different number of segments per video.
@@ -68,7 +68,7 @@ For every downloaded video, opens it with OpenCV (`cv2.VideoCapture`) and reads 
 ### Step 3 — `upload_segments_and_create_dataset`
 Uploads all video segments (from every source video) to the selected datalake with:
 - Tag: `video_segment`
-- Custom metadata: `{"source_video": "<origin_video_filename>"}` per segment
+- Custom metadata: `{"source_video": "<origin_video_filename>", "source_video_tags": ["<tag_name>", ...]}` per segment
 
 Then creates a new dataset version on the same parent dataset and adds the uploaded segments to it.
 
@@ -109,9 +109,9 @@ Every uploaded segment carries:
 | Field | Value |
 |-------|-------|
 | Tag | `video_segment` |
-| Custom metadata | `{"source_video": "highway_cam.mp4"}` |
+| Custom metadata | `{"source_video": "highway_cam.mp4", "source_video_tags": ["night", "downtown"]}` |
 
-This allows filtering segments by origin video in the Picsellia datalake.
+This allows filtering segments by origin video, or by the tags carried over from the origin video, in the Picsellia datalake.
 
 ---
 

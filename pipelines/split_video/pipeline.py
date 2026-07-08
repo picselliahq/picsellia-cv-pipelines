@@ -30,9 +30,9 @@ context = create_processing_context_from_config(
     remove_logs_on_completion=False,
 )
 def split_video_pipeline():
-    video_assets, videos_dir, video_coco_data = download_videos()
+    video_assets, videos_dir, video_coco_data, video_tags = download_videos()
     segment_metadata = split_videos(video_assets, videos_dir)
-    new_dataset_version = upload_segments_and_create_dataset(segment_metadata)
+    new_dataset_version = upload_segments_and_create_dataset(segment_metadata, video_tags)
     upload_annotations(new_dataset_version, video_coco_data, segment_metadata)
 
 

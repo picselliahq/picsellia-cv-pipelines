@@ -5,7 +5,12 @@ from typing import Any
 
 from picsellia import DatasetVersion
 from picsellia.exceptions import ResourceConflictError
-from picsellia.types.enums import AnnotationFileType, DataType, ImportAnnotationMode, InferenceType
+from picsellia.types.enums import (
+    AnnotationFileType,
+    DataType,
+    ImportAnnotationMode,
+    InferenceType,
+)
 from picsellia_cv_engine.core.contexts import PicselliaDatasetProcessingContext
 from picsellia_cv_engine.decorators.pipeline_decorator import Pipeline
 from picsellia_cv_engine.decorators.step_decorator import step
@@ -15,17 +20,21 @@ from utils.processing import (
     split_videos_into_segments,
 )
 
+UPLOAD_BATCH_SIZE = 100
+
 
 @step
-def download_videos() -> tuple[list, str, dict[str, Any]]:
+def download_videos() -> tuple[list, str, dict[str, Any], dict[str, list[str]]]:
     """
     List video assets in the input dataset version, download them locally,
-    and export their COCO annotations in video format (if any).
+    export their COCO annotations in video format (if any), and read each
+    video's tags.
 
     Returns:
         video_assets: list of video Asset objects.
         videos_dir: local directory containing the downloaded video files.
         video_coco_data: parsed video COCO dict (with 'videos', 'images', 'annotations').
+        video_tags: {video_filename: [tag_name, ...]}.
     """
     context: PicselliaDatasetProcessingContext = Pipeline.get_active_context()
     dataset_version = context.target
@@ -45,8 +54,10 @@ def download_videos() -> tuple[list, str, dict[str, Any]]:
     videos_dir = os.path.join(context.working_dir, "videos")
     os.makedirs(videos_dir, exist_ok=True)
 
+    video_tags: dict[str, list[str]] = {}
     for asset in video_assets:
         asset.download(target_path=videos_dir, force_replace=True)
+        video_tags[asset.filename] = [tag.name for tag in asset.get_tags()]
     print(f"Downloaded {len(video_assets)} video(s) to '{videos_dir}'.")
 
     coco_dir = os.path.join(context.working_dir, "annotations", "input")
@@ -66,7 +77,7 @@ def download_videos() -> tuple[list, str, dict[str, Any]]:
         f"{len(video_coco_data.get('videos', []))} video(s), "
         f"{len(video_coco_data.get('annotations', []))} annotation(s)."
     )
-    return video_assets, videos_dir, video_coco_data
+    return video_assets, videos_dir, video_coco_data, video_tags
 
 
 @step
@@ -102,12 +113,13 @@ def split_videos(video_assets: list, videos_dir: str) -> dict[str, dict[str, Any
 @step
 def upload_segments_and_create_dataset(
     segment_metadata: dict[str, dict[str, Any]],
+    video_tags: dict[str, list[str]],
 ) -> DatasetVersion:
     """
-    Upload all video segments to the datalake (with tag 'video_segment' and
-    the origin video filename as 'source_video' custom metadata), create a
-    new dataset version on the same parent dataset, and add the uploaded
-    segments to it.
+    Upload all video segments to the datalake (with tag 'video_segment' and,
+    as custom metadata, the origin video filename as 'source_video' and its
+    tags as 'source_video_tags'), create a new dataset version on the same
+    parent dataset, and add the uploaded segments to it.
 
     Returns the newly created DatasetVersion.
     """
@@ -121,16 +133,37 @@ def upload_segments_and_create_dataset(
 
     segment_paths = list(segment_metadata.keys())
     segment_custom_metadata = [
-        {"source_video": segment_metadata[path]["source_video"]}
+        {
+            "source_video": segment_metadata[path]["source_video"],
+            "source_video_tags": video_tags.get(
+                segment_metadata[path]["source_video"], []
+            ),
+        }
         for path in segment_paths
     ]
 
     print(f"Uploading {len(segment_paths)} video segment(s) to the datalake…")
-    uploaded_data = datalake.upload_data(
-        filepaths=segment_paths,
-        tags=["video_segment"],
-        custom_metadata=segment_custom_metadata,
-    )
+    uploaded_data = None
+    for batch_start in range(0, len(segment_paths), UPLOAD_BATCH_SIZE):
+        batch_paths = segment_paths[batch_start : batch_start + UPLOAD_BATCH_SIZE]
+        batch_metadata = segment_custom_metadata[
+            batch_start : batch_start + UPLOAD_BATCH_SIZE
+        ]
+        print(
+            f"Uploading batch {batch_start // UPLOAD_BATCH_SIZE + 1} "
+            f"({len(batch_paths)} segment(s))…"
+        )
+        batch_uploaded_data = datalake.upload_data(
+            filepaths=batch_paths,
+            tags=["video_segment"],
+            custom_metadata=batch_metadata,
+            wait_for_unprocessable_data=False,
+        )
+        uploaded_data.wait_for_upload_done(blocking_time_increment=60.0, attempts=60)
+        if uploaded_data is None:
+            uploaded_data = batch_uploaded_data
+        else:
+            uploaded_data += batch_uploaded_data
 
     parent_dataset = context.client.get_dataset(name=context.target.name)
     try:
@@ -166,7 +199,9 @@ def upload_annotations(
     context: PicselliaDatasetProcessingContext = Pipeline.get_active_context()
 
     if not video_coco_data.get("annotations"):
-        print("No annotations on the source video(s) — dataset version created without annotations.")
+        print(
+            "No annotations on the source video(s) — dataset version created without annotations."
+        )
         return
 
     segment_video_coco = build_segment_video_coco(
@@ -175,11 +210,16 @@ def upload_annotations(
     )
     annotations = segment_video_coco.get("annotations", [])
     if not annotations:
-        print("No annotation could be remapped onto the produced segments — skipping import.")
+        print(
+            "No annotation could be remapped onto the produced segments — skipping import."
+        )
         return
 
     inference_type = detect_inference_type(segment_video_coco)
-    if inference_type not in (InferenceType.OBJECT_DETECTION, InferenceType.SEGMENTATION):
+    if inference_type not in (
+        InferenceType.OBJECT_DETECTION,
+        InferenceType.SEGMENTATION,
+    ):
         print(
             f"Annotation type '{inference_type}' is not supported for video-track "
             f"import — skipping annotation import."
