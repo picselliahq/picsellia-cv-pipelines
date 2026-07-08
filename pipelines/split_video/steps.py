@@ -131,7 +131,7 @@ def upload_segments_and_create_dataset(
 
     print(f"input datalake: {context.inputs.get('datalake')}")
 
-    datalake = context.client.get_datalake(id=context.inputs.get("datalake"))
+    datalake = context.client.get_datalake(id=context.inputs.get("datalake_id"))
     print(f"Using datalake '{datalake.name}' (id: {datalake.id}).")
 
     segment_paths = list(segment_metadata.keys())
