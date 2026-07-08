@@ -11,7 +11,7 @@ class ProcessingInputs(PipelineInputs):
             required=True,
         )
         self.define_input(
-            name="datalake",
+            name="datalake_id",
             input_type=ProcessingInputType.DATALAKE,
             required=True,
         )
