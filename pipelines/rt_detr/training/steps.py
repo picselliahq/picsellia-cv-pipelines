@@ -86,7 +86,7 @@ def evaluate(
     predictions: list[PicselliaRectanglePrediction] = []
     for asset in ds.assets:
         pred = run_inference_on_asset(
-            ds, asset, processor, model, device, id2label, conf_thresh=0.25
+            ds, asset, processor, model, device, id2label, conf_thresh=0.15
         )
         if pred:
             predictions.append(pred)
