@@ -12,6 +12,11 @@ dependencies = [
     "torchvision==0.24.1",
     "huggingface-hub>=1.2.4",
     "transformers>=5.0.0rc1",
+    # transformers' >=5.0.0rc1 lower bound puts uv into prerelease-resolution mode,
+    # which otherwise pulls tokenizers 0.23.0rc0 whose RobertaProcessing dropped the
+    # `cls` kwarg that CLIP's tokenizer still passes. Pin to stable within
+    # transformers' supported range (<=0.23.0).
+    "tokenizers>=0.22.0,<0.23.0",
     "shapely>=2.1.2",
     "scipy>=1.11.0",
     "pycocotools>=2.0.7",

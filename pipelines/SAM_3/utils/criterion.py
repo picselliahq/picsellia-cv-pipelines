@@ -106,7 +106,8 @@ class HungarianMatcher(nn.Module):
         )
         cost = torch.nan_to_num(cost, nan=0.0, posinf=1e4, neginf=-1e4)
 
-        query_idx, target_idx = linear_sum_assignment(cost.cpu().numpy())
+        # .float(): under bf16 autocast cost is bfloat16, which numpy cannot convert.
+        query_idx, target_idx = linear_sum_assignment(cost.float().cpu().numpy())
         return (
             torch.as_tensor(query_idx, dtype=torch.long, device=device),
             torch.as_tensor(target_idx, dtype=torch.long, device=device),

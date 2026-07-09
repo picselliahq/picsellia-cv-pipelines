@@ -1,10 +1,12 @@
 from __future__ import annotations
 
+import gc
 import math
 import os
 import shutil
 import sys
 import tempfile
+import time
 from pathlib import Path
 from typing import Any
 
@@ -35,6 +37,12 @@ def load_sam3_model_and_processor(device: str):
     from dotenv import load_dotenv
     from huggingface_hub import login
     from transformers import Sam3Model, Sam3Processor
+
+    # Reduce CUDA fragmentation so the caching allocator can reuse "reserved but
+    # unallocated" blocks instead of OOMing. Read at the first CUDA allocation
+    # (the .to(device) below); setdefault lets an explicit env override win.
+    # torch>=2.9 renamed PYTORCH_CUDA_ALLOC_CONF to PYTORCH_ALLOC_CONF.
+    os.environ.setdefault("PYTORCH_ALLOC_CONF", "expandable_segments:True")
 
     hf_cache_dir = os.environ.get("HF_HOME")
     if not hf_cache_dir:
@@ -148,7 +156,12 @@ def train_sam3(
     print(f"Training samples ((image, concept) pairs): {len(train_ds)}")
     print(f"Concepts: {train_ds.concept_names}")
 
-    workers = int(os.getenv("WORKERS", "2"))
+    # num_workers=0 by default: on Python 3.14 the multiprocessing start method
+    # is "forkserver", and spawning DataLoader workers while CUDA, a HF Rust
+    # tokenizer, and the Picsellia client are all live in the parent deadlocks
+    # (the pipeline "freezes" on the first batch). Loading in the main process
+    # avoids it. Opt back into workers with WORKERS=N once that's not a concern.
+    workers = int(os.getenv("WORKERS", "0"))
     train_loader = DataLoader(
         train_ds,
         batch_size=hp.batch_size,
@@ -156,6 +169,7 @@ def train_sam3(
         num_workers=workers,
         collate_fn=collate_fn,
         pin_memory=True,
+        persistent_workers=workers > 0,
         drop_last=False,
     )
 
@@ -174,38 +188,85 @@ def train_sam3(
 
     experiment.log_parameters(hp.to_dict())
 
+    # bf16 autocast roughly halves forward-activation memory, which is what lets
+    # SAM-3's 1008x1008 forward fit on a 15 GB GPU. bf16 keeps fp32's exponent
+    # range, so no GradScaler is needed; matmul-heavy ops run in bf16 while
+    # numerically sensitive ops (BCE, etc.) are auto-promoted to fp32 internally.
+    use_amp = device.startswith("cuda")
+
+    # On a T4 a single SAM-3 step is slow (its vision attention runs on SDPA's
+    # math kernel), so a 1661-sample epoch can take a long time with no output
+    # and look hung. Log per-step progress (flushed) so the run is visibly alive.
+    log_every = max(1, int(os.getenv("LOG_EVERY", "10")))
+    print(
+        f"Starting training: {len(train_loader)} batches/epoch x {hp.epochs} epochs",
+        flush=True,
+    )
+
     global_step = 0
-    for epoch in range(hp.epochs):
-        model.train()
-        epoch_losses: dict[str, float] = {}
-        num_batches = 0
-        optimizer.zero_grad()
+    try:
+        for epoch in range(hp.epochs):
+            model.train()
+            epoch_losses: dict[str, float] = {}
+            num_batches = 0
+            optimizer.zero_grad()
 
-        for i, batch in enumerate(train_loader):
-            outputs = _forward_sam3(model, batch, hp, device)
-            losses = criterion(outputs, batch["targets"])
-            loss = losses["loss"] / accum
-            loss.backward()
+            for i, batch in enumerate(train_loader):
+                step_t0 = time.time()
+                with torch.autocast(
+                    device_type="cuda", dtype=torch.bfloat16, enabled=use_amp
+                ):
+                    outputs = _forward_sam3(model, batch, hp, device)
+                    losses = criterion(outputs, batch["targets"])
+                loss = losses["loss"] / accum
+                loss.backward()
 
-            if (i + 1) % accum == 0 or (i + 1) == len(train_loader):
-                torch.nn.utils.clip_grad_norm_(trainable_params, hp.max_grad_norm)
-                optimizer.step()
-                scheduler.step()
-                optimizer.zero_grad()
-                global_step += 1
+                if (i + 1) % accum == 0 or (i + 1) == len(train_loader):
+                    torch.nn.utils.clip_grad_norm_(trainable_params, hp.max_grad_norm)
+                    optimizer.step()
+                    scheduler.step()
+                    optimizer.zero_grad()
+                    global_step += 1
 
-            for name, value in losses.items():
-                epoch_losses[name] = epoch_losses.get(name, 0.0) + float(value.detach())
-            num_batches += 1
+                if i % log_every == 0:
+                    mem = (
+                        torch.cuda.max_memory_allocated() / 1024**3
+                        if device.startswith("cuda")
+                        else 0.0
+                    )
+                    print(
+                        f"  epoch {epoch + 1}/{hp.epochs} "
+                        f"batch {i + 1}/{len(train_loader)} "
+                        f"loss={float(losses['loss']):.4f} "
+                        f"{time.time() - step_t0:.2f}s/it peak={mem:.1f}GiB",
+                        flush=True,
+                    )
 
-        avg = {k: v / max(1, num_batches) for k, v in epoch_losses.items()}
-        print(
-            f"Epoch {epoch + 1}/{hp.epochs} | "
-            + " | ".join(f"{k}={v:.4f}" for k, v in avg.items())
-        )
-        for name, value in avg.items():
-            _log_line(experiment, f"train/{name}", value)
-        _log_line(experiment, "learning_rate", scheduler.get_last_lr()[0])
+                for name, value in losses.items():
+                    epoch_losses[name] = (
+                        epoch_losses.get(name, 0.0) + float(value.detach())
+                    )
+                num_batches += 1
+
+            avg = {k: v / max(1, num_batches) for k, v in epoch_losses.items()}
+            print(
+                f"Epoch {epoch + 1}/{hp.epochs} | "
+                + " | ".join(f"{k}={v:.4f}" for k, v in avg.items())
+            )
+            for name, value in avg.items():
+                _log_line(experiment, f"train/{name}", value)
+            _log_line(experiment, "learning_rate", scheduler.get_last_lr()[0])
+    finally:
+        # Deterministically tear down the DataLoader's worker processes. A CUDA
+        # OOM (or any error) mid-iteration otherwise leaves workers orphaned, and
+        # they leak the POSIX semaphores / shared memory they allocated
+        # ("resource_tracker: leaked semaphore objects"). Dropping the loader and
+        # forcing a GC runs the iterator's __del__, which joins the workers and
+        # unlinks those resources before the process exits.
+        del train_loader
+        gc.collect()
+        if device.startswith("cuda"):
+            torch.cuda.empty_cache()
 
     return _save_and_upload(model, processor, experiment, output_dir)
 

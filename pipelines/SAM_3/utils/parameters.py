@@ -8,8 +8,12 @@ class TrainingHyperParameters(HyperParameters):
 
         # Core training loop
         self.epochs = self.extract_parameter(["epochs"], expected_type=int, default=10)
+        # SAM-3's forward activations (e.g. the relative-position-bias matrix)
+        # scale linearly with batch size and dominate memory; at 1008x1008 a single
+        # sample already fills a 15 GB T4. Default to 1 and use grad accumulation to
+        # raise the effective batch.
         self.batch_size = self.extract_parameter(
-            ["batch_size"], expected_type=int, default=2
+            ["batch_size"], expected_type=int, default=1
         )
         self.learning_rate = self.extract_parameter(
             ["learning_rate", "lr"], expected_type=float, default=1e-4

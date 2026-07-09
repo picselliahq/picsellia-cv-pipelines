@@ -8,8 +8,12 @@ import numpy as np
 import torch
 from pycocotools import mask as mask_utils
 from pycocotools.coco import COCO
-from PIL import Image
+from PIL import Image, ImageFile
 from torch.utils.data import Dataset
+
+# Tolerate truncated/partially-downloaded images instead of raising inside a
+# DataLoader worker (a worker exception kills training and can leak semaphores).
+ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 
 class Sam3SegmentationDataset(Dataset):
