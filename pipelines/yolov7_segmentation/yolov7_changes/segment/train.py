@@ -36,8 +36,7 @@ from tqdm import tqdm
 
 FILE = Path(__file__).resolve()
 ROOT = FILE.parents[1]  # YOLOv5 root directory
-if str(ROOT) not in sys.path:
-    sys.path.append(str(ROOT))  # add ROOT to PATH
+sys.path.insert(0, str(ROOT))  # ensure yolov7/seg is first in path
 ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 
 import warnings

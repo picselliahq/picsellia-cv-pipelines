@@ -71,12 +71,54 @@ class Yolov7ModelTrainer:
 
         project_dir = os.path.join(self.model.results_dir, "training")
         os.makedirs(project_dir, exist_ok=True)
+        _pipeline_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        # .../yolov7_segmentation/utils/model_training.py → .../yolov7_segmentation/
 
-        train_file_path = os.path.abspath(
-            "yolov7_segmentation/yolov7/seg/segment/train.py"
+        train_file_path = os.path.join(_pipeline_dir, "yolov7/seg/segment/train.py")
+        venv_python = os.path.join(_pipeline_dir, ".venv/bin/python")
+        # train_file_path = os.path.abspath(
+        #     "yolov7_segmentation/yolov7/seg/segment/train.py"
+        # )
+        #
+        # venv_python = os.path.abspath("yolov7_segmentation/.venv/bin/python")
+        print(f"cwd: {os.getcwd()}")
+        print(f"venv_python: {venv_python}")
+        print(f"train_file_path: {train_file_path}")
+        print(f"venv exists: {os.path.exists(venv_python)}")
+        print(f"train exists: {os.path.exists(train_file_path)}")
+        yolov7_seg_dir = os.path.join(_pipeline_dir, "yolov7/seg")
+        env = os.environ.copy()
+        # Set PYTHONPATH to only yolov7/seg — do NOT inherit existing PYTHONPATH.
+        # The pipeline's utils/ package (yolov7_segmentation/utils/) is a regular
+        # package that would shadow yolov7's utils/ namespace package if included,
+        # causing "No module named 'utils.dataloaders'".
+        env["PYTHONPATH"] = yolov7_seg_dir
+        print(f"PYTHONPATH: {env.get('PYTHONPATH', 'NOT SET')}")
+        utils_dir = os.path.join(_pipeline_dir, "yolov7/seg/utils")
+        if os.path.exists(utils_dir):
+            print(f"yolov7/seg/utils/ contents: {os.listdir(utils_dir)}")
+        else:
+            print("yolov7/seg/utils/ does NOT exist")
+
+        diag = subprocess.run(
+            [
+                venv_python, "-c",
+                "import sys, traceback\n"
+                f"sys.path.insert(0, '{yolov7_seg_dir}')\n"
+                "print('sys.path[:3]:', sys.path[:3])\n"
+                "try:\n"
+                "    import utils; print('utils.__path__:', list(utils.__path__))\n"
+                "except Exception: traceback.print_exc()\n"
+                "try:\n"
+                "    import utils.dataloaders; print('utils.dataloaders OK')\n"
+                "except Exception: traceback.print_exc()\n",
+            ],
+            env=env, capture_output=True, text=True,
         )
-
-        venv_python = os.path.abspath("yolov7_segmentation/.venv/bin/python")
+        print("--- import diag stdout ---")
+        print(diag.stdout)
+        print("--- import diag stderr ---")
+        print(diag.stderr)
 
         command = [
             venv_python,
@@ -111,7 +153,7 @@ class Yolov7ModelTrainer:
             str(experiment_id),
         ]
 
-        process = subprocess.Popen(command, stdout=None, stderr=None, text=True)
+        process = subprocess.Popen(command, stdout=None, stderr=None, text=True, env=env)
 
         return_code = process.wait()
         if return_code != 0:
