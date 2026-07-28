@@ -1,6 +1,7 @@
 import os
 import shutil
 import subprocess
+from pathlib import Path
 
 import cv2
 from picsellia_cv_engine.core.data import (
@@ -19,6 +20,8 @@ from utils.model import (
 from utils.parameters import (
     Yolov7HyperParameters,
 )
+
+PIPELINE_ROOT = Path(__file__).resolve().parent.parent
 
 
 class Yolov7SegmentationModelPredictor:
@@ -65,7 +68,7 @@ class Yolov7SegmentationModelPredictor:
         image_batches = self._prepare_batches(image_paths, hyperparameters.batch_size)
 
         for batch in image_batches:
-            tmp_dir = os.path.abspath("tmp")
+            tmp_dir = str(PIPELINE_ROOT / "tmp")
             os.makedirs(tmp_dir, exist_ok=True)
 
             for image_path in batch:
@@ -74,13 +77,13 @@ class Yolov7SegmentationModelPredictor:
             project_dir = os.path.join(self.model.results_dir, "inference")
             os.makedirs(project_dir, exist_ok=True)
 
-            detect_file_path = os.path.abspath(
-                "yolov7_segmentation/yolov7/seg/segment/predict.py"
+            detect_file_path = str(
+                PIPELINE_ROOT / "yolov7" / "seg" / "segment" / "predict.py"
             )
 
             print(f"Running inference with weights: {self.model.trained_weights_path}")
 
-            venv_python = os.path.abspath("yolov7_segmentation/.venv/bin/python")
+            venv_python = str(PIPELINE_ROOT / ".venv" / "bin" / "python")
 
             command = [
                 venv_python,
@@ -108,7 +111,15 @@ class Yolov7SegmentationModelPredictor:
 
             print(f"Running command: {' '.join(command)}")
 
-            process = subprocess.Popen(command, stdout=None, stderr=None, text=True)
+            env = os.environ.copy()
+            seg_dir = str(PIPELINE_ROOT / "yolov7" / "seg")
+            env["PYTHONPATH"] = os.pathsep.join(
+                filter(None, [seg_dir, env.get("PYTHONPATH")])
+            )
+
+            process = subprocess.Popen(
+                command, stdout=None, stderr=None, text=True, env=env
+            )
 
             return_code = process.wait()
             if return_code != 0:
