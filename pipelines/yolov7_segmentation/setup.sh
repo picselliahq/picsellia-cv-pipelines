@@ -2,11 +2,15 @@
 
 set -e  # Exit on error
 
-WORKDIR="./yolov7_segmentation"
+# Anchor to this script's own location so it works regardless of the caller's cwd
+# (Docker runs it from the parent dir, but it's also run directly from here for local dev).
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" && pwd)"
+
+WORKDIR="$SCRIPT_DIR"
 TARGET_REPO="$WORKDIR/yolov7"
 BRANCH="u7"
 REPO_URL="https://github.com/WongKinYiu/yolov7"
-CUSTOM_SEG_DIR="./yolov7_segmentation/yolov7_changes"
+CUSTOM_SEG_DIR="$SCRIPT_DIR/yolov7_changes"
 
 # 1. Cleanup previous clone if exists
 echo "🚧 Checking if $TARGET_REPO already exists..."

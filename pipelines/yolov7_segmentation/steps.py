@@ -132,7 +132,9 @@ def get_model(
         hyperparameters_name=hyperparameters_name,
         exported_weights_name=exported_weights_name,
     )
-    model.download_weights(destination_dir=os.path.join(context.working_dir, "model"))
+    model.download_model_weights(
+        destination_dir=os.path.join(context.working_dir, "model")
+    )
     model.set_hyperparameters_path(
         destination_path=os.path.join(context.working_dir, "model", "weights")
     )

@@ -1,5 +1,6 @@
 import os
 import subprocess
+from pathlib import Path
 
 from picsellia import Experiment
 
@@ -12,6 +13,8 @@ from .model import (
 from .parameters import (
     Yolov7HyperParameters,
 )
+
+PIPELINE_ROOT = Path(__file__).resolve().parent.parent
 
 
 def handle_training_failure(process: subprocess.Popen):
@@ -72,11 +75,9 @@ class Yolov7ModelTrainer:
         project_dir = os.path.join(self.model.results_dir, "training")
         os.makedirs(project_dir, exist_ok=True)
 
-        train_file_path = os.path.abspath(
-            "yolov7_segmentation/yolov7/seg/segment/train.py"
-        )
+        train_file_path = str(PIPELINE_ROOT / "yolov7" / "seg" / "segment" / "train.py")
 
-        venv_python = os.path.abspath("yolov7_segmentation/.venv/bin/python")
+        venv_python = str(PIPELINE_ROOT / ".venv" / "bin" / "python")
 
         command = [
             venv_python,
@@ -111,7 +112,15 @@ class Yolov7ModelTrainer:
             str(experiment_id),
         ]
 
-        process = subprocess.Popen(command, stdout=None, stderr=None, text=True)
+        env = os.environ.copy()
+        seg_dir = str(PIPELINE_ROOT / "yolov7" / "seg")
+        env["PYTHONPATH"] = os.pathsep.join(
+            filter(None, [seg_dir, env.get("PYTHONPATH")])
+        )
+
+        process = subprocess.Popen(
+            command, stdout=None, stderr=None, text=True, env=env
+        )
 
         return_code = process.wait()
         if return_code != 0:
