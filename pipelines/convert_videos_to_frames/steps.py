@@ -112,7 +112,7 @@ def upload_frames_and_create_dataset(
     if not version_name:
         raise ValueError("Input 'output_dataset_version_name' is required.")
 
-    datalake = context.client.get_datalake(name=context.inputs.get("datalake"))
+    datalake = context.client.get_datalake_by_id(name=context.inputs.get("datalake"))
 
     frame_images = frames_coco.get("images", [])
 
