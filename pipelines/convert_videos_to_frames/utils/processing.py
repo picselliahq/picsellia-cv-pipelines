@@ -62,13 +62,21 @@ def extract_frames_and_build_coco(
     # old image_id -> video_id, since annotations only carry image_id, not
     # video_id, and we need to know which video's scale factor to apply.
     old_image_id_to_video_id: dict[int, int] = {}
+    video_id_to_frame_ids: dict[int, list[int]] = {}
     for img in video_coco_data.get("images", []):
         vid = img.get("video_id")
         fid = img.get("frame_id")
         if vid is not None and fid is not None:
             annotated_key_to_old_image_id[(vid, fid)] = img["id"]
+            video_id_to_frame_ids.setdefault(vid, []).append(fid)
         if vid is not None:
             old_image_id_to_video_id[img["id"]] = vid
+
+    for vid, frame_ids in video_id_to_frame_ids.items():
+        print(
+            f"[dims] video_id={vid}: {len(frame_ids)} annotated frame(s), "
+            f"frame_id range=[{min(frame_ids)}, {max(frame_ids)}]"
+        )
 
     frames_coco: dict[str, Any] = {
         "images": [],
@@ -91,6 +99,11 @@ def extract_frames_and_build_coco(
         cap = cv2.VideoCapture(video_path)
         if not cap.isOpened():
             raise RuntimeError(f"Cannot open video: {video_path}")
+        print(
+            f"[dims] video '{video_filename}' (video_id={vid_id}) opencv metadata: "
+            f"fps={cap.get(cv2.CAP_PROP_FPS):.3f}, "
+            f"reported_frame_count={cap.get(cv2.CAP_PROP_FRAME_COUNT):.0f}"
+        )
 
         frame_idx = 0
         while True:
@@ -134,6 +147,13 @@ def extract_frames_and_build_coco(
 
         cap.release()
         print(f"Extracted {frame_idx} frames from '{video_filename}'.")
+        annotated_frame_ids = video_id_to_frame_ids.get(vid_id, [])
+        if annotated_frame_ids and max(annotated_frame_ids) >= frame_idx:
+            print(
+                f"[dims] MISMATCH: video_id={vid_id} has annotated frame_id up to "
+                f"{max(annotated_frame_ids)} but only {frame_idx} frame(s) were "
+                f"decoded — frame_id/frame_idx are out of sync for this video."
+            )
 
     # Convert video track annotations to standard per-frame COCO annotations,
     # rescaling coordinates if the actual decoded frame size differs from the
