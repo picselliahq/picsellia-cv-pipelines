@@ -62,6 +62,7 @@ def extract_frames_and_build_coco(
     # old image_id -> video_id, since annotations only carry image_id, not
     # video_id, and we need to know which video's scale factor to apply.
     old_image_id_to_video_id: dict[int, int] = {}
+    old_image_id_to_frame_id: dict[int, int] = {}
     video_id_to_frame_ids: dict[int, list[int]] = {}
     for img in video_coco_data.get("images", []):
         vid = img.get("video_id")
@@ -71,6 +72,12 @@ def extract_frames_and_build_coco(
             video_id_to_frame_ids.setdefault(vid, []).append(fid)
         if vid is not None:
             old_image_id_to_video_id[img["id"]] = vid
+        if fid is not None:
+            old_image_id_to_frame_id[img["id"]] = fid
+
+    category_id_to_name = {
+        c["id"]: c.get("name") for c in video_coco_data.get("categories", [])
+    }
 
     for vid, frame_ids in video_id_to_frame_ids.items():
         print(
@@ -160,6 +167,11 @@ def extract_frames_and_build_coco(
     # video asset's recorded dimensions (e.g. rotation metadata applied by
     # Picsellia's ingestion but ignored by OpenCV's decoder).
     new_ann_id = 0
+    # Log only the first occurrence of each (video_id, category) pair — these
+    # are static zones so one sample per zone per video is enough to compare
+    # against the source video's annotation UI, and it spreads the logging
+    # across every video instead of only the first one encountered.
+    logged_video_categories: set[tuple[int | None, int]] = set()
     for ann in video_coco_data.get("annotations", []):
         old_img_id = ann.get("image_id")
         if old_img_id not in old_image_id_to_new:
@@ -167,19 +179,24 @@ def extract_frames_and_build_coco(
 
         new_img_id = old_image_id_to_new[old_img_id]
         vid_id = old_image_id_to_video_id.get(old_img_id)
+        frame_id = old_image_id_to_frame_id.get(old_img_id)
         scale_x, scale_y = video_id_to_scale.get(vid_id, (1.0, 1.0))
 
         bbox = ann.get("bbox", [])
-        if new_ann_id < 5:
+        log_key = (vid_id, ann["category_id"])
+        should_log = log_key not in logged_video_categories
+        if should_log:
+            logged_video_categories.add(log_key)
+            category_name = category_id_to_name.get(ann["category_id"])
             print(
-                f"[dims] annotation {ann.get('id')} (old_image_id={old_img_id}, "
-                f"video_id={vid_id}): bbox_before={bbox}, "
-                f"scale_x={scale_x:.4f}, scale_y={scale_y:.4f}"
+                f"[dims] annotation {ann.get('id')} label='{category_name}' "
+                f"video_id={vid_id} frame_id={frame_id} old_image_id={old_img_id}: "
+                f"bbox_before={bbox}, scale_x={scale_x:.4f}, scale_y={scale_y:.4f}"
             )
         if bbox and (scale_x != 1.0 or scale_y != 1.0):
             x, y, bw, bh = bbox
             bbox = [x * scale_x, y * scale_y, bw * scale_x, bh * scale_y]
-        if new_ann_id < 5:
+        if should_log:
             print(f"[dims] annotation {ann.get('id')}: bbox_after={bbox}")
 
         area = ann.get("area", 0.0) * scale_x * scale_y
