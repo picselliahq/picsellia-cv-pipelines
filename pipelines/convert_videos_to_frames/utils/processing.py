@@ -6,6 +6,24 @@ import cv2
 from picsellia.types.enums import InferenceType
 
 
+def _scale_segmentation(
+    segmentation: Any, scale_x: float, scale_y: float
+) -> Any:
+    """Rescale COCO polygon segmentation coordinates. RLE (dict) segmentations
+    are returned unchanged since they encode a mask at a fixed resolution."""
+    if scale_x == 1.0 and scale_y == 1.0:
+        return segmentation
+    if isinstance(segmentation, dict):
+        return segmentation
+    return [
+        [
+            coord * (scale_x if i % 2 == 0 else scale_y)
+            for i, coord in enumerate(polygon)
+        ]
+        for polygon in segmentation
+    ]
+
+
 def extract_frames_and_build_coco(
     video_coco_data: dict[str, Any],
     videos_dir: str,
@@ -28,11 +46,14 @@ def extract_frames_and_build_coco(
 
     # (video_id, frame_id) -> old image_id in the video COCO
     annotated_key_to_old_image_id: dict[tuple[int, int], int] = {}
+    # old image_id -> (width, height) as recorded at annotation time
+    old_image_dims: dict[int, tuple[float, float]] = {}
     for img in video_coco_data.get("images", []):
         vid = img.get("video_id")
         fid = img.get("frame_id")
         if vid is not None and fid is not None:
             annotated_key_to_old_image_id[(vid, fid)] = img["id"]
+        old_image_dims[img["id"]] = (img.get("width"), img.get("height"))
 
     frames_coco: dict[str, Any] = {
         "images": [],
@@ -41,6 +62,7 @@ def extract_frames_and_build_coco(
     }
     frame_to_video: dict[str, str] = {}
     old_image_id_to_new: dict[int, int] = {}
+    new_image_dims: dict[int, tuple[int, int]] = {}
     new_image_id = 0
 
     for vid_id, video_filename in video_id_to_filename.items():
@@ -73,6 +95,7 @@ def extract_frames_and_build_coco(
                 }
             )
             frame_to_video[frame_filename] = video_filename
+            new_image_dims[new_image_id] = (w, h)
 
             key = (vid_id, frame_idx)
             if key in annotated_key_to_old_image_id:
@@ -84,24 +107,40 @@ def extract_frames_and_build_coco(
         cap.release()
         print(f"Extracted {frame_idx} frames from '{video_filename}'.")
 
-    # Convert video track annotations to standard per-frame COCO annotations
+    # Convert video track annotations to standard per-frame COCO annotations,
+    # rescaling coordinates if the actual decoded frame size differs from the
+    # image size that was used at annotation time (e.g. video rotation metadata
+    # applied by the annotation platform but ignored by OpenCV's decoder).
     new_ann_id = 0
     for ann in video_coco_data.get("annotations", []):
         old_img_id = ann.get("image_id")
         if old_img_id not in old_image_id_to_new:
             continue
 
+        new_img_id = old_image_id_to_new[old_img_id]
+        old_w, old_h = old_image_dims.get(old_img_id, (None, None))
+        new_w, new_h = new_image_dims[new_img_id]
+        scale_x = new_w / old_w if old_w else 1.0
+        scale_y = new_h / old_h if old_h else 1.0
+
+        bbox = ann.get("bbox", [])
+        if bbox and (scale_x != 1.0 or scale_y != 1.0):
+            x, y, bw, bh = bbox
+            bbox = [x * scale_x, y * scale_y, bw * scale_x, bh * scale_y]
+
+        area = ann.get("area", 0.0) * scale_x * scale_y
+
         new_ann: dict[str, Any] = {
             "id": new_ann_id,
-            "image_id": old_image_id_to_new[old_img_id],
+            "image_id": new_img_id,
             "category_id": ann["category_id"],
-            "bbox": ann.get("bbox", []),
-            "area": ann.get("area", 0.0),
+            "bbox": bbox,
+            "area": area,
             "iscrowd": ann.get("iscrowd", 0),
         }
         seg = ann.get("segmentation")
         if seg:
-            new_ann["segmentation"] = seg
+            new_ann["segmentation"] = _scale_segmentation(seg, scale_x, scale_y)
 
         frames_coco["annotations"].append(new_ann)
         new_ann_id += 1
