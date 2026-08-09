@@ -43,6 +43,10 @@ def download_videos() -> tuple[list, str, dict[str, Any]]:
 
     for asset in video_assets:
         asset.download(target_path=videos_dir, force_replace=True)
+        print(
+            f"[dims] asset '{asset.filename}' (id={asset.id}): "
+            f"width={asset.width}, height={asset.height}"
+        )
     print(f"Downloaded {len(video_assets)} video(s) to '{videos_dir}'.")
 
     coco_dir = os.path.join(context.working_dir, "annotations", "input")
@@ -63,6 +67,17 @@ def download_videos() -> tuple[list, str, dict[str, Any]]:
         f"{len(video_coco_data.get('images', []))} annotated frame(s), "
         f"{len(video_coco_data.get('annotations', []))} annotation(s)."
     )
+    for img in video_coco_data.get("images", []):
+        print(
+            f"[dims] video COCO 'images' entry {img.get('id')} "
+            f"(video_id={img.get('video_id')}, frame_id={img.get('frame_id')}): "
+            f"width={img.get('width')}, height={img.get('height')}"
+        )
+    if video_coco_data.get("annotations"):
+        print(
+            f"[dims] sample annotation keys: "
+            f"{sorted(video_coco_data['annotations'][0].keys())}"
+        )
     return video_assets, videos_dir, video_coco_data
 
 
