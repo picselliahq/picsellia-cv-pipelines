@@ -180,6 +180,7 @@ def upload_annotations(
         file_path=coco_path,
         use_id=False,
         mode=ImportAnnotationMode.REPLACE,
+        fail_on_asset_not_found=False,
     )
     print(
         f"Imported {len(annotations)} annotation(s) into "
