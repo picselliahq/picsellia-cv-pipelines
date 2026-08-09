@@ -26,6 +26,7 @@ def _scale_segmentation(
 
 def extract_frames_and_build_coco(
     video_coco_data: dict[str, Any],
+    video_assets: list,
     videos_dir: str,
     frames_dir: str,
 ) -> tuple[dict[str, Any], dict[str, str]]:
@@ -44,16 +45,25 @@ def extract_frames_and_build_coco(
         v["id"]: v["file_name"] for v in video_coco_data.get("videos", [])
     }
 
+    # Picsellia's video COCO export never sets width/height on "images"
+    # entries, so the dimensions the annotations were drawn against have to
+    # come from the video asset's own metadata instead (which can differ
+    # from what OpenCV actually decodes).
+    filename_to_asset_dims: dict[str, tuple[int | None, int | None]] = {
+        asset.filename: (asset.width, asset.height) for asset in video_assets
+    }
+    video_id_to_annotated_dims: dict[int, tuple[int | None, int | None]] = {
+        vid: filename_to_asset_dims.get(filename)
+        for vid, filename in video_id_to_filename.items()
+    }
+
     # (video_id, frame_id) -> old image_id in the video COCO
     annotated_key_to_old_image_id: dict[tuple[int, int], int] = {}
-    # old image_id -> (width, height) as recorded at annotation time
-    old_image_dims: dict[int, tuple[float, float]] = {}
     for img in video_coco_data.get("images", []):
         vid = img.get("video_id")
         fid = img.get("frame_id")
         if vid is not None and fid is not None:
             annotated_key_to_old_image_id[(vid, fid)] = img["id"]
-        old_image_dims[img["id"]] = (img.get("width"), img.get("height"))
 
     frames_coco: dict[str, Any] = {
         "images": [],
@@ -62,7 +72,8 @@ def extract_frames_and_build_coco(
     }
     frame_to_video: dict[str, str] = {}
     old_image_id_to_new: dict[int, int] = {}
-    new_image_dims: dict[int, tuple[int, int]] = {}
+    # video_id -> (scale_x, scale_y) between annotated and decoded dimensions
+    video_id_to_scale: dict[int, tuple[float, float]] = {}
     new_image_id = 0
 
     for vid_id, video_filename in video_id_to_filename.items():
@@ -86,6 +97,14 @@ def extract_frames_and_build_coco(
             cv2.imwrite(os.path.join(frames_dir, frame_filename), frame)
 
             h, w = frame.shape[:2]
+            if vid_id not in video_id_to_scale:
+                annotated_w, annotated_h = video_id_to_annotated_dims.get(
+                    vid_id, (None, None)
+                )
+                video_id_to_scale[vid_id] = (
+                    w / annotated_w if annotated_w else 1.0,
+                    h / annotated_h if annotated_h else 1.0,
+                )
             frames_coco["images"].append(
                 {
                     "id": new_image_id,
@@ -95,7 +114,6 @@ def extract_frames_and_build_coco(
                 }
             )
             frame_to_video[frame_filename] = video_filename
-            new_image_dims[new_image_id] = (w, h)
 
             key = (vid_id, frame_idx)
             if key in annotated_key_to_old_image_id:
@@ -109,8 +127,8 @@ def extract_frames_and_build_coco(
 
     # Convert video track annotations to standard per-frame COCO annotations,
     # rescaling coordinates if the actual decoded frame size differs from the
-    # image size that was used at annotation time (e.g. video rotation metadata
-    # applied by the annotation platform but ignored by OpenCV's decoder).
+    # video asset's recorded dimensions (e.g. rotation metadata applied by
+    # Picsellia's ingestion but ignored by OpenCV's decoder).
     new_ann_id = 0
     for ann in video_coco_data.get("annotations", []):
         old_img_id = ann.get("image_id")
@@ -118,10 +136,7 @@ def extract_frames_and_build_coco(
             continue
 
         new_img_id = old_image_id_to_new[old_img_id]
-        old_w, old_h = old_image_dims.get(old_img_id, (None, None))
-        new_w, new_h = new_image_dims[new_img_id]
-        scale_x = new_w / old_w if old_w else 1.0
-        scale_y = new_h / old_h if old_h else 1.0
+        scale_x, scale_y = video_id_to_scale.get(ann.get("video_id"), (1.0, 1.0))
 
         bbox = ann.get("bbox", [])
         if bbox and (scale_x != 1.0 or scale_y != 1.0):
