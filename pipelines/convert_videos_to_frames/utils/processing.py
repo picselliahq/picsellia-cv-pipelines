@@ -59,11 +59,16 @@ def extract_frames_and_build_coco(
 
     # (video_id, frame_id) -> old image_id in the video COCO
     annotated_key_to_old_image_id: dict[tuple[int, int], int] = {}
+    # old image_id -> video_id, since annotations only carry image_id, not
+    # video_id, and we need to know which video's scale factor to apply.
+    old_image_id_to_video_id: dict[int, int] = {}
     for img in video_coco_data.get("images", []):
         vid = img.get("video_id")
         fid = img.get("frame_id")
         if vid is not None and fid is not None:
             annotated_key_to_old_image_id[(vid, fid)] = img["id"]
+        if vid is not None:
+            old_image_id_to_video_id[img["id"]] = vid
 
     frames_coco: dict[str, Any] = {
         "images": [],
@@ -101,9 +106,14 @@ def extract_frames_and_build_coco(
                 annotated_w, annotated_h = video_id_to_annotated_dims.get(
                     vid_id, (None, None)
                 )
-                video_id_to_scale[vid_id] = (
-                    w / annotated_w if annotated_w else 1.0,
-                    h / annotated_h if annotated_h else 1.0,
+                scale_x = w / annotated_w if annotated_w else 1.0
+                scale_y = h / annotated_h if annotated_h else 1.0
+                video_id_to_scale[vid_id] = (scale_x, scale_y)
+                print(
+                    f"[dims] video '{video_filename}' (video_id={vid_id}): "
+                    f"asset metadata={annotated_w}x{annotated_h}, "
+                    f"opencv decoded frame={w}x{h}, "
+                    f"scale_x={scale_x:.4f}, scale_y={scale_y:.4f}"
                 )
             frames_coco["images"].append(
                 {
@@ -136,12 +146,21 @@ def extract_frames_and_build_coco(
             continue
 
         new_img_id = old_image_id_to_new[old_img_id]
-        scale_x, scale_y = video_id_to_scale.get(ann.get("video_id"), (1.0, 1.0))
+        vid_id = old_image_id_to_video_id.get(old_img_id)
+        scale_x, scale_y = video_id_to_scale.get(vid_id, (1.0, 1.0))
 
         bbox = ann.get("bbox", [])
+        if new_ann_id < 5:
+            print(
+                f"[dims] annotation {ann.get('id')} (old_image_id={old_img_id}, "
+                f"video_id={vid_id}): bbox_before={bbox}, "
+                f"scale_x={scale_x:.4f}, scale_y={scale_y:.4f}"
+            )
         if bbox and (scale_x != 1.0 or scale_y != 1.0):
             x, y, bw, bh = bbox
             bbox = [x * scale_x, y * scale_y, bw * scale_x, bh * scale_y]
+        if new_ann_id < 5:
+            print(f"[dims] annotation {ann.get('id')}: bbox_after={bbox}")
 
         area = ann.get("area", 0.0) * scale_x * scale_y
 
