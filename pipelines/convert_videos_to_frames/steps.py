@@ -86,6 +86,7 @@ def extract_frames(
 
     frames_coco, frame_to_video = extract_frames_and_build_coco(
         video_coco_data=video_coco_data,
+        video_assets=video_assets,
         videos_dir=videos_dir,
         frames_dir=frames_dir,
     )
