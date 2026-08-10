@@ -26,9 +26,9 @@ context = create_processing_context_from_config(
     remove_logs_on_completion=False,
 )
 def convert_videos_to_frames_pipeline():
-    video_assets, videos_dir, video_coco_data = download_videos()
+    _video_assets, videos_dir, video_coco_data = download_videos()
     frames_dir, frames_coco, frame_to_video = extract_frames(
-        video_assets, videos_dir, video_coco_data
+        videos_dir, video_coco_data
     )
     new_dataset_version = upload_frames_and_create_dataset(
         frames_dir, frames_coco, frame_to_video

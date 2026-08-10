@@ -26,14 +26,21 @@ def _scale_segmentation(
 
 def extract_frames_and_build_coco(
     video_coco_data: dict[str, Any],
-    video_assets: list,
     videos_dir: str,
     frames_dir: str,
+    annotation_canvas_width: int,
+    annotation_canvas_height: int,
 ) -> tuple[dict[str, Any], dict[str, str]]:
     """
     Extract every frame from each video referenced in `video_coco_data`.
     Build a standard COCO file where every frame is an image entry, and
     video track annotations are converted to per-frame image annotations.
+
+    Picsellia's video annotation tool resizes videos to a fixed canvas
+    (`annotation_canvas_width` x `annotation_canvas_height`) before display,
+    but its COCO export does not rescale shape coordinates back to the
+    original video resolution — so annotation coordinates must be rescaled
+    here, from that fixed annotation canvas to the actual decoded frame size.
 
     Returns:
         frames_coco: standard COCO dict ready for import.
@@ -43,18 +50,6 @@ def extract_frames_and_build_coco(
 
     video_id_to_filename: dict[int, str] = {
         v["id"]: v["file_name"] for v in video_coco_data.get("videos", [])
-    }
-
-    # Picsellia's video COCO export never sets width/height on "images"
-    # entries, so the dimensions the annotations were drawn against have to
-    # come from the video asset's own metadata instead (which can differ
-    # from what OpenCV actually decodes).
-    filename_to_asset_dims: dict[str, tuple[int | None, int | None]] = {
-        asset.filename: (asset.width, asset.height) for asset in video_assets
-    }
-    video_id_to_annotated_dims: dict[int, tuple[int | None, int | None]] = {
-        vid: filename_to_asset_dims.get(filename)
-        for vid, filename in video_id_to_filename.items()
     }
 
     # (video_id, frame_id) -> old image_id in the video COCO
@@ -123,15 +118,12 @@ def extract_frames_and_build_coco(
 
             h, w = frame.shape[:2]
             if vid_id not in video_id_to_scale:
-                annotated_w, annotated_h = video_id_to_annotated_dims.get(
-                    vid_id, (None, None)
-                )
-                scale_x = w / annotated_w if annotated_w else 1.0
-                scale_y = h / annotated_h if annotated_h else 1.0
+                scale_x = w / annotation_canvas_width
+                scale_y = h / annotation_canvas_height
                 video_id_to_scale[vid_id] = (scale_x, scale_y)
                 print(
                     f"[dims] video '{video_filename}' (video_id={vid_id}): "
-                    f"asset metadata={annotated_w}x{annotated_h}, "
+                    f"annotation canvas={annotation_canvas_width}x{annotation_canvas_height}, "
                     f"opencv decoded frame={w}x{h}, "
                     f"scale_x={scale_x:.4f}, scale_y={scale_y:.4f}"
                 )
@@ -163,9 +155,8 @@ def extract_frames_and_build_coco(
             )
 
     # Convert video track annotations to standard per-frame COCO annotations,
-    # rescaling coordinates if the actual decoded frame size differs from the
-    # video asset's recorded dimensions (e.g. rotation metadata applied by
-    # Picsellia's ingestion but ignored by OpenCV's decoder).
+    # rescaling coordinates from the fixed annotation canvas to the actual
+    # decoded frame size.
     new_ann_id = 0
     # Log only the first occurrence of each (video_id, category) pair — these
     # are static zones so one sample per zone per video is enough to compare

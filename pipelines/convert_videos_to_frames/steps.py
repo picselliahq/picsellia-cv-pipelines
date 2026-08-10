@@ -83,13 +83,14 @@ def download_videos() -> tuple[list, str, dict[str, Any]]:
 
 @step
 def extract_frames(
-    video_assets: list,
     videos_dir: str,
     video_coco_data: dict[str, Any],
 ) -> tuple[str, dict[str, Any], dict[str, str]]:
     """
     Extract every frame from each downloaded video using OpenCV and build a
-    standard image COCO file (track annotations converted to per-frame ones).
+    standard image COCO file (track annotations converted to per-frame ones,
+    with coordinates rescaled from Picsellia's annotation canvas to the
+    actual decoded frame size).
 
     Returns:
         frames_dir: directory containing the extracted JPEG frames.
@@ -97,13 +98,15 @@ def extract_frames(
         frame_to_video: {frame_filename: origin_video_filename}.
     """
     context: PicselliaDatasetProcessingContext = Pipeline.get_active_context()
+    parameters = context.processing_parameters
     frames_dir = os.path.join(context.working_dir, "frames")
 
     frames_coco, frame_to_video = extract_frames_and_build_coco(
         video_coco_data=video_coco_data,
-        video_assets=video_assets,
         videos_dir=videos_dir,
         frames_dir=frames_dir,
+        annotation_canvas_width=parameters.annotation_canvas_width,
+        annotation_canvas_height=parameters.annotation_canvas_height,
     )
     return frames_dir, frames_coco, frame_to_video
 
