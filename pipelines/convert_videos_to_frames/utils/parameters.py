@@ -9,8 +9,14 @@ class ProcessingParameters(Parameters):
         # canvas before display, but its COCO export does not rescale shape
         # coordinates back to the original video resolution.
         self.annotation_canvas_width = self.extract_parameter(
-            keys=["annotation_canvas_width"], expected_type=int, default=2048
+            keys=["annotation_canvas_width"],
+            expected_type=int,
+            default=2048,
+            range_value=(1, 100_000),
         )
         self.annotation_canvas_height = self.extract_parameter(
-            keys=["annotation_canvas_height"], expected_type=int, default=1150
+            keys=["annotation_canvas_height"],
+            expected_type=int,
+            default=1150,
+            range_value=(1, 100_000),
         )
