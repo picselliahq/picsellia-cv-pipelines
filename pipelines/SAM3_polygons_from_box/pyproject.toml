@@ -1,0 +1,25 @@
+[project]
+name = "SAM3_polygons_from_box"
+version = "0.1.0"
+description = "Picsellia processing pipeline"
+requires-python = ">=3.14"
+
+dependencies = [
+    "picsellia-pipelines-cli",
+    "picsellia-cv-engine",
+    "opencv-python",
+    "torch==2.9.1",
+    "torchvision==0.24.1",
+    "huggingface-hub>=1.2.4",
+    "transformers>=5.0.0rc1",
+    "shapely>=2.1.2",
+]
+
+[tool.uv.sources]
+torch = { index = "pytorch-cu126" }
+torchvision = { index = "pytorch-cu126" }
+
+[[tool.uv.index]]
+name = "pytorch-cu126"
+url = "https://download.pytorch.org/whl/cu126"
+explicit = true
