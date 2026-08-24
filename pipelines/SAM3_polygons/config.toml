@@ -1,7 +1,7 @@
 [metadata]
 name = "SAM3_polygons"
 version = "1.0.7"
-description = "This Dataset Processing provides polygons pre-labeling with SAM3"
+description = "This Dataset Processing provides polygons pre-labeling with SAM3. The annotation_mode parameter controls how new annotations interact with existing ones on an asset: 'keep' (do nothing if annotations already exist), 'replace' (delete existing annotations and overwrite them), or 'concatenate' (add new annotations alongside existing ones)."
 type = "PRE_ANNOTATION"
 
 [execution]

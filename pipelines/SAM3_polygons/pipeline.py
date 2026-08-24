@@ -46,8 +46,6 @@ def sam3_labeling_pipeline():
     - mask_threshold: Mask confidence threshold (default: 0.5)
 
     Optional parameters:
-    - box_prompt: Bounding box [x1, y1, x2, y2] to constrain segmentation
-    - label_name: Fallback category name when using box_prompt only (default: "object")
     - min_area: Minimum mask area in pixels (default: 50.0)
     - max_overlap_ratio: Maximum overlap ratio for same-class deduplication (default: 0.3)
 
