@@ -60,5 +60,5 @@ class ProcessingParameters(Parameters):
         # new ones: "keep" (do nothing), "replace" (delete and overwrite) or
         # "concatenate" (add new shapes on top of existing ones).
         self.annotation_mode = self.extract_parameter(
-            ["annotation_mode"], expected_type=str, default="keep"
+            ["annotation_mode"], expected_type=str, default="concatenate"
         )

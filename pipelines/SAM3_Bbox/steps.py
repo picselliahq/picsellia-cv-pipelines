@@ -112,17 +112,15 @@ def process(
     context: PicselliaDatasetProcessingContext = Pipeline.get_active_context()
     parameters = context.processing_parameters
     text_prompt = context.inputs.get("text_prompt")
-    label_name = context.inputs.get("label_name")
 
-    if text_prompt is None and parameters.to_dict().get("box_prompt") is None:
+    if not text_prompt:
         raise ValueError(
-            "❌ At least one of 'text_prompt' or 'box_prompt' must be provided in processing parameters.\n"
-            "Example parameters:\n"
+            "❌ 'text_prompt' must be provided in inputs.\n"
+            "Example inputs:\n"
             "  - text_prompt: 'waste'\n"
-            "  - box_prompt: [100, 100, 500, 500]\n"
+            "Example parameters:\n"
             "  - threshold: 0.5\n"
             "  - mask_threshold: 0.5\n"
-            "  - label_name: 'object'"
         )
 
     # Set dataset type if not configured
@@ -135,7 +133,6 @@ def process(
 
     params = parameters.to_dict()
     params["text_prompt"] = text_prompt
-    params["label_name"] = label_name
 
     # Call the helper function to process images with SAM-3
     output_coco = process_images_sam3(
