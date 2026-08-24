@@ -5,13 +5,19 @@ from pathlib import Path
 import torch
 from dotenv import load_dotenv
 from huggingface_hub import login
-from picsellia.types.enums import InferenceType
+from picsellia.types.enums import ImportAnnotationMode, InferenceType
 from picsellia_cv_engine.core import CocoDataset
 from picsellia_cv_engine.core.contexts import PicselliaDatasetProcessingContext
 from picsellia_cv_engine.decorators.pipeline_decorator import Pipeline
 from picsellia_cv_engine.decorators.step_decorator import step
 from transformers import Sam3Model, Sam3Processor
 from utils.sam3_processing import process_images_sam3
+
+ANNOTATION_MODES = {
+    "keep": ImportAnnotationMode.KEEP,
+    "replace": ImportAnnotationMode.REPLACE,
+    "concatenate": ImportAnnotationMode.CONCATENATE,
+}
 
 
 @step
@@ -150,3 +156,26 @@ def process(
     print(f"   💾 COCO file saved to: {picsellia_dataset.coco_file_path}")
 
     return picsellia_dataset
+
+
+@step
+def upload_annotations(picsellia_dataset: CocoDataset):
+    """
+    Upload annotations to Picsellia, honoring the configured annotation_mode
+    (keep / replace / concatenate).
+    """
+    context: PicselliaDatasetProcessingContext = Pipeline.get_active_context()
+    annotation_mode = context.processing_parameters.annotation_mode.lower()
+
+    if annotation_mode not in ANNOTATION_MODES:
+        raise ValueError(
+            f"❌ Invalid annotation_mode '{annotation_mode}'. "
+            f"Must be one of: {list(ANNOTATION_MODES)}"
+        )
+
+    picsellia_dataset.dataset_version.import_annotations_coco_file(
+        file_path=picsellia_dataset.coco_file_path,
+        use_id=True,
+        fail_on_asset_not_found=True,
+        mode=ANNOTATION_MODES[annotation_mode],
+    )
