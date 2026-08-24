@@ -18,4 +18,4 @@ fallback_to_bbox_polygon = true
 annotation_mode = "replace"
 
 [input.dataset_version]
-id = "REPLACE_WITH_A_BBOX_ANNOTATED_DATASET_VERSION_ID"
+id = "019b6f03-1eed-7137-9b44-35bd2134aa1c"
