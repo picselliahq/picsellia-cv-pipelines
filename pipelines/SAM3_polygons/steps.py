@@ -5,19 +5,13 @@ from pathlib import Path
 import torch
 from dotenv import load_dotenv
 from huggingface_hub import login
-from picsellia.types.enums import ImportAnnotationMode, InferenceType
+from picsellia.types.enums import InferenceType
 from picsellia_cv_engine.core import CocoDataset
 from picsellia_cv_engine.core.contexts import PicselliaDatasetProcessingContext
 from picsellia_cv_engine.decorators.pipeline_decorator import Pipeline
 from picsellia_cv_engine.decorators.step_decorator import step
 from transformers import Sam3Model, Sam3Processor
 from utils.sam3_processing import process_images_sam3
-
-ANNOTATION_MODES = {
-    "keep": ImportAnnotationMode.KEEP,
-    "replace": ImportAnnotationMode.REPLACE,
-    "concatenate": ImportAnnotationMode.CONCATENATE,
-}
 
 
 @step
@@ -112,15 +106,18 @@ def process(
     context: PicselliaDatasetProcessingContext = Pipeline.get_active_context()
     parameters = context.processing_parameters
     text_prompt = context.inputs.get("text_prompt")
+    label_name = context.inputs.get("label_name")
+    box_prompt = parameters.to_dict().get("box_prompt")
 
-    if not text_prompt:
+    if text_prompt is None and box_prompt is None:
         raise ValueError(
-            "❌ 'text_prompt' must be provided in inputs.\n"
-            "Example inputs:\n"
-            "  - text_prompt: 'waste'\n"
+            "❌ At least one of 'text_prompt' or 'box_prompt' must be provided in processing parameters.\n"
             "Example parameters:\n"
+            "  - text_prompt: 'waste'\n"
+            "  - box_prompt: [100, 100, 500, 500]\n"
             "  - threshold: 0.5\n"
             "  - mask_threshold: 0.5\n"
+            "  - label_name: 'object'"
         )
 
     # Validate dataset type
@@ -144,6 +141,7 @@ def process(
 
     params = parameters.to_dict()
     params["text_prompt"] = text_prompt
+    params["label_name"] = label_name
 
     print("PARAMS:", params)
     # Call the helper function to process images with SAM-3
@@ -165,26 +163,3 @@ def process(
     print(f"   💾 COCO file saved to: {picsellia_dataset.coco_file_path}")
 
     return picsellia_dataset
-
-
-@step
-def upload_annotations(picsellia_dataset: CocoDataset):
-    """
-    Upload annotations to Picsellia, honoring the configured annotation_mode
-    (keep / replace / concatenate).
-    """
-    context: PicselliaDatasetProcessingContext = Pipeline.get_active_context()
-    annotation_mode = context.processing_parameters.annotation_mode.lower()
-
-    if annotation_mode not in ANNOTATION_MODES:
-        raise ValueError(
-            f"❌ Invalid annotation_mode '{annotation_mode}'. "
-            f"Must be one of: {list(ANNOTATION_MODES)}"
-        )
-
-    picsellia_dataset.dataset_version.import_annotations_coco_file(
-        file_path=picsellia_dataset.coco_file_path,
-        use_id=True,
-        fail_on_asset_not_found=True,
-        mode=ANNOTATION_MODES[annotation_mode],
-    )

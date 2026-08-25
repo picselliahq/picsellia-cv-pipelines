@@ -56,7 +56,7 @@ This section explains every parameter you can configure in the pipeline. Paramet
 
 **Type**: Text (string)
 **Default**: `"person, car, skateboard"`
-**Required**: Yes
+**Required**: Yes (unless using `box_prompt`)
 
 **How to use**:
 - **Single class**: `text_prompt = "car"`
@@ -449,6 +449,52 @@ deduplication_strategy = "keep_larger"
 # Street scenes: Detect people and vehicles separately
 deduplication_strategy = "keep_smaller"
 ```
+
+---
+
+### 🔵 Optional Advanced Parameters
+
+#### `box_prompt`
+**What it does**: Restricts segmentation to objects within a specific rectangular region.
+
+**Type**: List of 4 integers
+**Format**: `[x1, y1, x2, y2]` where (x1, y1) is top-left corner, (x2, y2) is bottom-right
+**Default**: `None` (no spatial restriction)
+
+**How to use**:
+```toml
+# Only detect objects in the region x:100-500, y:100-600
+box_prompt = [100, 100, 500, 600]
+```
+
+**When to use**:
+- Ignore objects in certain image areas (e.g., timestamp overlays)
+- Focus on a region of interest
+- Speed up processing by limiting search area
+
+**Can be combined with text prompts**:
+```toml
+text_prompt = "person"
+box_prompt = [100, 100, 800, 600]
+# Only detects persons within the specified box
+```
+
+---
+
+#### `label_name`
+**What it does**: Fallback category name when using `box_prompt` without `text_prompt`.
+
+**Type**: Text (string)
+**Default**: `"waste"`
+
+**When to use**:
+```toml
+# Detect anything in the box, label it as "region_of_interest"
+box_prompt = [100, 100, 500, 500]
+label_name = "region_of_interest"
+```
+
+**Note**: This parameter is ignored if `text_prompt` is provided.
 
 ---
 

@@ -10,3 +10,8 @@ class ProcessingInputs(PipelineInputs):
             input_type=ProcessingInputType.TEXT,
             required=True,
         )
+        self.define_input(
+            name="label_name",
+            input_type=ProcessingInputType.TEXT,
+            required=False,
+        )
