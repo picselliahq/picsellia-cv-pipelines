@@ -57,7 +57,7 @@ def _prepare_image_prompt_context(
     return vision_embeds, text_embeds, image_inputs["original_sizes"]
 
 
-def _infer_mask_for_box(
+def _infer_masks_for_boxes(
     *,
     sam3_model: Sam3Model,
     sam3_processor: Sam3Processor,
@@ -67,12 +67,19 @@ def _infer_mask_for_box(
     device: str,
     threshold: float,
     mask_threshold: float,
-    box_xyxy: list[int],
+    boxes_xyxy: list[list[int]],
 ) -> np.ndarray:
+    """
+    Run ONE SAM-3 forward pass for ALL the given boxes at once (they must be
+    boxes of the SAME category - see `process_boxes_to_polygons`). This
+    mirrors how SAM3_Bbox/SAM3_polygons run a single forward pass per class
+    instead of per detected instance, which is what makes them so much
+    faster than looping over every single box individually.
+    """
     box_inputs = sam3_processor(
         original_sizes=original_sizes,
-        input_boxes=[[box_xyxy]],
-        input_boxes_labels=[[1]],
+        input_boxes=[boxes_xyxy],
+        input_boxes_labels=[[1] * len(boxes_xyxy)],
         return_tensors="pt",
     ).to(device)
 
@@ -108,20 +115,34 @@ def _mask_iou_with_box(mask: np.ndarray, box_xyxy: list[int]) -> float:
     return 0.0 if union == 0 else intersection / union
 
 
-def _select_best_mask(
-    masks_np: np.ndarray, box_xyxy: list[int]
-) -> np.ndarray | None:
-    """SAM-3 may return several candidate masks for a single box prompt.
-    Keep the one whose extent best matches the box that was used as a
-    prompt, since that's the object the box was meant to describe."""
+def _assign_masks_to_boxes(
+    masks_np: np.ndarray, boxes_xyxy: list[list[int]]
+) -> list[np.ndarray | None]:
+    """
+    Batching several boxes into one SAM-3 call means the output masks are no
+    longer indexed by input box, so greedily match each returned mask back to
+    the original box it overlaps best (highest IoU first), one mask per box.
+    """
+    assigned: list[np.ndarray | None] = [None] * len(boxes_xyxy)
     if masks_np.size == 0:
-        return None
-    if len(masks_np) == 1:
-        return masks_np[0]
+        return assigned
 
-    ious = [_mask_iou_with_box(mask, box_xyxy) for mask in masks_np]
-    best_idx = int(np.argmax(ious))
-    return masks_np[best_idx]
+    candidates = [
+        (_mask_iou_with_box(mask, box_xyxy), box_idx, mask_idx)
+        for box_idx, box_xyxy in enumerate(boxes_xyxy)
+        for mask_idx, mask in enumerate(masks_np)
+    ]
+    candidates = [c for c in candidates if c[0] > 0]
+    candidates.sort(key=lambda c: c[0], reverse=True)
+
+    used_masks: set[int] = set()
+    for _iou, box_idx, mask_idx in candidates:
+        if assigned[box_idx] is not None or mask_idx in used_masks:
+            continue
+        assigned[box_idx] = masks_np[mask_idx]
+        used_masks.add(mask_idx)
+
+    return assigned
 
 
 def _mask_to_polygon(
@@ -226,11 +247,19 @@ def process_boxes_to_polygons(
             device=device,
         )
 
+        # Group boxes by category and run ONE SAM-3 call per (image, category)
+        # instead of one per box: boxes of the same class are legitimate
+        # multiple exemplars of the same visual concept for SAM-3, so this
+        # keeps the same call cadence as SAM3_Bbox/SAM3_polygons (one call
+        # per class) no matter how many instances of that class exist.
+        boxes_by_category: dict[int, list[dict]] = {}
         for ann in boxes_for_image:
-            box_xyxy = _coco_bbox_to_xyxy(ann["bbox"])
-            category_id = int(ann["category_id"])
+            boxes_by_category.setdefault(int(ann["category_id"]), []).append(ann)
 
-            masks_np = _infer_mask_for_box(
+        for category_id, anns in boxes_by_category.items():
+            boxes_xyxy = [_coco_bbox_to_xyxy(ann["bbox"]) for ann in anns]
+
+            masks_np = _infer_masks_for_boxes(
                 sam3_model=sam3_model,
                 sam3_processor=sam3_processor,
                 vision_embeds=vision_embeds,
@@ -239,45 +268,43 @@ def process_boxes_to_polygons(
                 device=device,
                 threshold=threshold,
                 mask_threshold=mask_threshold,
-                box_xyxy=box_xyxy,
+                boxes_xyxy=boxes_xyxy,
             )
 
-            best_mask = _select_best_mask(masks_np, box_xyxy)
-            result = (
-                _mask_to_polygon(best_mask, min_area)
-                if best_mask is not None
-                else None
-            )
+            assigned_masks = _assign_masks_to_boxes(masks_np, boxes_xyxy)
 
-            if result is None:
-                if not fallback_to_bbox_polygon:
+            for ann, box_xyxy, mask in zip(anns, boxes_xyxy, assigned_masks, strict=True):
+                result = _mask_to_polygon(mask, min_area) if mask is not None else None
+
+                if result is None:
+                    if not fallback_to_bbox_polygon:
+                        print(
+                            f"   ⚠️ No mask found for annotation {ann['id']}, skipping."
+                        )
+                        skipped += 1
+                        continue
                     print(
-                        f"   ⚠️ No mask found for annotation {ann['id']}, skipping."
+                        f"   ↪️ No mask found for annotation {ann['id']}, "
+                        "falling back to the box as a rectangular polygon."
                     )
-                    skipped += 1
-                    continue
-                print(
-                    f"   ↪️ No mask found for annotation {ann['id']}, "
-                    "falling back to the box as a rectangular polygon."
-                )
-                bbox_xywh, segmentation, area = _box_to_polygon_fallback(box_xyxy)
-                fallback_count += 1
-            else:
-                bbox_xywh, segmentation, area = result
-                converted += 1
+                    bbox_xywh, segmentation, area = _box_to_polygon_fallback(box_xyxy)
+                    fallback_count += 1
+                else:
+                    bbox_xywh, segmentation, area = result
+                    converted += 1
 
-            new_annotations.append(
-                {
-                    "id": annotation_id,
-                    "image_id": image_id,
-                    "category_id": category_id,
-                    "segmentation": [segmentation],
-                    "area": area,
-                    "bbox": bbox_xywh,
-                    "iscrowd": 0,
-                }
-            )
-            annotation_id += 1
+                new_annotations.append(
+                    {
+                        "id": annotation_id,
+                        "image_id": image_id,
+                        "category_id": category_id,
+                        "segmentation": [segmentation],
+                        "area": area,
+                        "bbox": bbox_xywh,
+                        "iscrowd": 0,
+                    }
+                )
+                annotation_id += 1
 
     coco["annotations"] = new_annotations
 
