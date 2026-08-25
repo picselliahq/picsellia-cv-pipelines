@@ -1,0 +1,17 @@
+[metadata]
+name = "SAM3_polygons_from_box"
+version = "1.0.0"
+description = "Converts bounding box annotations into polygon segmentation annotations using SAM3, using each box as a prompt, and creates a new dataset version."
+type = "DATASET_VERSION_CREATION"
+
+[execution]
+pipeline_script = "pipeline.py"
+requirements_file = "pyproject.toml"
+parameters_class = "utils/parameters.py:ProcessingParameters"
+inputs_class = "utils/inputs.py:ProcessingInputs"
+
+[docker]
+image_name = "picsellia/sam3_polygons_from_box"
+image_tag = "latest"
+cpu = 4
+gpu = 1
