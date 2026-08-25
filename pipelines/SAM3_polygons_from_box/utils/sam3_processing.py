@@ -47,10 +47,12 @@ def _prepare_image_prompt_context(
         vision_embeds = sam3_model.get_vision_features(
             pixel_values=image_inputs["pixel_values"]
         )
+        # NOTE: passed back into `forward(text_embeds=...)` as-is (the model
+        # reads `.pooler_output` off of it internally) - do NOT unwrap it here.
         text_embeds = sam3_model.get_text_features(
             input_ids=text_inputs["input_ids"],
             attention_mask=text_inputs.get("attention_mask"),
-        ).pooler_output
+        )
 
     return vision_embeds, text_embeds, image_inputs["original_sizes"]
 
@@ -60,7 +62,7 @@ def _infer_mask_for_box(
     sam3_model: Sam3Model,
     sam3_processor: Sam3Processor,
     vision_embeds: Any,
-    text_embeds: torch.Tensor,
+    text_embeds: Any,
     original_sizes: torch.Tensor,
     device: str,
     threshold: float,
