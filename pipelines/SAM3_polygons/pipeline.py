@@ -6,8 +6,7 @@ from picsellia_cv_engine.core.services.context.unified_context import (
 )
 from picsellia_cv_engine.decorators.pipeline_decorator import pipeline
 from picsellia_cv_engine.steps.base.dataset.loader import load_coco_datasets
-from picsellia_cv_engine.steps.base.dataset.uploader import upload_dataset_annotations
-from steps import load_sam3_model, process
+from steps import load_sam3_model, process, upload_annotations
 from utils.parameters import ProcessingParameters
 
 parser = argparse.ArgumentParser()
@@ -47,8 +46,6 @@ def sam3_labeling_pipeline():
     - mask_threshold: Mask confidence threshold (default: 0.5)
 
     Optional parameters:
-    - box_prompt: Bounding box [x1, y1, x2, y2] to constrain segmentation
-    - label_name: Fallback category name when using box_prompt only (default: "object")
     - min_area: Minimum mask area in pixels (default: 50.0)
     - max_overlap_ratio: Maximum overlap ratio for same-class deduplication (default: 0.3)
 
@@ -58,6 +55,8 @@ def sam3_labeling_pipeline():
     - deduplication_strategy: "keep_smaller" or "keep_larger" (default: "keep_smaller")
                              keep_smaller: Prioritize smaller, more precise masks
                              keep_larger: Prioritize larger, more complete masks
+    - annotation_mode: "keep", "replace" or "concatenate" (default: "keep")
+                        How to handle annotations already present on an asset.
     """
     # Load dataset
     picsellia_dataset = load_coco_datasets()
@@ -71,7 +70,7 @@ def sam3_labeling_pipeline():
     )
 
     # Upload annotations to Picsellia
-    upload_dataset_annotations(dataset=picsellia_dataset, use_id=True)
+    upload_annotations(picsellia_dataset=picsellia_dataset)
 
 
 if __name__ == "__main__":

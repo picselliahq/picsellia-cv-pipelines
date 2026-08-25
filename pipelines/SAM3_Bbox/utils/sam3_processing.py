@@ -80,7 +80,6 @@ def _initialize_categories_and_labels(
     coco: dict[str, Any],
     labelmap: dict[str, Any],
     text_prompts_list: list[str],
-    label_name: str,
 ) -> dict[str, int]:
     coco["categories"] = coco.get("categories", [])
     category_name_to_id = _build_category_name_to_id(coco)
@@ -88,9 +87,7 @@ def _initialize_categories_and_labels(
         (max(category_name_to_id.values(), default=0) + 1) if category_name_to_id else 1
     )
 
-    prompts_to_register = text_prompts_list if text_prompts_list else [label_name]
-
-    for prompt in prompts_to_register:
+    for prompt in text_prompts_list:
         next_category_id = _ensure_label_and_category(
             picsellia_dataset=picsellia_dataset,
             coco=coco,
@@ -118,17 +115,11 @@ def _infer_masks(
     device: str,
     threshold: float,
     mask_threshold: float,
-    text: str | None = None,
-    box_prompt: list[int] | None = None,
+    text: str,
 ) -> np.ndarray:
-    processor_kwargs: dict[str, Any] = {"images": image_pil, "return_tensors": "pt"}
-    if text is not None:
-        processor_kwargs["text"] = text
-    if box_prompt is not None:
-        processor_kwargs["input_boxes"] = [[box_prompt]]
-        processor_kwargs["input_boxes_labels"] = [[1]]
-
-    inputs = sam3_processor(**processor_kwargs).to(device)
+    inputs = sam3_processor(images=image_pil, text=text, return_tensors="pt").to(
+        device
+    )
 
     with torch.no_grad():
         outputs = sam3_model(**inputs)
@@ -268,69 +259,41 @@ def _collect_detections_for_image(
     image_pil: Image.Image,
     image_filename: str,
     text_prompts_list: list[str],
-    box_prompt: list[int] | None,
     threshold: float,
     mask_threshold: float,
     min_area: float,
-    label_name: str,
     category_name_to_id: dict[str, int],
     device: str,
 ) -> list[Detection]:
     detections: list[Detection] = []
 
-    if text_prompts_list:
-        print(f"🔄 Running inference for {len(text_prompts_list)} prompt(s)...\n")
-        for idx, prompt in enumerate(text_prompts_list, 1):
-            print(
-                f"   [{idx}/{len(text_prompts_list)}] Inferencing with prompt: '{prompt}'"
-            )
+    print(f"🔄 Running inference for {len(text_prompts_list)} prompt(s)...\n")
+    for idx, prompt in enumerate(text_prompts_list, 1):
+        print(
+            f"   [{idx}/{len(text_prompts_list)}] Inferencing with prompt: '{prompt}'"
+        )
 
-            masks_np = _infer_masks(
-                sam3_model=sam3_model,
-                sam3_processor=sam3_processor,
-                image_pil=image_pil,
-                device=device,
-                threshold=threshold,
-                mask_threshold=mask_threshold,
-                text=prompt,
-                box_prompt=box_prompt,
-            )
+        masks_np = _infer_masks(
+            sam3_model=sam3_model,
+            sam3_processor=sam3_processor,
+            image_pil=image_pil,
+            device=device,
+            threshold=threshold,
+            mask_threshold=mask_threshold,
+            text=prompt,
+        )
 
-            if masks_np.size == 0:
-                print(f"      ➜ No '{prompt}' objects detected")
-                continue
+        if masks_np.size == 0:
+            print(f"      ➜ No '{prompt}' objects detected")
+            continue
 
-            print(f"      ➜ Found {len(masks_np)} '{prompt}' mask(s)")
-            detections.extend(
-                _masks_to_detections(
-                    masks_np,
-                    min_area=min_area,
-                    category_id=category_name_to_id[prompt],
-                    prompt=prompt,
-                )
-            )
-
-        return detections
-
-    masks_np = _infer_masks(
-        sam3_model=sam3_model,
-        sam3_processor=sam3_processor,
-        image_pil=image_pil,
-        device=device,
-        threshold=threshold,
-        mask_threshold=mask_threshold,
-        text=None,
-        box_prompt=box_prompt,
-    )
-
-    if masks_np.size > 0:
-        print(f"✓ Found {len(masks_np)} objects in {image_filename}")
+        print(f"      ➜ Found {len(masks_np)} '{prompt}' mask(s)")
         detections.extend(
             _masks_to_detections(
                 masks_np,
                 min_area=min_area,
-                category_id=category_name_to_id[label_name],
-                prompt=label_name,
+                category_id=category_name_to_id[prompt],
+                prompt=prompt,
             )
         )
 
@@ -379,10 +342,8 @@ def process_images_sam3(
     labelmap = picsellia_dataset.labelmap or {}
 
     text_prompt = cast(str | None, parameters.get("text_prompt"))
-    box_prompt = cast(list[int] | None, parameters.get("box_prompt"))
     threshold = float(parameters.get("threshold", 0.5))
     mask_threshold = float(parameters.get("mask_threshold", 0.5))
-    label_name = cast(str, parameters.get("label_name", "object"))
 
     min_area = float(parameters.get("min_area", 100.0))
     iou_threshold = float(parameters.get("iou_threshold", 0.5))
@@ -391,10 +352,8 @@ def process_images_sam3(
         str, parameters.get("deduplication_strategy", "keep_smaller")
     )
 
-    if text_prompt is None and box_prompt is None:
-        raise ValueError(
-            "At least one of 'text_prompt' or 'box_prompt' must be provided in parameters"
-        )
+    if not text_prompt:
+        raise ValueError("'text_prompt' must be provided in parameters")
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
     text_prompts_list = _parse_text_prompts(text_prompt)
@@ -404,7 +363,6 @@ def process_images_sam3(
         coco=coco,
         labelmap=labelmap,
         text_prompts_list=text_prompts_list,
-        label_name=label_name,
     )
 
     # Only the newly generated SAM-3 detections must be written out: annotations
@@ -432,11 +390,9 @@ def process_images_sam3(
             image_pil=image_pil,
             image_filename=image_filename,
             text_prompts_list=text_prompts_list,
-            box_prompt=box_prompt,
             threshold=threshold,
             mask_threshold=mask_threshold,
             min_area=min_area,
-            label_name=label_name,
             category_name_to_id=category_name_to_id,
             device=device,
         )

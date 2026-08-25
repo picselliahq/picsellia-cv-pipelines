@@ -55,3 +55,10 @@ class ProcessingParameters(Parameters):
         self.deduplication_strategy = self.extract_parameter(
             ["deduplication_strategy"], expected_type=str, default="keep_smaller"
         )
+
+        # How to handle annotations already present on an asset when uploading
+        # new ones: "keep" (do nothing), "replace" (delete and overwrite) or
+        # "concatenate" (add new shapes on top of existing ones).
+        self.annotation_mode = self.extract_parameter(
+            ["annotation_mode"], expected_type=str, default="concatenate"
+        )
