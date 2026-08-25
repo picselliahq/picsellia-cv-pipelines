@@ -26,31 +26,67 @@ def _coco_bbox_to_xyxy(bbox: list[float]) -> list[int]:
     return [int(x), int(y), int(x + w), int(y + h)]
 
 
-def _infer_mask_for_box(
+def _prepare_image_prompt_context(
     *,
     sam3_model: Sam3Model,
     sam3_processor: Sam3Processor,
     image_pil: Image.Image,
     device: str,
+):
+    """
+    Run the vision encoder (and the constant "visual" text encoding) ONCE per
+    image. The vision backbone is by far the most expensive part of a SAM-3
+    forward pass, so every box prompt for this image can then reuse the same
+    embeddings and only pay for the lightweight geometry/decoder heads,
+    instead of re-encoding the whole image for every single box.
+    """
+    image_inputs = sam3_processor(images=image_pil, return_tensors="pt").to(device)
+    text_inputs = sam3_processor(text="visual", return_tensors="pt").to(device)
+
+    with torch.no_grad():
+        vision_embeds = sam3_model.get_vision_features(
+            pixel_values=image_inputs["pixel_values"]
+        )
+        text_embeds = sam3_model.get_text_features(
+            input_ids=text_inputs["input_ids"],
+            attention_mask=text_inputs.get("attention_mask"),
+        ).pooler_output
+
+    return vision_embeds, text_embeds, image_inputs["original_sizes"]
+
+
+def _infer_mask_for_box(
+    *,
+    sam3_model: Sam3Model,
+    sam3_processor: Sam3Processor,
+    vision_embeds: Any,
+    text_embeds: torch.Tensor,
+    original_sizes: torch.Tensor,
+    device: str,
     threshold: float,
     mask_threshold: float,
     box_xyxy: list[int],
 ) -> np.ndarray:
-    inputs = sam3_processor(
-        images=image_pil,
+    box_inputs = sam3_processor(
+        original_sizes=original_sizes,
         input_boxes=[[box_xyxy]],
         input_boxes_labels=[[1]],
         return_tensors="pt",
     ).to(device)
 
     with torch.no_grad():
-        outputs = sam3_model(**inputs)
+        outputs = sam3_model(
+            vision_embeds=vision_embeds,
+            text_embeds=text_embeds,
+            input_boxes=box_inputs["input_boxes"],
+            input_boxes_labels=box_inputs["input_boxes_labels"],
+        )
 
     results = sam3_processor.post_process_instance_segmentation(
         outputs,
         threshold=threshold,
         mask_threshold=mask_threshold,
-        target_sizes=inputs.get("original_sizes").tolist(),
+        target_sizes=original_sizes.tolist(),
     )[0]
 
     masks = results["masks"]
@@ -181,6 +217,13 @@ def process_boxes_to_polygons(
             f"({len(boxes_for_image)} box(es))"
         )
 
+        vision_embeds, text_embeds, original_sizes = _prepare_image_prompt_context(
+            sam3_model=sam3_model,
+            sam3_processor=sam3_processor,
+            image_pil=image_pil,
+            device=device,
+        )
+
         for ann in boxes_for_image:
             box_xyxy = _coco_bbox_to_xyxy(ann["bbox"])
             category_id = int(ann["category_id"])
@@ -188,7 +231,9 @@ def process_boxes_to_polygons(
             masks_np = _infer_mask_for_box(
                 sam3_model=sam3_model,
                 sam3_processor=sam3_processor,
-                image_pil=image_pil,
+                vision_embeds=vision_embeds,
+                text_embeds=text_embeds,
+                original_sizes=original_sizes,
                 device=device,
                 threshold=threshold,
                 mask_threshold=mask_threshold,

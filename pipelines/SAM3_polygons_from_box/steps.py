@@ -165,14 +165,17 @@ def process(
     input_dataset_version = context.input_dataset_version
     parameters = context.processing_parameters.to_dict()
 
+    # `output_dataset_version` was created by forking `input_dataset_version`:
+    # it shares the same image files but its assets have their OWN ids, so we
+    # must match assets by filename (use_id=False) rather than by id.
     input_dataset = CocoDataset(name="input", dataset_version=input_dataset_version)
     input_dataset.download_annotations(
         destination_dir=os.path.join(context.working_dir, "annotations", "input"),
-        use_id=True,
+        use_id=False,
     )
     input_dataset.download_assets(
         destination_dir=os.path.join(context.working_dir, "images", "input"),
-        use_id=True,
+        use_id=False,
     )
 
     output_coco = process_boxes_to_polygons(
@@ -213,7 +216,7 @@ def upload_annotations(coco_file_path: str, output_dataset_version: DatasetVersi
 
     output_dataset_version.import_annotations_coco_file(
         file_path=coco_file_path,
-        use_id=True,
+        use_id=False,
         fail_on_asset_not_found=True,
         mode=ANNOTATION_MODES[annotation_mode],
     )
