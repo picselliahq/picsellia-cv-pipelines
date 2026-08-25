@@ -365,8 +365,11 @@ def process_images_sam3(
         text_prompts_list=text_prompts_list,
     )
 
-    coco["annotations"] = coco.get("annotations", [])
-    annotation_id = len(cast(list[dict[str, Any]], coco["annotations"])) + 1
+    # Only the newly generated SAM-3 detections must be written out: annotations
+    # already downloaded from Picsellia must not be re-included here, otherwise
+    # they get duplicated when uploaded with annotation_mode="concatenate".
+    coco["annotations"] = []
+    annotation_id = 1
 
     for image_info in cast(list[dict[str, Any]], coco.get("images", [])):
         image_filename = cast(str, image_info["file_name"])

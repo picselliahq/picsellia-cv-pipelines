@@ -11,10 +11,10 @@ mask_threshold = 0.5
 iou_threshold = 0.5
 containment_threshold = 0.8
 deduplication_strategy = "keep_smaller"
+annotation_mode = "concatenate"
 
 [input.dataset_version]
 id = "019b6f03-1eed-7137-9b44-35bd2134aa1c"
 
 [inputs]
 text_prompt = "car,person,bicycle"
-label_name = "waste"
