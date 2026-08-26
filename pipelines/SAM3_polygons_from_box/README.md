@@ -6,7 +6,7 @@ Unlike `SAM3_Bbox` and `SAM3_polygons` (which detect new objects from a text/box
 
 The output is a **new dataset version** (type `SEGMENTATION`) forked from the input dataset - the same images are reused (no re-upload), only the annotations change from boxes to polygons. Each polygon keeps the **same label/category** as the box it was generated from.
 
-## Required inputs
+## Required Inputs
 
 - `output_dataset_version_name`: name of the new dataset version to create.
 
