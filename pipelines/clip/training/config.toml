@@ -1,7 +1,7 @@
 [metadata]
 name = "clip-training"
 version = "1.0.6"
-description = "Training pipeline using YOLO and Ultralytics."
+description = "This Picsellia pipeline fine-tunes CLIP models using the Hugging Face Transformers library. CLIP learns to understand images through natural language descriptions, enabling zero-shot classification, image-text matching, and semantic search. Extended documentation availble here: https://github.com/picselliahq/picsellia-cv-pipelines/blob/main/pipelines/clip/training/README.md"
 type = "TRAINING"
 
 [execution]

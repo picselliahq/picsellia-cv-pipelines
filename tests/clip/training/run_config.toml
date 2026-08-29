@@ -16,3 +16,6 @@ id = "01991517-f20e-7667-a4f7-4216dfcc076a"
 [output.experiment]
 name = "test-clip"
 project_name = "test-clip"
+
+[hyperparameters]
+batch_size = 2
