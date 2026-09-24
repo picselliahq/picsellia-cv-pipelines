@@ -12,7 +12,7 @@ After running this pipeline, your Picsellia dataset will contain:
 - ✅ Properly labeled categories based on your text prompts
 - ✅ COCO-format annotations ready for model training
 
-## Quick Start Guide
+## Quick start guide
 
 ### 🎯 Single-Class Detection
 
