@@ -1,4 +1,4 @@
-# SAM3_polygons_from_box Pipeline
+# SAM3_polygons_from_box pipeline
 
 **Convert bounding box annotations into precise polygon segmentation annotations using SAM-3, prompted with each existing box.**
 

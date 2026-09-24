@@ -12,7 +12,7 @@ After running this pipeline, your Picsellia dataset will contain:
 - ✅ COCO-format annotations ready for model training
 - ✅ No training required - zero-shot segmentation
 
-## Quick Start Guide
+## Quick start suide
 
 ### 🎯 Single-Class Segmentation
 
