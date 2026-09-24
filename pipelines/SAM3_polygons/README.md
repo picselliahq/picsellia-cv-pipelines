@@ -4,7 +4,7 @@
 
 This Picsellia pipeline uses Meta's SAM-3 (Segment Anything Model 3) to generate high-quality polygon segmentation annotations without requiring any training. Simply describe what you want to segment, and SAM-3 will find and create precise polygon masks for those objects across your entire dataset.
 
-## What You'll Get
+## What You'll get
 
 After running this pipeline, your Picsellia dataset will contain:
 - ✅ Precise polygon segmentation masks
