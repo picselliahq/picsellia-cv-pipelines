@@ -243,6 +243,18 @@ def train(
 
     print("\n" + "=" * 60)
     print("[6/6] Saving and uploading model artifacts...")
+    export_format = ctx.export_parameters.export_format
+    print(f"  - Export format: {export_format}")
+
+    # Pick a training image for ONNX tracing so the mask branch is fully exercised
+    trace_image_path = None
+    if export_format in ("onnx", "all"):
+        train_images_dir = picsellia_datasets["train"].images_dir
+        for fname in os.listdir(train_images_dir):
+            if fname.lower().endswith((".jpg", ".jpeg", ".png")):
+                trace_image_path = os.path.join(train_images_dir, fname)
+                break
+
     save_and_upload_artifacts(
         picsellia_model,
         ctx.experiment,
@@ -250,6 +262,8 @@ def train(
         id2label,
         image_size=hp.image_size,
         backbone=hp.backbone,
+        export_format=export_format,
+        trace_image_path=trace_image_path,
     )
     print("  - Model saved and uploaded successfully")
     print("=" * 60)
