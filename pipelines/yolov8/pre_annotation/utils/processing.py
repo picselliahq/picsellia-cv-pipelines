@@ -436,11 +436,13 @@ class PreAnnotator:
             if not assets:
                 continue
 
-            url_list = [asset.sync()["data"]["presigned_url"] for asset in assets]
-
-            predictions = self.model.loaded_model(
-                url_list, imgsz=image_size, agnostic_nms=agnostic_nms
-            )
+            predictions = []
+            for asset in assets:
+                asset.download()
+                prediction = self.model.loaded_model(
+                    asset.filename, imgsz=image_size, agnostic_nms=agnostic_nms
+                )
+                predictions.append(prediction)
 
             for asset, prediction in list(zip(assets, predictions, strict=False)):
                 if len(prediction) > 0:
