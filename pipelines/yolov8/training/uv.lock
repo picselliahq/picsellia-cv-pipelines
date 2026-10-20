@@ -631,7 +631,7 @@ wheels = [
 
 [[package]]
 name = "picsellia"
-version = "6.30.0"
+version = "6.37.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "beartype" },
@@ -645,27 +645,27 @@ dependencies = [
     { name = "semantic-version" },
     { name = "tqdm" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/6f/11/c5df70c3341f8b637f34c6e11cc2d9a578d0354bcef139d6d48263887642/picsellia-6.30.0.tar.gz", hash = "sha256:a94f27c88e83000f39b8a62447037a51358100801042d4a416a686e6865af0d2", size = 121909, upload-time = "2026-02-13T10:21:35.428Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/6c/3a/5a6601e5cf08214ff926856f2b93c29bb13e139c74727675d6d82f89b02d/picsellia-6.37.0.tar.gz", hash = "sha256:765e849bdd052991970584413ad5c2ead641c26fa88adc546c1f0721fb0c99a0", size = 144369, upload-time = "2026-10-19T16:06:23.947Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/2c/c6/dae3deebd54616a781022f77420af5de39e8162fba35c4de49eb4be3dc92/picsellia-6.30.0-py3-none-any.whl", hash = "sha256:2da288fcd02bdd9a06043933623a0462d8d41c809405490885ea64456364b0f0", size = 168468, upload-time = "2026-02-13T10:21:34.248Z" },
+    { url = "https://files.pythonhosted.org/packages/94/fb/704ad737431ea920ae738ef4a9c37626d43060338d49fa0bb5dfcc33ada0/picsellia-6.37.0-py3-none-any.whl", hash = "sha256:2cb137163b2b9bedccb14da5c63ee69dd3e25e5ba39c7f7f9fb39460a2f108e1", size = 189656, upload-time = "2026-10-19T16:06:22.189Z" },
 ]
 
 [[package]]
 name = "picsellia-annotations"
-version = "0.12.1"
+version = "0.14.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "pydantic" },
     { name = "xmltodict" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/97/57/235dbc5195e0b5ef73ceb51badb1e3eef803f92d0c431fc1746309f078a6/picsellia_annotations-0.12.1.tar.gz", hash = "sha256:2e702d7ace09bccdd82773060e07832df31cdb85e344f88d516f504342aad823", size = 3607, upload-time = "2025-12-09T10:05:47.907Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/5e/d7/e71075f01680596c68fcafd59700113d235d3189a7ad04fc3a16e8542fd4/picsellia_annotations-0.14.0.tar.gz", hash = "sha256:baf057e6b0182c5b16a94238239fe3f7f14210bb2450dbf274facbd3e14ecb58", size = 4750, upload-time = "2026-10-19T12:31:10.88Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/e3/d6/3951768c5b6663bfb8a265ae40cf86a088411b5363d88571a4743e8f8920/picsellia_annotations-0.12.1-py3-none-any.whl", hash = "sha256:a04fe79f7d66faf41437dbcfd22e7aeb98af7348d94b4ac8214fd6daac41f078", size = 5711, upload-time = "2025-12-09T10:05:46.873Z" },
+    { url = "https://files.pythonhosted.org/packages/07/d4/fbc27902a0e53fecb4d3e694ce6b59f3f79afbfe2a414cb3205b1487983f/picsellia_annotations-0.14.0-py3-none-any.whl", hash = "sha256:3e6be535b553ed1b4c1659ec2c2cce5c9b7d8f2c10cc0d153b8e0de4eac74d2c", size = 5906, upload-time = "2026-10-19T12:31:09.654Z" },
 ]
 
 [[package]]
 name = "picsellia-cv-engine"
-version = "0.5.6"
+version = "0.6.12"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "numpy" },
@@ -676,9 +676,9 @@ dependencies = [
     { name = "tabulate" },
     { name = "toml" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/fc/53/8d7da729356638c071d09f657bd6ebb505e61f6ec3ebef2e4f6f37b64c74/picsellia_cv_engine-0.5.6.tar.gz", hash = "sha256:711d139f8a20b90659c1710fccceebb8c929e9577d7114f84310d8fca94a040e", size = 54652668, upload-time = "2026-02-20T17:27:32.319Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/b7/95/06869b326c7426c2cb2ff6b741aa1e7831959fe826b7592fb5f27d149ddd/picsellia_cv_engine-0.6.12.tar.gz", hash = "sha256:9d5935b06028737572191f762ee34496e48f869ce62f13358e3fe83b99d05259", size = 54655345, upload-time = "2026-06-04T15:24:27.35Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/b5/29/91f12ce403bfcb91dce5ea7e17579686337ab0c8d8ea592acce26ba16662/picsellia_cv_engine-0.5.6-py3-none-any.whl", hash = "sha256:a36c03640feb923a8f4b87f870d322b48bb21f1f22f667e8a7f52ed8751c4f63", size = 186208, upload-time = "2026-02-20T17:27:34.781Z" },
+    { url = "https://files.pythonhosted.org/packages/ac/36/c0176f8314b2ccd6cba9609cd92cf4df162afae992dfd15ac586a9033de5/picsellia_cv_engine-0.6.12-py3-none-any.whl", hash = "sha256:e1181cf53b2c896bcbc6d6104bea308f5cd89743d30842fe04e5888c8c05d528", size = 189551, upload-time = "2026-06-04T15:24:24.362Z" },
 ]
 
 [package.optional-dependencies]
@@ -690,7 +690,7 @@ ultralytics = [
 
 [[package]]
 name = "picsellia-pipelines-cli"
-version = "0.4.0"
+version = "0.7.6"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "dotenv" },
@@ -699,9 +699,9 @@ dependencies = [
     { name = "toml" },
     { name = "typer" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/65/9b/eaac4bb631256b830a969c52db84e1fe35688c379bbc0a5df62d36df3590/picsellia_pipelines_cli-0.4.0.tar.gz", hash = "sha256:f9e12767b5c6129c877151d436e9867683a5db3c488b800b6cfbe775eac2c789", size = 64529, upload-time = "2026-02-18T11:02:15.26Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/72/e8/0c1c930990710641cc52092b51b8903f8de86606d1b5be94baaa0dda0264/picsellia_pipelines_cli-0.7.6.tar.gz", hash = "sha256:228d460a548ae5f39abc0d7b616ecfe76fb7a12c24d8d06c20ac393181fa9d91", size = 72684, upload-time = "2026-09-14T10:12:39.138Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/55/6f/0cd08c421724af73356fc8f3b37ffeb10dcdb0400b9f2dd6a84e13777609/picsellia_pipelines_cli-0.4.0-py3-none-any.whl", hash = "sha256:0ba33065348f02d52ae2a40c87ddc1efc4f06d0cc49b6dfcaabddb6e5dbd9c5b", size = 86557, upload-time = "2026-02-18T11:02:13.905Z" },
+    { url = "https://files.pythonhosted.org/packages/10/b7/76bf1306a4a693b943a64f179656067c9a8408a49c6fafe2833c07582b16/picsellia_pipelines_cli-0.7.6-py3-none-any.whl", hash = "sha256:9e52eb2d3d4577121697863b9a316136fc0a6f0f0a556e110a07f5233430c205", size = 97693, upload-time = "2026-09-14T10:12:38.215Z" },
 ]
 
 [[package]]
