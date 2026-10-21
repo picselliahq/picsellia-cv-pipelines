@@ -1,7 +1,7 @@
-FROM picsellia/cuda:11.8.0-cudnn8-ubuntu20.04-python3.10
+FROM picsellia/cuda:12.6.3-cudnn-ubuntu24.04-python3.14
 
 RUN apt-get update && apt-get install -y \
-    libgl1-mesa-glx \
+    libgl1 \
     git \
     && rm -rf /var/lib/apt/lists/*
 
@@ -15,10 +15,10 @@ COPY ./ ./training
 ARG REBUILD_PICSELLIA
 
 # Sync from uv.lock (assumes uv lock has already been created)
-RUN uv sync --python=$(which python3.10) --project training
+RUN uv sync --python=$(which python3.14) --project training
 
 RUN mkdir -p /workspace && chown -R 42420:42420 /workspace
 
 ENV PYTHONPATH=":/experiment"
 
-ENTRYPOINT ["run", "python3.10", "training/pipeline.py"]
+ENTRYPOINT ["run", "python3.14", "training/pipeline.py"]
