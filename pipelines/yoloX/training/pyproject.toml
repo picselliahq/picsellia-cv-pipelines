@@ -24,5 +24,15 @@ dependencies = [
     "thop",
     "ninja>=1.13.0",
     "onnxscript>=0.5.0",
-    "onnxruntime>=1.15.0,<1.24",
+    "onnxruntime>=1.15.0",
 ]
+
+# Pin torch on a CUDA 12.8 build: required for Blackwell GPUs (RTX PRO 6000, sm_120).
+[tool.uv.sources]
+torch = { index = "pytorch-cu128", marker = "sys_platform == 'linux'" }
+torchvision = { index = "pytorch-cu128", marker = "sys_platform == 'linux'" }
+
+[[tool.uv.index]]
+name = "pytorch-cu128"
+url = "https://download.pytorch.org/whl/cu128"
+explicit = true
