@@ -23,5 +23,5 @@ id = "0189df3c-bb5a-75a0-9269-541686ac5b70"
 id = "019ba344-faad-70ba-8700-a541bf48ae19"
 
 [output.experiment]
-name = "yoloX"
+name = "yolov8_exp1"
 project_name = "test_models"
