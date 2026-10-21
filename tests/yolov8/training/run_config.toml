@@ -20,7 +20,7 @@ validate = false
 id = "0189df3c-bb5a-75a0-9269-541686ac5b70"
 
 [input.model_version]
-id = "019ba344-f9a4-7abe-bf16-9d1b3d5d0255"
+id = "019ba344-faad-70ba-8700-a541bf48ae19"
 
 [output.experiment]
 name = "yolov8_exp1"
