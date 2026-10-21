@@ -4,9 +4,6 @@ override_outputs = true
 type = "TRAINING"
 
 
-[input.experiment]
-id = "019c9fe1-839b-7521-b89d-1be5f04de736"
-
 [input.model_version]
 id = "0196a0f3-37f5-7b20-9f22-c3445452aeba"
 
@@ -15,7 +12,8 @@ id = "01892b88-8dac-7664-96ee-16d05aa599c9"
 
 
 [output.experiment]
-id = "019c9fe1-839b-7521-b89d-1be5f04de736"
+name = "yolov8_exp1"
+project_name = "test_models"
 
 [hyperparameters]
 architecture = "yolox-s"
