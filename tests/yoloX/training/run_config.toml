@@ -12,7 +12,7 @@ id = "01892b88-8dac-7664-96ee-16d05aa599c9"
 
 
 [output.experiment]
-name = "yolov8_exp1"
+name = "yoloX"
 project_name = "test_models"
 
 [hyperparameters]
