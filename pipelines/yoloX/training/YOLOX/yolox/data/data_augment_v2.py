@@ -1,9 +1,8 @@
 import cv2
 import numpy as np
 
-# imgaug uses deprecated np.bool removed in NumPy 1.24+
-if not hasattr(np, "bool"):
-    np.bool = np.bool_
+# imgaug needs NumPy aliases that were removed (must run before importing imgaug)
+from . import _imgaug_compat  # noqa: F401, I001
 
 import imgaug.augmenters as iaa
 import matplotlib.patches as patches
