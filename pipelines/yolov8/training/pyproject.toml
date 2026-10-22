@@ -2,19 +2,28 @@
 name = "training-yolov8"
 version = "0.1.0"
 description = "Picsellia processing pipeline"
-requires-python = ">=3.10,<3.11"
+requires-python = ">=3.14"
 
 dependencies = [
-    "picsellia-cv-engine[ultralytics]",
+    # The `picsellia-cv-engine[ultralytics]` extra pins torch==2.7.1 (no cp314 wheel), so
+    # ultralytics is declared directly and torch is pinned below.
+    "picsellia-cv-engine",
     "picsellia-pipelines-cli",
-    "onnx==1.13",
-    "onnxruntime==1.14",
-    "onnxruntime-gpu==1.21",
+    "ultralytics>=8.3.145",
+    "onnx",
+    "onnxruntime-gpu>=1.24.1",
     "onnxslim==0.1.44",
     # Pin torch on a CUDA 12.8 build: required for Blackwell GPUs (RTX PRO 6000, sm_120).
-    "torch==2.7.1",
-    "torchvision==0.22.1",
+    # 2.9 is the first torch release with cp314 wheels.
+    "torch==2.9.1",
+    "torchvision==0.24.1",
 ]
+
+# picsellia-cv-engine pins numpy<2, but on Python 3.13+ that forces onnx 1.19 with
+# ml-dtypes 0.4.1, and `import onnx` then fails (missing ml_dtypes.float4_e2m1fn).
+# ml-dtypes>=0.5 needs numpy>=2.1, hence the override.
+[tool.uv]
+override-dependencies = ["numpy>=2.1"]
 
 [tool.uv.sources]
 torch = { index = "pytorch-cu128", marker = "sys_platform == 'linux'" }
