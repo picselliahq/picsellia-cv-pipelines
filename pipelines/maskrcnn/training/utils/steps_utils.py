@@ -263,37 +263,33 @@ def paste_masks_in_image_gpu(
     return result
 
 
-class MaskRCNNWrapperRawMasks(torch.nn.Module):
-    """Wrapper for Mask R-CNN that returns raw 28x28 masks.
+class MaskRCNNOnnxWrapper(torch.nn.Module):
+    """Wrapper for Mask R-CNN that returns flat tuple outputs for ONNX export.
 
-    This avoids TorchScript limitations with dynamic tensor allocation
-    in the mask pasting operation. The client must resize masks to
-    bounding box dimensions and paste them onto the image.
+    The standard Mask R-CNN model returns a list of dicts, which is not
+    compatible with ONNX export. This wrapper unpacks the output into a
+    flat tuple of tensors.
     """
 
     def __init__(self, model: torch.nn.Module):
         super().__init__()
         self.model = model
-        # Store reference to roi_heads for direct access
-        self.transform = model.transform
-        self.backbone = model.backbone
-        self.rpn = model.rpn
-        self.roi_heads = model.roi_heads
 
     def forward(
         self, image: torch.Tensor
     ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
-        """Forward pass returning raw masks.
+        """Forward pass for a single image.
 
         Args:
             image: Input tensor of shape [C, H, W]
 
         Returns:
             Tuple of (boxes, labels, scores, masks)
-            masks are [N, 1, 28, 28] - raw ROI mask output, NOT pasted to image size
-            Client must resize each mask to its corresponding box dimensions.
+            - boxes: [N, 4] bounding boxes in (x1, y1, x2, y2) format
+            - labels: [N] class labels (1-indexed, 0 = background)
+            - scores: [N] confidence scores
+            - masks: [N, 1, H, W] sigmoid masks pasted at full image size
         """
-        # Run standard forward - masks will be pasted but we'll intercept
         outputs = self.model([image])[0]
         return (
             outputs["boxes"],
@@ -686,6 +682,88 @@ def convert_checkpoint_to_torchscript(
     return output_path
 
 
+def export_to_onnx(
+    model: torch.nn.Module,
+    output_path: str,
+    device: torch.device,
+    image_size: int = 800,
+    trace_image_path: str | None = None,
+) -> str:
+    """Export model to ONNX format.
+
+    The mask branch in Mask R-CNN is conditional — it only runs when
+    detections exist. To ensure the tracer follows through the full mask
+    head we either use a real photo (preferred) or lower the detection
+    thresholds so that random noise produces detections.
+
+    Args:
+        model: Trained Mask R-CNN model.
+        output_path: Path to save the ONNX model.
+        device: Device the model is on.
+        image_size: Image size used for export (ignored when trace_image_path is set).
+        trace_image_path: Path to a real image for tracing.  Using a real
+            photo ensures the mask branch is fully exercised.
+
+    Returns:
+        Path to the saved ONNX model.
+    """
+    model.eval()
+    model.to(device)
+
+    # Do NOT call _patch_paste_masks_for_device here — that patch rewrites
+    # torchvision's _onnx_paste_mask_in_image with custom coordinate math
+    # that introduces a systematic pixel offset in the exported masks.
+    # Torchvision's built-in ONNX code path handles RoI alignment correctly.
+
+    if trace_image_path is not None:
+        img = Image.open(trace_image_path).convert("RGB")
+        trace_input = [F.to_tensor(img).to(device)]
+        print(f"  - Trace image: {trace_image_path} ({img.size[0]}x{img.size[1]})")
+    else:
+        trace_input = [torch.rand(3, image_size, image_size).to(device)]
+        print(f"  - Trace input: random noise ({image_size}x{image_size})")
+
+    # Lower detection thresholds so the tracer sees actual detections
+    # and traces through the mask branch (otherwise it records the
+    # empty-tensor fallback and masks become a dead ConstantOfShape).
+    orig_score_thresh = model.roi_heads.score_thresh
+    orig_nms_thresh = model.roi_heads.nms_thresh
+    orig_detections_per_img = model.roi_heads.detections_per_img
+
+    model.roi_heads.score_thresh = 0.0
+    model.roi_heads.nms_thresh = 0.99
+    model.roi_heads.detections_per_img = 100
+
+    print(f"  - Exporting model to ONNX (opset=17)...")
+    print(f"  - Device: {device}")
+    try:
+        with torch.no_grad():
+            torch.onnx.export(
+                model,
+                (trace_input,),
+                output_path,
+                opset_version=17,
+                dynamo=False,
+                do_constant_folding=False,
+                input_names=["image"],
+                output_names=["boxes", "labels", "scores", "masks"],
+                dynamic_axes={
+                    "image": {1: "height", 2: "width"},
+                    "boxes": {0: "num_detections"},
+                    "labels": {0: "num_detections"},
+                    "scores": {0: "num_detections"},
+                    "masks": {0: "num_detections", 2: "height", 3: "width"},
+                },
+            )
+    finally:
+        model.roi_heads.score_thresh = orig_score_thresh
+        model.roi_heads.nms_thresh = orig_nms_thresh
+        model.roi_heads.detections_per_img = orig_detections_per_img
+
+    print(f"  - ONNX model saved to: {output_path}")
+    return output_path
+
+
 def save_and_upload_artifacts(
     picsellia_model: Model,
     experiment: Experiment,
@@ -693,8 +771,10 @@ def save_and_upload_artifacts(
     id2label: dict[int, str],
     image_size: int = 800,
     backbone: str = "resnet50",
+    export_format: str = "torchscript",
+    trace_image_path: str | None = None,
 ) -> None:
-    """Save model weights (PyTorch and TorchScript) and upload to the experiment.
+    """Save model weights and export, then upload to the experiment.
 
     Args:
         picsellia_model: Picsellia model object.
@@ -703,6 +783,8 @@ def save_and_upload_artifacts(
         id2label: Mapping from class ID to class name.
         image_size: Image size used for training.
         backbone: Backbone architecture used for training.
+        export_format: Export format ("torchscript", "onnx", or "all").
+        trace_image_path: Path to a real image for ONNX tracing.
     """
     import json
 
@@ -724,11 +806,20 @@ def save_and_upload_artifacts(
     )
     print(f"  - PyTorch checkpoint saved to: {model_path}")
 
-    print("  - Exporting to TorchScript...")
     device = next(model.parameters()).device
-    torchscript_path = os.path.join(final_dir, "model.torchscript")
-    export_to_torchscript(model, torchscript_path, device, image_size)
-    print(f"  - TorchScript model saved to: {torchscript_path}")
+    exported_paths: dict[str, str] = {}
+
+    if export_format in ("torchscript", "all"):
+        print("  - Exporting to TorchScript...")
+        torchscript_path = os.path.join(final_dir, "model.torchscript")
+        export_to_torchscript(model, torchscript_path, device, image_size)
+        exported_paths["torchscript"] = torchscript_path
+
+    if export_format in ("onnx", "all"):
+        print("  - Exporting to ONNX...")
+        onnx_path = os.path.join(final_dir, "model.onnx")
+        export_to_onnx(model, onnx_path, device, image_size, trace_image_path)
+        exported_paths["onnx"] = onnx_path
 
     print("  - Saving model metadata...")
     metadata = {
@@ -738,6 +829,7 @@ def save_and_upload_artifacts(
         "framework": "pytorch",
         "model_type": "maskrcnn",
         "image_size": image_size,
+        "export_format": export_format,
     }
     metadata_path = os.path.join(final_dir, "model_metadata.json")
     with open(metadata_path, "w") as f:
@@ -750,11 +842,20 @@ def save_and_upload_artifacts(
         artifact_name="checkpoint-latest",
         artifact_path=model_path,
     )
-    picsellia_model.save_artifact_to_experiment(
-        experiment=experiment,
-        artifact_name="model-latest",
-        artifact_path=torchscript_path,
-    )
+
+    if "torchscript" in exported_paths:
+        picsellia_model.save_artifact_to_experiment(
+            experiment=experiment,
+            artifact_name="model-latest",
+            artifact_path=exported_paths["torchscript"],
+        )
+
+    if "onnx" in exported_paths:
+        picsellia_model.save_artifact_to_experiment(
+            experiment=experiment,
+            artifact_name="model-latest-onnx",
+            artifact_path=exported_paths["onnx"],
+        )
 
 
 def mask_to_polygon(
