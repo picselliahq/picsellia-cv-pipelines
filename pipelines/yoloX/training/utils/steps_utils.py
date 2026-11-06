@@ -213,8 +213,39 @@ def export_to_onnx(
         output_names=output_names,
         dynamic_axes=dynamic_axes,
     )
+    _inline_onnx_external_data(output_path)
 
     return output_path
+
+
+def _inline_onnx_external_data(onnx_path: str) -> None:
+    """Make the .onnx file self-contained.
+
+    With torch>=2.9, `torch.onnx.export` uses the dynamo exporter, which writes the
+    weights to a sibling `<name>.onnx.data` file. Only the .onnx is uploaded to
+    Picsellia, so the weights must be stored inside it.
+
+    Raises:
+        RuntimeError: If the exported model still references external data.
+    """
+    import onnx
+    from onnx.external_data_helper import uses_external_data
+
+    # `onnx.load` reads the sibling .onnx.data file when there is one.
+    model = onnx.load(onnx_path)
+    onnx.save(model, onnx_path, save_as_external_data=False)
+
+    external_data_path = f"{onnx_path}.data"
+    if os.path.isfile(external_data_path):
+        os.remove(external_data_path)
+
+    reloaded = onnx.load(onnx_path, load_external_data=False)
+    external = [t.name for t in reloaded.graph.initializer if uses_external_data(t)]
+    if external:
+        raise RuntimeError(
+            f"ONNX export still references external data for {len(external)} tensors "
+            f"(e.g. {external[0]}); the uploaded model would be unusable."
+        )
 
 
 def save_and_upload_artifacts(
