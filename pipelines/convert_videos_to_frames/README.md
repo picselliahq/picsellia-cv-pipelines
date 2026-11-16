@@ -2,14 +2,14 @@
 
 **Split annotated video dataset versions into individual frames and create a new image dataset version.**
 
-This Picsellia pipeline downloads video assets from a dataset version, extracts every frame using OpenCV, uploads the frames to a datalake, and creates a new image dataset version on the same parent dataset — with annotations converted from the video COCO format (track-based) to the standard COCO image format (per-frame).
+This Picsellia pipeline downloads video assets from a dataset version, extracts frames using OpenCV (every frame by default, or a subset via `extract_only_keyframes` / `extract_every_n_frames`), uploads the frames to a datalake, and creates a new image dataset version on the same parent dataset — with annotations converted from the video COCO format (track-based) to the standard COCO image format (per-frame).
 
 ## What You'll Get
 
 After running this pipeline, you'll have:
-- A new image dataset version containing all extracted frames
+- A new image dataset version containing the extracted frames (all of them by default, or only the ones selected by `extract_only_keyframes` / `extract_every_n_frames`)
 - Frames uploaded to the datalake with the tag `video_frames` and `origin_video` custom metadata
-- Annotations converted from video tracks to standard per-frame COCO format
+- Annotations converted from video tracks to standard per-frame COCO format (only for the extracted frames)
 - Inference type automatically detected from the source annotations (Object Detection, Segmentation, Mask, Keypoint, or Classification)
 
 ---
@@ -42,7 +42,21 @@ Select the datalake from your Picsellia workspace.
 
 ## Parameters Reference
 
-This pipeline has no configurable parameters.
+### `extract_only_keyframes`
+**What it does**: If `true`, only extract frames marked as a track keyframe in Picsellia's video annotation export (`attributes.keyframe == true` — i.e. manually annotated frames, as opposed to interpolated ones), instead of every decoded frame.
+
+**Type**: Boolean
+**Default**: `false`
+**Mutually exclusive with**: `extract_every_n_frames`
+
+If a video has no keyframe at all (e.g. no annotations), no frame is extracted for that video.
+
+### `extract_every_n_frames`
+**What it does**: Extract one frame every N frames (e.g. `5` extracts frames 0, 5, 10, 15…).
+
+**Type**: Integer
+**Default**: `0` (extract every frame)
+**Mutually exclusive with**: `extract_only_keyframes`
 
 ---
 
@@ -54,7 +68,12 @@ The pipeline runs four steps in sequence:
 Lists all assets in the input dataset version and filters for VIDEO-type assets. If specific asset IDs are selected in the processing job, only those assets are used. Downloads the video files locally, then exports their COCO annotations using the video COCO format (`export_video=True`), which includes track-based annotations with `frame_id` per annotated frame.
 
 ### Step 2 — `extract_frames`
-Opens each video with OpenCV (`cv2.VideoCapture`) and reads every frame sequentially. Each frame is saved as a JPEG named `{video_stem}_frame_{frame_index:06d}.jpg`. A standard COCO `images` list is built from all extracted frames, and annotated frames are identified by matching `(video_id, frame_id)` pairs from the video COCO export. Video track annotations are converted to standard per-frame COCO annotations with remapped `image_id` values.
+Opens each video with OpenCV (`cv2.VideoCapture`) and reads every frame sequentially, keeping only the frames selected by the extraction parameters:
+- By default (`extract_only_keyframes=false` and `extract_every_n_frames=0`): every decoded frame is kept.
+- `extract_only_keyframes=true`: only frames marked as a track keyframe (`attributes.keyframe == true`) in the video COCO export are kept.
+- `extract_every_n_frames=N` (N > 0): only one frame every N is kept (frames 0, N, 2N…).
+
+Each kept frame is saved as a JPEG named `{video_stem}_frame_{frame_index:06d}.jpg`. A standard COCO `images` list is built from the kept frames, and annotated frames are identified by matching `(video_id, frame_id)` pairs from the video COCO export. Video track annotations are converted to standard per-frame COCO annotations with remapped `image_id` values — annotations whose frame was filtered out are dropped.
 
 ### Step 3 — `upload_frames_and_create_dataset`
 Uploads all extracted frames to the selected datalake with:
@@ -114,8 +133,13 @@ This allows filtering frames by origin video in the Picsellia datalake.
 | `output_dataset_version_name` | `frames_v1` |
 | `datalake` | *(select your datalake)* |
 
+| Parameter (optional) | Example value |
+|-----------------------|---------------|
+| `extract_only_keyframes` | `true` |
+| `extract_every_n_frames` | `5` |
+
 1. Create a processing job on a dataset version that contains VIDEO assets.
-2. Set the two inputs above.
+2. Set the two inputs above, and optionally one (not both) of the extraction parameters.
 3. Run — frames and converted annotations appear in the new dataset version.
 
 ---
@@ -130,6 +154,12 @@ If the source videos have no COCO annotations, the pipeline skips the annotation
 
 ### Output version name conflict
 If a dataset version with `output_dataset_version_name` already exists on the parent dataset, the pipeline automatically appends a timestamp (e.g., `frames_v1_1719830412.345`) and continues without failing.
+
+### `extract_only_keyframes` and `extract_every_n_frames` both set
+The pipeline raises an error since the two are mutually exclusive — set only one of them (or leave both at their default to extract every frame).
+
+### No frame extracted for a video with `extract_only_keyframes=true`
+That video has no track keyframe in its COCO export (e.g. no annotations at all). The pipeline logs a warning and extracts no frame for that specific video, while still processing the others.
 
 ---
 

@@ -5,18 +5,22 @@ from picsellia_cv_engine.core.parameters import Parameters
 class ProcessingParameters(Parameters):
     def __init__(self, log_data: LogDataType):
         super().__init__(log_data=log_data)
-        # Picsellia's video annotation tool resizes videos to this fixed
-        # canvas before display, but its COCO export does not rescale shape
-        # coordinates back to the original video resolution.
-        self.annotation_canvas_width = self.extract_parameter(
-            keys=["annotation_canvas_width"],
-            expected_type=int,
-            default=2048,
-            range_value=(1, 100_000),
+
+        # If True, only extract frames marked as a track keyframe in
+        # Picsellia's video annotation export (attributes.keyframe == True),
+        # instead of every decoded frame. Mutually exclusive with
+        # `extract_every_n_frames`.
+        self.extract_only_keyframes = self.extract_parameter(
+            keys=["extract_only_keyframes"],
+            expected_type=bool,
+            default=False,
         )
-        self.annotation_canvas_height = self.extract_parameter(
-            keys=["annotation_canvas_height"],
+
+        # Extract one frame every N frames (0 = extract every frame).
+        # Mutually exclusive with `extract_only_keyframes`.
+        self.extract_every_n_frames = self.extract_parameter(
+            keys=["extract_every_n_frames"],
             expected_type=int,
-            default=1150,
-            range_value=(1, 100_000),
+            default=0,
+            range_value=(0, 100_000),
         )

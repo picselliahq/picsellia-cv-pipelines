@@ -43,10 +43,6 @@ def download_videos() -> tuple[list, str, dict[str, Any]]:
 
     for asset in video_assets:
         asset.download(target_path=videos_dir, force_replace=True)
-        print(
-            f"[dims] asset '{asset.filename}' (id={asset.id}): "
-            f"width={asset.width}, height={asset.height}"
-        )
     print(f"Downloaded {len(video_assets)} video(s) to '{videos_dir}'.")
 
     coco_dir = os.path.join(context.working_dir, "annotations", "input")
@@ -67,17 +63,6 @@ def download_videos() -> tuple[list, str, dict[str, Any]]:
         f"{len(video_coco_data.get('images', []))} annotated frame(s), "
         f"{len(video_coco_data.get('annotations', []))} annotation(s)."
     )
-    for img in video_coco_data.get("images", []):
-        print(
-            f"[dims] video COCO 'images' entry {img.get('id')} "
-            f"(video_id={img.get('video_id')}, frame_id={img.get('frame_id')}): "
-            f"width={img.get('width')}, height={img.get('height')}"
-        )
-    if video_coco_data.get("annotations"):
-        print(
-            f"[dims] sample annotation keys: "
-            f"{sorted(video_coco_data['annotations'][0].keys())}"
-        )
     return video_assets, videos_dir, video_coco_data
 
 
@@ -87,26 +72,35 @@ def extract_frames(
     video_coco_data: dict[str, Any],
 ) -> tuple[str, dict[str, Any], dict[str, str]]:
     """
-    Extract every frame from each downloaded video using OpenCV and build a
-    standard image COCO file (track annotations converted to per-frame ones,
-    with coordinates rescaled from Picsellia's annotation canvas to the
-    actual decoded frame size).
+    Extract frames from each downloaded video using OpenCV and build a
+    standard image COCO file (track annotations converted to per-frame ones).
+
+    By default every frame is extracted. `extract_only_keyframes` restricts
+    extraction to frames marked as a track keyframe in Picsellia's video
+    annotation export, and `extract_every_n_frames` restricts it to one frame
+    every N frames (0 = every frame). The two are mutually exclusive.
 
     Returns:
         frames_dir: directory containing the extracted JPEG frames.
-        frames_coco: standard COCO dict (images = all frames, converted annotations).
+        frames_coco: standard COCO dict (images = extracted frames, converted annotations).
         frame_to_video: {frame_filename: origin_video_filename}.
     """
     context: PicselliaDatasetProcessingContext = Pipeline.get_active_context()
     parameters = context.processing_parameters
     frames_dir = os.path.join(context.working_dir, "frames")
 
+    if parameters.extract_only_keyframes and parameters.extract_every_n_frames > 0:
+        raise ValueError(
+            "Parameters 'extract_only_keyframes' and 'extract_every_n_frames' "
+            "are mutually exclusive — set only one of them."
+        )
+
     frames_coco, frame_to_video = extract_frames_and_build_coco(
         video_coco_data=video_coco_data,
         videos_dir=videos_dir,
         frames_dir=frames_dir,
-        annotation_canvas_width=parameters.annotation_canvas_width,
-        annotation_canvas_height=parameters.annotation_canvas_height,
+        extract_only_keyframes=parameters.extract_only_keyframes,
+        extract_every_n_frames=parameters.extract_every_n_frames,
     )
     return frames_dir, frames_coco, frame_to_video
 

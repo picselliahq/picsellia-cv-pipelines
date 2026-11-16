@@ -1,7 +1,7 @@
 [metadata]
 name = "convert_videos_to_frames"
 version = "1.0"
-description = "Split annotated videos into individual frames, reupload them to the datalake and create a new image dataset version with converted COCO annotations."
+description = "Split annotated videos into individual frames (all frames, keyframes only via extract_only_keyframes, or every N frames via extract_every_n_frames), reupload them to the datalake and create a new image dataset version with converted COCO annotations."
 type = "DATASET_VERSION_CREATION"
 
 [execution]
