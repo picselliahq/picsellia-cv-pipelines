@@ -26,6 +26,32 @@ context = create_processing_context_from_config(
     remove_logs_on_completion=False,
 )
 def convert_videos_to_frames_pipeline():
+    """
+    Convert Videos to Frames Pipeline
+
+    This pipeline:
+    1. Downloads VIDEO-type assets from the input dataset version and exports
+       their track-based video COCO annotations
+    2. Extracts frames from each video with OpenCV, converting video track
+       annotations into standard per-frame COCO annotations
+    3. Uploads the extracted frames to a datalake and creates a new image
+       dataset version on the same parent dataset
+    4. Imports the converted annotations onto the new dataset version
+
+    Required inputs:
+    - output_dataset_version_name: name of the new image dataset version to create
+    - datalake: datalake to upload the extracted frames to
+
+    Optional parameters (mutually exclusive, default: extract every frame):
+    - extract_only_keyframes: only extract frames marked as a track keyframe
+                               in Picsellia's video annotation export
+                               (attributes.keyframe == true), i.e. manually
+                               annotated frames rather than interpolated ones
+                               (default: false)
+    - extract_every_n_frames: extract one frame every N frames, e.g. 5 keeps
+                               frames 0, 5, 10, 15... (default: 0, meaning
+                               every frame is extracted)
+    """
     _video_assets, videos_dir, video_coco_data = download_videos()
     frames_dir, frames_coco, frame_to_video = extract_frames(
         videos_dir, video_coco_data

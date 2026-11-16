@@ -6,41 +6,43 @@ import cv2
 from picsellia.types.enums import InferenceType
 
 
-def _scale_segmentation(
-    segmentation: Any, scale_x: float, scale_y: float
-) -> Any:
-    """Rescale COCO polygon segmentation coordinates. RLE (dict) segmentations
-    are returned unchanged since they encode a mask at a fixed resolution."""
-    if scale_x == 1.0 and scale_y == 1.0:
-        return segmentation
-    if isinstance(segmentation, dict):
-        return segmentation
-    return [
-        [
-            coord * (scale_x if i % 2 == 0 else scale_y)
-            for i, coord in enumerate(polygon)
-        ]
-        for polygon in segmentation
-    ]
+def _collect_keyframe_ids(video_coco_data: dict[str, Any]) -> dict[int, set[int]]:
+    """
+    {video_id: {frame_id, ...}} for frames marked as a track keyframe in
+    Picsellia's video annotation export (attributes.keyframe == True) - i.e.
+    frames that were manually annotated, as opposed to interpolated ones.
+    """
+    image_id_to_video_id = {
+        img["id"]: img.get("video_id") for img in video_coco_data.get("images", [])
+    }
+    keyframe_ids: dict[int, set[int]] = {}
+    for ann in video_coco_data.get("annotations", []):
+        attributes = ann.get("attributes") or {}
+        if not attributes.get("keyframe"):
+            continue
+        video_id = ann.get("video_id")
+        if video_id is None:
+            video_id = image_id_to_video_id.get(ann.get("image_id"))
+        frame_id = attributes.get("frame_id")
+        if video_id is None or frame_id is None:
+            continue
+        keyframe_ids.setdefault(video_id, set()).add(frame_id)
+    return keyframe_ids
 
 
 def extract_frames_and_build_coco(
     video_coco_data: dict[str, Any],
     videos_dir: str,
     frames_dir: str,
-    annotation_canvas_width: int,
-    annotation_canvas_height: int,
+    extract_only_keyframes: bool = False,
+    extract_every_n_frames: int = 0,
 ) -> tuple[dict[str, Any], dict[str, str]]:
     """
-    Extract every frame from each video referenced in `video_coco_data`.
-    Build a standard COCO file where every frame is an image entry, and
-    video track annotations are converted to per-frame image annotations.
-
-    Picsellia's video annotation tool resizes videos to a fixed canvas
-    (`annotation_canvas_width` x `annotation_canvas_height`) before display,
-    but its COCO export does not rescale shape coordinates back to the
-    original video resolution — so annotation coordinates must be rescaled
-    here, from that fixed annotation canvas to the actual decoded frame size.
+    Extract frames from each video referenced in `video_coco_data`, according
+    to `extract_only_keyframes` / `extract_every_n_frames` (see
+    `ProcessingParameters` for their semantics - at most one may be active).
+    Build a standard COCO file where every extracted frame is an image entry,
+    and video track annotations are converted to per-frame image annotations.
 
     Returns:
         frames_coco: standard COCO dict ready for import.
@@ -54,31 +56,15 @@ def extract_frames_and_build_coco(
 
     # (video_id, frame_id) -> old image_id in the video COCO
     annotated_key_to_old_image_id: dict[tuple[int, int], int] = {}
-    # old image_id -> video_id, since annotations only carry image_id, not
-    # video_id, and we need to know which video's scale factor to apply.
-    old_image_id_to_video_id: dict[int, int] = {}
-    old_image_id_to_frame_id: dict[int, int] = {}
-    video_id_to_frame_ids: dict[int, list[int]] = {}
     for img in video_coco_data.get("images", []):
         vid = img.get("video_id")
         fid = img.get("frame_id")
         if vid is not None and fid is not None:
             annotated_key_to_old_image_id[(vid, fid)] = img["id"]
-            video_id_to_frame_ids.setdefault(vid, []).append(fid)
-        if vid is not None:
-            old_image_id_to_video_id[img["id"]] = vid
-        if fid is not None:
-            old_image_id_to_frame_id[img["id"]] = fid
 
-    category_id_to_name = {
-        c["id"]: c.get("name") for c in video_coco_data.get("categories", [])
-    }
-
-    for vid, frame_ids in video_id_to_frame_ids.items():
-        print(
-            f"[dims] video_id={vid}: {len(frame_ids)} annotated frame(s), "
-            f"frame_id range=[{min(frame_ids)}, {max(frame_ids)}]"
-        )
+    keyframe_ids_by_video = (
+        _collect_keyframe_ids(video_coco_data) if extract_only_keyframes else {}
+    )
 
     frames_coco: dict[str, Any] = {
         "images": [],
@@ -87,8 +73,6 @@ def extract_frames_and_build_coco(
     }
     frame_to_video: dict[str, str] = {}
     old_image_id_to_new: dict[int, int] = {}
-    # video_id -> (scale_x, scale_y) between annotated and decoded dimensions
-    video_id_to_scale: dict[int, tuple[float, float]] = {}
     new_image_id = 0
 
     for vid_id, video_filename in video_id_to_filename.items():
@@ -97,36 +81,42 @@ def extract_frames_and_build_coco(
             print(f"Video file not found, skipping: {video_path}")
             continue
 
+        frames_to_keep: set[int] | None = None
+        if extract_only_keyframes:
+            frames_to_keep = keyframe_ids_by_video.get(vid_id, set())
+            if not frames_to_keep:
+                print(
+                    f"No keyframe found for video_id={vid_id} "
+                    f"('{video_filename}') — no frame will be extracted."
+                )
+
         video_stem = Path(video_filename).stem
         cap = cv2.VideoCapture(video_path)
         if not cap.isOpened():
             raise RuntimeError(f"Cannot open video: {video_path}")
-        print(
-            f"[dims] video '{video_filename}' (video_id={vid_id}) opencv metadata: "
-            f"fps={cap.get(cv2.CAP_PROP_FPS):.3f}, "
-            f"reported_frame_count={cap.get(cv2.CAP_PROP_FRAME_COUNT):.0f}"
-        )
 
         frame_idx = 0
+        extracted_count = 0
         while True:
             ret, frame = cap.read()
             if not ret:
                 break
 
+            if frames_to_keep is not None:
+                keep_frame = frame_idx in frames_to_keep
+            elif extract_every_n_frames > 0:
+                keep_frame = frame_idx % extract_every_n_frames == 0
+            else:
+                keep_frame = True
+
+            if not keep_frame:
+                frame_idx += 1
+                continue
+
             frame_filename = f"{video_stem}_frame_{frame_idx:06d}.jpg"
             cv2.imwrite(os.path.join(frames_dir, frame_filename), frame)
 
             h, w = frame.shape[:2]
-            if vid_id not in video_id_to_scale:
-                scale_x = w / annotation_canvas_width
-                scale_y = h / annotation_canvas_height
-                video_id_to_scale[vid_id] = (scale_x, scale_y)
-                print(
-                    f"[dims] video '{video_filename}' (video_id={vid_id}): "
-                    f"annotation canvas={annotation_canvas_width}x{annotation_canvas_height}, "
-                    f"opencv decoded frame={w}x{h}, "
-                    f"scale_x={scale_x:.4f}, scale_y={scale_y:.4f}"
-                )
             frames_coco["images"].append(
                 {
                     "id": new_image_id,
@@ -142,67 +132,35 @@ def extract_frames_and_build_coco(
                 old_image_id_to_new[annotated_key_to_old_image_id[key]] = new_image_id
 
             new_image_id += 1
+            extracted_count += 1
             frame_idx += 1
 
         cap.release()
-        print(f"Extracted {frame_idx} frames from '{video_filename}'.")
-        annotated_frame_ids = video_id_to_frame_ids.get(vid_id, [])
-        if annotated_frame_ids and max(annotated_frame_ids) >= frame_idx:
-            print(
-                f"[dims] MISMATCH: video_id={vid_id} has annotated frame_id up to "
-                f"{max(annotated_frame_ids)} but only {frame_idx} frame(s) were "
-                f"decoded — frame_id/frame_idx are out of sync for this video."
-            )
+        print(f"Extracted {extracted_count} frame(s) from '{video_filename}'.")
 
-    # Convert video track annotations to standard per-frame COCO annotations,
-    # rescaling coordinates from the fixed annotation canvas to the actual
-    # decoded frame size.
+    # Convert video track annotations to standard per-frame COCO annotations.
+    # Annotations whose frame wasn't extracted (filtered out above) are
+    # naturally dropped since their old image_id has no entry in
+    # `old_image_id_to_new`.
     new_ann_id = 0
-    # Log only the first occurrence of each (video_id, category) pair — these
-    # are static zones so one sample per zone per video is enough to compare
-    # against the source video's annotation UI, and it spreads the logging
-    # across every video instead of only the first one encountered.
-    logged_video_categories: set[tuple[int | None, int]] = set()
     for ann in video_coco_data.get("annotations", []):
         old_img_id = ann.get("image_id")
         if old_img_id not in old_image_id_to_new:
             continue
 
         new_img_id = old_image_id_to_new[old_img_id]
-        vid_id = old_image_id_to_video_id.get(old_img_id)
-        frame_id = old_image_id_to_frame_id.get(old_img_id)
-        scale_x, scale_y = video_id_to_scale.get(vid_id, (1.0, 1.0))
-
-        bbox = ann.get("bbox", [])
-        log_key = (vid_id, ann["category_id"])
-        should_log = log_key not in logged_video_categories
-        if should_log:
-            logged_video_categories.add(log_key)
-            category_name = category_id_to_name.get(ann["category_id"])
-            print(
-                f"[dims] annotation {ann.get('id')} label='{category_name}' "
-                f"video_id={vid_id} frame_id={frame_id} old_image_id={old_img_id}: "
-                f"bbox_before={bbox}, scale_x={scale_x:.4f}, scale_y={scale_y:.4f}"
-            )
-        if bbox and (scale_x != 1.0 or scale_y != 1.0):
-            x, y, bw, bh = bbox
-            bbox = [x * scale_x, y * scale_y, bw * scale_x, bh * scale_y]
-        if should_log:
-            print(f"[dims] annotation {ann.get('id')}: bbox_after={bbox}")
-
-        area = ann.get("area", 0.0) * scale_x * scale_y
 
         new_ann: dict[str, Any] = {
             "id": new_ann_id,
             "image_id": new_img_id,
             "category_id": ann["category_id"],
-            "bbox": bbox,
-            "area": area,
+            "bbox": ann.get("bbox", []),
+            "area": ann.get("area", 0.0),
             "iscrowd": ann.get("iscrowd", 0),
         }
         seg = ann.get("segmentation")
         if seg:
-            new_ann["segmentation"] = _scale_segmentation(seg, scale_x, scale_y)
+            new_ann["segmentation"] = seg
 
         frames_coco["annotations"].append(new_ann)
         new_ann_id += 1
