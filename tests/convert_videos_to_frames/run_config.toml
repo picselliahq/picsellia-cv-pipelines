@@ -13,3 +13,6 @@ datalake = "019a5df4-9465-7683-9f74-c3182e498288"
 
 [input.dataset_version]
 id = "019f21dd-6102-76f2-bafb-4658d00a5c31"
+
+[parameters]
+extract_only_keyframes = true

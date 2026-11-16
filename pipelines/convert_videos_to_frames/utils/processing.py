@@ -9,21 +9,24 @@ from picsellia.types.enums import InferenceType
 def _collect_keyframe_ids(video_coco_data: dict[str, Any]) -> dict[int, set[int]]:
     """
     {video_id: {frame_id, ...}} for frames marked as a track keyframe in
-    Picsellia's video annotation export (attributes.keyframe == True) - i.e.
-    frames that were manually annotated, as opposed to interpolated ones.
+    Picsellia's video annotation export (frame_attributes.keyframe == True) -
+    i.e. frames that were manually annotated, as opposed to interpolated
+    ones. Several tracks can each have a keyframe on the same frame_id (one
+    annotation per track); that frame only needs to be extracted once, so
+    results are deduplicated per video via a set.
     """
     image_id_to_video_id = {
         img["id"]: img.get("video_id") for img in video_coco_data.get("images", [])
     }
     keyframe_ids: dict[int, set[int]] = {}
     for ann in video_coco_data.get("annotations", []):
-        attributes = ann.get("attributes") or {}
-        if not attributes.get("keyframe"):
+        frame_attributes = ann.get("frame_attributes") or {}
+        if not frame_attributes.get("keyframe"):
             continue
         video_id = ann.get("video_id")
         if video_id is None:
             video_id = image_id_to_video_id.get(ann.get("image_id"))
-        frame_id = attributes.get("frame_id")
+        frame_id = frame_attributes.get("frame_id")
         if video_id is None or frame_id is None:
             continue
         keyframe_ids.setdefault(video_id, set()).add(frame_id)
