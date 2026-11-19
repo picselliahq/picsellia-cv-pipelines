@@ -17,10 +17,10 @@ train_set_split_ratio = 0.8
 validate = false
 
 [input.train_dataset_version]
-id = "0189df3c-bb5a-75a0-9269-541686ac5b70"
+id = "@dataset_version"
 
 [input.model_version]
-id = "019ba344-faad-70ba-8700-a541bf48ae19"
+id = "@model_version"
 
 [output.experiment]
 name = "yolov8_exp1"

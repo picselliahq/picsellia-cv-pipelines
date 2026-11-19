@@ -3,10 +3,6 @@ override_outputs = true
 [job]
 type = "PRE_ANNOTATION"
 
-[auth]
-organization_name = "test-account"
-env = "STAGING"
-
 [inputs]
 model_file_name = "pretrained-weights"
 confidence_threshold = 0.1
@@ -22,7 +18,7 @@ model_file_name = "pretrained-weights"
 replace_annotations = false
 
 [input.dataset_version]
-id = "0198e049-b98a-7bb6-b043-7cc3c8eeb5e3"
+id = "@dataset_version"
 
 [input.model_version]
-id = "0196a0ec-e802-775f-818a-4d3482f31d31"
+id = "@model_version"

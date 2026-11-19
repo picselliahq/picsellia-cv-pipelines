@@ -3,13 +3,11 @@ override_outputs = true
 [job]
 type = "TRAINING"
 
-
 [input.model_version]
-id = "0196a0f3-37f5-7b20-9f22-c3445452aeba"
+id = "@model_version"
 
 [input.train_dataset_version]
-id = "01892b88-8dac-7664-96ee-16d05aa599c9"
-
+id = "@dataset_version"
 
 [output.experiment]
 name = "yoloX"

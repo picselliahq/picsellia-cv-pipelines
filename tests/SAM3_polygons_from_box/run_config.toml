@@ -3,10 +3,6 @@ override_outputs = true
 [job]
 type = "DATASET_VERSION_CREATION"
 
-[auth]
-organization_name = "test-account"
-env = "STAGING"
-
 [inputs]
 output_dataset_version_name = "polygons-from-boxes"
 
@@ -18,4 +14,4 @@ fallback_to_bbox_polygon = true
 annotation_mode = "replace"
 
 [input.dataset_version]
-id = "019b6f03-1eed-7137-9b44-35bd2134aa1c"
+id = "@dataset_version"
