@@ -3,15 +3,11 @@ override_outputs = true
 [job]
 type = "TRAINING"
 
-[auth]
-organization_name = "test-account"
-env = "STAGING"
-
 [input.train_dataset_version]
-id = "01892b88-6572-7161-8b78-ec5fff300cec"
+id = "@dataset_version"
 
 [input.model_version]
-id = "01991517-f20e-7667-a4f7-4216dfcc076a"
+id = "@model_version"
 
 [output.experiment]
 name = "test-clip"

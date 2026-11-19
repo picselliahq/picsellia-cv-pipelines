@@ -47,7 +47,7 @@ pre-commit install
 
 # Authenticate
 export PXL_API_TOKEN="your-token"
-pxl-pipeline login --organization test-account --env STAGING --token $PXL_API_TOKEN
+pxl-pipeline login --organization Picsellia_CI --env STAGING --token $PXL_API_TOKEN
 ```
 
 ### Repository Structure
@@ -624,6 +624,29 @@ id = "test-model-id"
 cd pipelines/my_pipeline
 pxl-pipeline test my_pipeline --run-config-file test_config.toml
 ```
+
+### CI Fixtures (`Picsellia_CI`)
+
+The CI tests of this repository run in the staging organization `Picsellia_CI`,
+which holds one small dataset per pipeline (`ci-<pipeline>`, version
+`fixture-v1`) and a copy of the base models (`ci-<model>`).
+
+- `tests/fixtures.toml` declares every fixture (source data, base model).
+- `scripts/provision_ci_org.py` creates them (dry-run by default, `--apply` to write)
+  and records their ids in `tests/fixtures.lock.toml`.
+- `tests/<pipeline>/run_config.toml` contain no UUIDs: `"@dataset_version"`,
+  `"@model_version"` and `"@datalake"` are resolved from the lock by
+  `scripts/render_run_config.py` right before each test. The organization comes
+  from `pxl-pipeline login`, so there is no `[auth]` block in those files.
+
+To test a pipeline against its fixture:
+
+```bash
+scripts/test_pipelines.sh --pipeline yolov8/pre_annotation --organization Picsellia_CI --env STAGING --token "$PXL_API_TOKEN"
+```
+
+To add a pipeline, declare it in `tests/fixtures.toml`, run the provisioning
+script, then use the placeholders in its `run_config.toml`.
 
 ### Test with Python Directly
 
