@@ -4,7 +4,7 @@ set -euo pipefail
 echo "Reading changed files from stdin..."
 
 # Known second-level "modes" (sub-pipelines)
-MODES=(pre_annotation training fine_tuning fast_training)
+MODES=(pre_annotation training training_mask fine_tuning fast_training)
 
 is_mode() {
   local candidate="$1"
