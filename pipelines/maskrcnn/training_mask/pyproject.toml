@@ -5,9 +5,10 @@ description = "Mask R-CNN training pipeline"
 requires-python = ">=3.10"
 
 dependencies = [
-    # DatasetVersion type MASK is only known by the SDK from 6.33.0 (6.29.0 fails
-    # to parse a MASK dataset version with a pydantic enum error).
-    "picsellia>=6.33.0",
+    # MASK support in the SDK: the MASK dataset version type is unknown in 6.29.0
+    # (pydantic enum error when loading it), and Experiment.add_evaluation(masks=...)
+    # needed to push mask evaluations is available in 6.37.0 (absent in 6.33.0).
+    "picsellia>=6.37.0",
     "picsellia-pipelines-cli",
     "picsellia-cv-engine",
     "torch>=2.0.0",

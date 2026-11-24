@@ -9,7 +9,7 @@ This is the `MASK` variant of [`maskrcnn/training`](../training/README.md). The 
 | Dataset version type | `SEGMENTATION` (polygons) | `MASK` (RLE) |
 | Model version `inference_type` | `SEGMENTATION` | `MASK` |
 | Inference output | polygons (`cv2.findContours` + simplification) | lossless RLE masks |
-| Evaluation | Picsellia `ModelEvaluator` | COCO `segm` computed in the pipeline |
+| Evaluation | Picsellia `ModelEvaluator` (polygons) | RLE masks sent with `add_evaluation(masks=...)` + COCO `segm` computed in the pipeline |
 
 To turn an existing polygon dataset into a `MASK` one, run the `polygons_to_RLE_mask` pipeline first.
 
@@ -18,11 +18,12 @@ To turn an existing polygon dataset into a `MASK` one, run the `polygons_to_RLE_
 After running this pipeline, you'll have:
 - A fully trained Mask R-CNN model fine-tuned on your data
 - Model weights saved as experiment artifacts
-- COCO `segm` metrics on your test set, logged as experiment values (`mask_mAP50-95`, `mask_mAP50`, `mask_mAP75`, `mask_mAR100`, plus `mask_AP50-95_<label>` per class)
+- The test-set predictions as Picsellia **evaluations** of the experiment (one per image, masks sent as RLE), with the metrics computed by the platform
+- COCO `segm` metrics computed in the pipeline, logged as experiment values (`mask_mAP50-95`, `mask_mAP50`, `mask_mAP75`, `mask_mAR100`, plus `mask_AP50-95_<label>` per class)
 - `mask_predictions.json` (RLE detections) and `mask_metrics.json` in the working directory under `evaluation/`
 - Training curves in Picsellia
 
-> **Note:** the Picsellia SDK cannot attach `MASK` evaluations to an experiment, so test-set predictions are not visualised in the Picsellia evaluation view. Metrics are logged as values instead.
+> **Note:** sending mask evaluations needs `picsellia>=6.37.0` (`Experiment.add_evaluation(masks=...)`). The version is required in `pyproject.toml`.
 
 ## Quick Start Guide
 

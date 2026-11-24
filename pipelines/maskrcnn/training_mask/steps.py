@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 
 import torch
+from picsellia import Asset
 from picsellia_cv_engine import Pipeline, step
 from picsellia_cv_engine.core import CocoDataset, DatasetCollection, Model
 from torch.utils.data import DataLoader
@@ -14,6 +15,7 @@ from utils.steps_utils import (
     evaluate_mask_predictions,
     evaluate_one_epoch,
     get_maskrcnn_model,
+    push_mask_evaluations,
     run_inference_on_asset,
     save_and_upload_artifacts,
     train_one_epoch,
@@ -312,6 +314,7 @@ def evaluate(
 
     detections: list[dict] = []
     evaluated_image_ids: list[int] = []
+    image_id_to_asset: dict[int, Asset] = {}
     assets_with_predictions = 0
     inference_times: list[float] = []
 
@@ -339,6 +342,7 @@ def evaluate(
         inference_times.append(time.perf_counter() - start_time)
 
         evaluated_image_ids.append(image_id)
+        image_id_to_asset[image_id] = asset
         if asset_detections:
             detections.extend(asset_detections)
             assets_with_predictions += 1
@@ -366,8 +370,7 @@ def evaluate(
     print("\n[4/4] Evaluating predictions...")
     if not detections:
         print("  - WARNING: No masks detected, logging zero metrics")
-    # The Picsellia SDK cannot attach MASK evaluations to an experiment, so the
-    # COCO segm metrics are computed here and logged as experiment values.
+    # 1. COCO segm metrics computed here (per-class AP included), logged as values.
     metrics = evaluate_mask_predictions(
         gt_coco_path=ds.coco_file_path,
         detections=detections,
@@ -377,7 +380,22 @@ def evaluate(
     for metric_name, value in metrics.items():
         ctx.experiment.log(name=metric_name, data=value, type=LogType.VALUE)
         print(f"  - {metric_name}: {value:.4f}")
-    print("  - Evaluation metrics computed and logged")
+    print("  - Local COCO segm metrics computed and logged")
+
+    # 2. Masks pushed as Picsellia evaluations (shown in the evaluation view, metrics
+    # computed by the platform). Needs picsellia>=6.37.0 (add_evaluation(masks=...)).
+    if detections:
+        print(f"  - Sending masks of {len(image_id_to_asset)} images as evaluations...")
+        n_pushed = push_mask_evaluations(
+            experiment=ctx.experiment,
+            ds=ds,
+            detections=detections,
+            image_id_to_asset=image_id_to_asset,
+            cat_id_to_name={cat_id: name for name, cat_id in name2cat_id.items()},
+        )
+        print(f"  - {n_pushed} evaluations added, platform metrics computed")
+    else:
+        print("  - No masks detected: no evaluation sent to Picsellia")
 
     print("\n" + "=" * 60)
     print("EVALUATION COMPLETED")

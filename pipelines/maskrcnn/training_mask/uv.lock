@@ -1607,7 +1607,7 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "opencv-python", specifier = ">=4.11.0.86" },
-    { name = "picsellia", specifier = ">=6.33.0" },
+    { name = "picsellia", specifier = ">=6.37.0" },
     { name = "picsellia-cv-engine" },
     { name = "picsellia-pipelines-cli" },
     { name = "pycocotools" },

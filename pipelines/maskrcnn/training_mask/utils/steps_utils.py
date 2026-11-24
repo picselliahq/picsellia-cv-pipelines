@@ -11,7 +11,7 @@ from typing import Any
 import numpy as np
 import torch
 from picsellia import Experiment
-from picsellia.types.enums import LogType
+from picsellia.types.enums import InferenceType, LogType
 from picsellia_cv_engine.core import CocoDataset, DatasetCollection, Model
 from PIL import Image
 from pycocotools import mask as mask_utils
@@ -873,8 +873,9 @@ def evaluate_mask_predictions(
 ) -> dict[str, float]:
     """Compute COCO ``segm`` metrics for RLE mask detections against the ground truth.
 
-    The Picsellia SDK cannot attach mask evaluations to an experiment, so metrics
-    are computed locally with pycocotools and returned for logging.
+    Metrics are computed locally with pycocotools (including per-class AP) and
+    returned for logging, independently of the evaluations sent to the platform
+    by ``push_mask_evaluations``.
 
     Args:
         gt_coco_path: Path to the ground-truth COCO file of the evaluated split.
@@ -948,6 +949,48 @@ def evaluate_mask_predictions(
         json.dump(metrics, f, indent=2)
 
     return metrics
+
+
+def push_mask_evaluations(
+    experiment: Experiment,
+    ds: CocoDataset,
+    detections: list[dict[str, Any]],
+    image_id_to_asset: dict[int, Any],
+    cat_id_to_name: dict[int, str],
+) -> int:
+    """Send RLE mask detections to Picsellia as evaluations of the experiment.
+
+    One evaluation per asset is added with ``experiment.add_evaluation(masks=...)``
+    (the platform expects the compressed RLE ``counts`` string, as for MASK
+    annotations), then ``compute_evaluations_metrics(InferenceType.MASK)`` is run
+    and awaited so the evaluation view and its metrics are ready at the end.
+
+    Args:
+        experiment: Experiment that owns the evaluations.
+        ds: Evaluated dataset, used to resolve the labels.
+        detections: Output of ``run_inference_on_asset``, concatenated over images.
+        image_id_to_asset: COCO image id -> Picsellia asset.
+        cat_id_to_name: COCO category id -> label name.
+
+    Returns:
+        Number of assets that received an evaluation.
+    """
+    labels: dict[str, Any] = {}
+    masks_by_image: dict[int, list[tuple[str, Any, float]]] = {}
+    for det in detections:
+        name = cat_id_to_name[det["category_id"]]
+        if name not in labels:
+            labels[name] = ds.dataset_version.get_or_create_label(name)
+        masks_by_image.setdefault(det["image_id"], []).append(
+            (det["segmentation"]["counts"], labels[name], det["score"])
+        )
+
+    for image_id, masks in masks_by_image.items():
+        experiment.add_evaluation(image_id_to_asset[image_id], masks=masks)
+
+    job = experiment.compute_evaluations_metrics(inference_type=InferenceType.MASK)
+    job.wait_for_done(attempts=120)
+    return len(masks_by_image)
 
 
 class PicselliaLogger:
