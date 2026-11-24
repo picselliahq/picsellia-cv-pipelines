@@ -11,4 +11,6 @@ datalake = "@datalake"
 id = "@dataset_version"
 
 [parameters]
-extract_only_keyframes = true
+# keyframes come from video annotations, which the CI fixture videos do not have
+extract_only_keyframes = false
+extract_every_n_frames = 50

@@ -21,10 +21,6 @@ dataset_version_id = "01a1f44b-f63d-7179-935f-e7727ddd3d47"
 dataset_id = "01a1f44c-245e-77a7-a24d-80dd572fdf02"
 dataset_version_id = "01a1f44c-24c5-76a1-b01c-2f1134cdad0e"
 
-[fixtures."bounding_box_cropper"]
-dataset_id = "01a1f44c-112a-71ef-baf4-c310a251e26b"
-dataset_version_id = "01a1f44c-1191-754c-959c-46fe252a4af4"
-
 [fixtures."clip/training"]
 dataset_id = "01a1f44d-ac89-72ce-bb5e-5bbdf0568672"
 dataset_version_id = "01a1f44d-ace4-71f1-b0e8-4e2a4c7eb044"

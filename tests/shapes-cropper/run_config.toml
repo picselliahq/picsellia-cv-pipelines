@@ -12,5 +12,5 @@ id = "@dataset_version"
 
 [inputs]
 datalake = "@datalake"
-label_name_to_extract = "car,bicycle"
+label_name_to_extract = "strawberry,strawberry-fruit"
 target_version_name = "test-cropped"

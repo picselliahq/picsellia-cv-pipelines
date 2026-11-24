@@ -82,14 +82,6 @@ source_dataset = "Maritime - Ship Recognition"
 source_version_id = "01a1c681-18c4-775a-a778-558600be5aad"
 source_size = 700
 
-[fixtures."bounding_box_cropper"]
-dataset = "ci-bounding_box_cropper"
-kind = "detection"
-output_name = "ci-out-bounding_box_cropper"
-source_dataset = "Manufacturing - PCB Components"
-source_version_id = "01a1c68e-d9d1-7064-9dc8-907edcb86a2c"
-source_size = 150
-
 [fixtures."albumentations_processing"]
 dataset = "ci-albumentations_processing"
 kind = "detection"
