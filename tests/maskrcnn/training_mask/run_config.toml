@@ -1,0 +1,26 @@
+override_outputs = true
+
+[job]
+type = "TRAINING"
+
+[input.train_dataset_version]
+id = "@dataset_version"
+
+[input.model_version]
+id = "@model_version"
+
+[output.experiment]
+name = "test-1"
+project_name = "test-maskrcnn-mask"
+
+[hyperparameters]
+epochs = 2
+batch_size = 1
+image_size = 1024
+backbone = "resnet50_v2"
+learning_rate = 5e-4
+weight_decay = 5e-4
+momentum = 0.9
+lr_scheduler_step_size = 5
+lr_scheduler_gamma = 0.1
+transfer_learning = true

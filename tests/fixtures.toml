@@ -125,6 +125,21 @@ model = "ci-mask-rcnn"
 model_version = "pre-trained"
 model_source_version_id = "019c04b7-dbc4-76ed-b46e-e39144a1029a"
 
+# MASK variant of maskrcnn/training: the source must be a MASK (RLE) dataset version.
+# Land Cover is the only MASK source in Demo-Account; the provisioning keeps the source
+# version type. The base weights are the same as maskrcnn/training (only used as
+# checkpoint-latest, the head is replaced when the number of classes differs).
+[fixtures."maskrcnn/training_mask"]
+dataset = "ci-maskrcnn-training_mask"
+kind = "segmentation"
+output_name = "ci-out-maskrcnn-training_mask"
+source_dataset = "Environment - Land Cover Segmentation"
+source_version_id = "01a1cf80-5375-77c6-aae3-9fb9836e67f1"
+source_size = 150
+model = "ci-mask-rcnn"
+model_version = "pre-trained"
+model_source_version_id = "019c04b7-dbc4-76ed-b46e-e39144a1029a"
+
 [fixtures."yolov7_segmentation"]
 dataset = "ci-yolov7_segmentation"
 kind = "segmentation"
