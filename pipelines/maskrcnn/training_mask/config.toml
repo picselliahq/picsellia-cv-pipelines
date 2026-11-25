@@ -155,3 +155,39 @@ name = "v1"
 origin_name = "Mask-RCNN-Mask"
 framework = "PYTORCH"
 inference_type = "MASK"
+
+[dataset_constraints]
+required = true
+
+[[dataset_constraints.groups]]
+name = "1 dataset"
+description = '''
+One MASK dataset version, attached with the alias `train`.
+
+The pipeline splits it at random into **train / val / test**: 80 % / 10 % / 10 % with the default `train_set_split_ratio` (reproducible with `seed`).
+
+Small MASK dataset for this configuration: dataset `ci-maskrcnn-training_mask-configs`, version `single`.'''
+aliases = ["train"]
+alias_descriptions = { train = "MASK dataset version, split into train / val / test" }
+
+[[dataset_constraints.groups]]
+name = "2 datasets"
+description = '''
+Two MASK dataset versions, attached with the aliases `train` and `test`.
+
+`train` is split into **train / val** (80 % / 20 % with the default `train_set_split_ratio`); `test` is used as it is. The second alias must be `test`, not `val`.
+
+Small MASK datasets for this configuration: dataset `ci-maskrcnn-training_mask-configs`, versions `train` and `test`.'''
+aliases = ["train", "test"]
+alias_descriptions = { train = "MASK dataset version, split into train / val", test = "MASK dataset version, used as it is" }
+
+[[dataset_constraints.groups]]
+name = "3 datasets"
+description = '''
+Three MASK dataset versions, attached with the aliases `train`, `val` and `test`.
+
+Each dataset is used as it is, nothing is split.
+
+Small MASK datasets for this configuration: dataset `ci-maskrcnn-training_mask-configs`, versions `train`, `val` and `test`.'''
+aliases = ["train", "val", "test"]
+alias_descriptions = { train = "MASK training split", val = "MASK validation split", test = "MASK test split" }
