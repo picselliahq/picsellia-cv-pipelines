@@ -17,13 +17,13 @@ To turn an existing polygon dataset into a `MASK` one, run the `polygons_to_RLE_
 
 After running this pipeline, you'll have:
 - A fully trained Mask R-CNN model fine-tuned on your data
-- Model weights saved as experiment artifacts
+- Experiment artifacts: `checkpoint-latest` (PyTorch), `model-latest` (TorchScript, checked against the PyTorch model after export), `model-metadata` (labels, backbone, thresholds and the output format of the TorchScript model), `mask-metrics` and `mask-predictions` (JSON)
 - The test-set predictions as Picsellia **evaluations** of the experiment (one per image, masks sent as RLE), with the metrics computed by the platform
-- COCO `segm` metrics computed in the pipeline, logged as experiment values (`mask_mAP50-95`, `mask_mAP50`, `mask_mAP75`, `mask_mAR100`, plus `mask_AP50-95_<label>` per class)
-- `mask_predictions.json` (RLE detections) and `mask_metrics.json` in the working directory under `evaluation/`
-- Training curves in Picsellia
+- COCO metrics computed in the pipeline: mask and box mAP/mAR as values (`test/mAP50-95(M)`, ...) and a per-class table (`test/metrics`)
+- A few test images with the predicted masks drawn on them (`test/prediction_NN`)
+- Training curves (`train/*`, `val/*`), including the validation mask mAP per epoch
 
-> **Note:** sending mask evaluations needs `picsellia>=6.37.0` (`Experiment.add_evaluation(masks=...)`). The version is required in `pyproject.toml`.
+> **Note:** sending mask evaluations needs `picsellia>=6.37.0` (`Experiment.add_evaluation(masks=...)`). The version is required in `pyproject.toml`. `opencv-python` stays a dependency because `picsellia-cv-engine` imports `cv2` without declaring it.
 
 ## Quick Start Guide
 
@@ -106,7 +106,7 @@ batch_size = 4
 ---
 
 #### `image_size`
-**What it does**: Minimum size to which images are resized during training.
+**What it does**: Shorter side images are resized to, in training and in inference (torchvision `min_size`; the longer side is capped at `image_size * 1333 / 800`). It is stored in the checkpoint and in `model-metadata`.
 
 **Type**: Integer
 **Default**: `800`
@@ -265,20 +265,28 @@ transfer_learning = true
 
 **Available Options**:
 
-| Format | Description | Best For |
-|--------|-------------|----------|
-| `torchscript` | PyTorch TorchScript format | Production deployment, cross-platform |
-| `onnx` | Open Neural Network Exchange | Interoperability, various runtimes |
+Only `torchscript` is supported: any other value stops the training at the start with an explicit error.
+
+| Format | Description |
+|--------|-------------|
+| `torchscript` | TorchScript model (`model-latest`). It returns `(boxes, labels, scores, masks)` where `masks` are raw 28x28 logits to resize, paste and threshold on the client side (described in `model-metadata`) |
 
 **Example**:
 ```toml
 [export_parameters]
-# TorchScript (default)
 export_format = "torchscript"
-
-# ONNX
-export_format = "onnx"
 ```
+
+### Evaluation and Reporting Parameters
+
+| Parameter | Default | What it does |
+|-----------|---------|--------------|
+| `metrics_score_threshold` | `0.05` | Minimum score of the detections used for the COCO metrics. Keep it low: mAP is computed over the whole precision/recall curve |
+| `score_threshold` | `0.5` | Minimum score of the masks sent to Picsellia as evaluations, drawn in the overlays, and the default threshold written in `model-metadata` |
+| `mask_threshold` | `0.5` | Threshold that binarizes the predicted mask probabilities |
+| `val_map_every` | `1` | Compute the validation mask mAP every N epochs (and on the last one); `0` disables it. It costs one inference pass over the validation split |
+| `overlay_images` | `8` | Number of test images logged with the predicted masks drawn on them; `0` disables it |
+| `log_every` | `0` | Progress line every N iterations (`0` = about 10 per epoch) |
 
 ---
 
@@ -415,9 +423,11 @@ learning_rate = 5e-4
 
 After training completes, check Picsellia for:
 
-- **Model weights**: Final checkpoint saved automatically
-- **Training curves**: Loss components over epochs
-- **Validation metrics**: Losses on validation set
+- **Model weights**: `checkpoint-latest` is uploaded first, then `model-metadata`, then the TorchScript `model-latest`, so a failing export never loses the training
+- **Training curves**: `train/loss*`, `train/lr`, `train/epoch_time_s`, `train/gpu_memory_peak_gb`
+- **Validation curves**: `val/loss*` and, every `val_map_every` epochs, `val/mAP50-95(M)`, `val/mAP50(M)`, `val/mAP50-95(B)`
+- **Dataset sizes**: `dataset/train_images`, `dataset/val_images`, `dataset/train_masks`, `dataset/val_masks`
+- **TorchScript check**: `export/torchscript_matches_eager` is `1` when the exported model gives the same detections as the PyTorch model on a real image, `0` when it does not (a warning is then in the step log)
 
 ### Loss Components
 
@@ -434,12 +444,19 @@ Mask R-CNN reports multiple loss components:
 
 ### Performance Metrics
 
-Masks are evaluated with COCO `segm` on the test split (mask IoU, not box IoU):
-- `mask_mAP50-95`: mean Average Precision over IoU 0.50:0.95
-- `mask_mAP50`: AP at IoU threshold 0.5
-- `mask_mAP75`: AP at IoU threshold 0.75
-- `mask_mAR100`: mean Average Recall with up to 100 detections per image
-- `mask_AP50-95_<label>`: per-class AP
+Metrics are computed on the test split with pycocotools, on every detection above `metrics_score_threshold`. `(M)` is the mask IoU, `(B)` the box IoU, as in the other Picsellia pipelines:
+
+| Log | Meaning |
+|-----|---------|
+| `test/mAP50-95(M)`, `test/mAP50(M)`, `test/mAP75(M)` | Mask mean Average Precision (IoU 0.50:0.95, 0.5, 0.75) |
+| `test/mAP-small(M)`, `test/mAP-medium(M)`, `test/mAP-large(M)` | Mask mAP by object area |
+| `test/mAR100(M)` | Mask mean Average Recall, up to 100 detections per image |
+| `test/mAP50-95(B)`, `test/mAP50(B)`, `test/mAP75(B)`, `test/mAR100(B)` | Same metrics on the boxes |
+| `test/metrics` (table) | One row per class plus `all`: images, instances, mask mAP50-95/mAP50/mAP75/mAR100 and box mAP50-95/mAP50 |
+| `test/inference_time_ms` | Model forward time per image (first image excluded, GPU synchronized) |
+| `test/time_per_image_ms` | Per image, including loading and mask encoding |
+
+The evaluations in Picsellia only contain the masks with a score above `score_threshold`, so the metrics computed by the platform are not the same numbers as the `test/*` values above. The `test/*` values are the reference.
 
 A metric COCO cannot define (for example a class with no ground truth) is logged as `0`.
 

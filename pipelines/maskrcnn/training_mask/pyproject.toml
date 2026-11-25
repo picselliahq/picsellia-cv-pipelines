@@ -14,5 +14,7 @@ dependencies = [
     "torch>=2.0.0",
     "torchvision>=0.15.0",
     "pycocotools",
+    # Not used by this pipeline, but picsellia-cv-engine imports cv2 (core/services/
+    # utils/annotations.py) without declaring opencv-python: keep it installed.
     "opencv-python>=4.11.0.86",
 ]

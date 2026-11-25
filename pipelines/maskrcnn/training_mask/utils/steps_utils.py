@@ -1,17 +1,18 @@
 from __future__ import annotations
 
-import copy
 import json
+import math
 import os
-import shutil
 import time
+import warnings
 from pathlib import Path
 from typing import Any
 
 import numpy as np
 import torch
+import torchvision
 from picsellia import Experiment
-from picsellia.types.enums import InferenceType, LogType
+from picsellia.types.enums import LogType
 from picsellia_cv_engine.core import CocoDataset, DatasetCollection, Model
 from PIL import Image
 from pycocotools import mask as mask_utils
@@ -26,6 +27,10 @@ from torchvision.models.detection import (
 from torchvision.models.detection.faster_rcnn import FastRCNNPredictor
 from torchvision.models.detection.mask_rcnn import MaskRCNNPredictor
 from torchvision.transforms import functional as F
+from utils.evaluation import encode_mask_rle, evaluate_detections
+from utils.log import fmt_duration, get_logger
+
+log = get_logger()
 
 
 class CocoMaskDataset(Dataset):
@@ -180,23 +185,38 @@ def get_maskrcnn_model(
     num_classes: int,
     backbone: str = "resnet50",
     pretrained: bool = True,
+    image_size: int = 800,
 ) -> torch.nn.Module:
     """Create a Mask R-CNN model with custom number of classes.
+
+    ``pretrained=True`` loads the torchvision COCO weights of the whole detector
+    (backbone, RPN, heads); the box and mask predictors are then replaced for
+    ``num_classes``.
 
     Args:
         num_classes: Number of classes (including background).
         backbone: Backbone architecture ("resnet50" or "resnet50_v2").
-        pretrained: Whether to use pretrained weights.
+        pretrained: Whether to start from the torchvision COCO weights.
+        image_size: Shorter side images are resized to (torchvision ``min_size``).
+            ``max_size`` keeps torchvision's default 800:1333 ratio.
 
     Returns:
         Mask R-CNN model ready for training.
     """
+    size_kwargs = {
+        "min_size": int(image_size),
+        "max_size": int(round(image_size * 1333 / 800)),
+    }
+    if not pretrained:
+        # Without COCO weights torchvision still downloads the ImageNet backbone
+        # (~100 MB); here the weights come from a checkpoint, so skip it.
+        size_kwargs["weights_backbone"] = None
     if backbone == "resnet50_v2":
         weights = MaskRCNN_ResNet50_FPN_V2_Weights.DEFAULT if pretrained else None
-        model = maskrcnn_resnet50_fpn_v2(weights=weights)
+        model = maskrcnn_resnet50_fpn_v2(weights=weights, **size_kwargs)
     else:
         weights = MaskRCNN_ResNet50_FPN_Weights.DEFAULT if pretrained else None
-        model = maskrcnn_resnet50_fpn(weights=weights)
+        model = maskrcnn_resnet50_fpn(weights=weights, **size_kwargs)
 
     in_features = model.roi_heads.box_predictor.cls_score.in_features
     model.roi_heads.box_predictor = FastRCNNPredictor(in_features, num_classes)
@@ -233,97 +253,6 @@ def build_datasets(
     return train_ds, val_ds
 
 
-def paste_masks_in_image_gpu(
-    masks: torch.Tensor,
-    boxes: torch.Tensor,
-    img_h: int,
-    img_w: int,
-    threshold: float = 0.5,
-) -> torch.Tensor:
-    """Paste masks into an image tensor - GPU compatible version.
-
-    This is a TorchScript-compatible replacement for torchvision's paste_masks_in_image
-    that keeps all tensors on the same device.
-
-    Args:
-        masks: Tensor of shape [N, 1, H, W] - raw mask predictions (usually 28x28)
-        boxes: Tensor of shape [N, 4] - bounding boxes in (x1, y1, x2, y2) format
-        img_h: Image height
-        img_w: Image width
-        threshold: Threshold for binarizing masks
-
-    Returns:
-        Tensor of shape [N, 1, img_h, img_w] - masks pasted at box locations
-    """
-    n = masks.shape[0]
-    if n == 0:
-        return masks.new_zeros((0, 1, img_h, img_w))
-
-    device = masks.device
-    result = torch.zeros((n, 1, img_h, img_w), dtype=masks.dtype, device=device)
-
-    for i in range(n):
-        box = boxes[i]
-        x1 = int(torch.clamp(box[0], min=0).item())
-        y1 = int(torch.clamp(box[1], min=0).item())
-        x2 = int(torch.clamp(box[2], max=img_w).item())
-        y2 = int(torch.clamp(box[3], max=img_h).item())
-
-        w = max(x2 - x1, 1)
-        h = max(y2 - y1, 1)
-
-        # Resize mask to box size
-        mask = masks[i : i + 1]  # Keep batch dim for interpolate
-        mask_resized = torch.nn.functional.interpolate(
-            mask, size=(h, w), mode="bilinear", align_corners=False
-        )
-
-        # Paste into result
-        result[i, 0, y1:y2, x1:x2] = mask_resized[0, 0, : y2 - y1, : x2 - x1]
-
-    return result
-
-
-class MaskRCNNWrapperRawMasks(torch.nn.Module):
-    """Wrapper for Mask R-CNN that returns raw 28x28 masks.
-
-    This avoids TorchScript limitations with dynamic tensor allocation
-    in the mask pasting operation. The client must resize masks to
-    bounding box dimensions and paste them onto the image.
-    """
-
-    def __init__(self, model: torch.nn.Module):
-        super().__init__()
-        self.model = model
-        # Store reference to roi_heads for direct access
-        self.transform = model.transform
-        self.backbone = model.backbone
-        self.rpn = model.rpn
-        self.roi_heads = model.roi_heads
-
-    def forward(
-        self, image: torch.Tensor
-    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
-        """Forward pass returning raw masks.
-
-        Args:
-            image: Input tensor of shape [C, H, W]
-
-        Returns:
-            Tuple of (boxes, labels, scores, masks)
-            masks are [N, 1, 28, 28] - raw ROI mask output, NOT pasted to image size
-            Client must resize each mask to its corresponding box dimensions.
-        """
-        # Run standard forward - masks will be pasted but we'll intercept
-        outputs = self.model([image])[0]
-        return (
-            outputs["boxes"],
-            outputs["labels"],
-            outputs["scores"],
-            outputs["masks"],
-        )
-
-
 class MaskRCNNWrapper(torch.nn.Module):
     """Wrapper for Mask R-CNN to make it compatible with TorchScript tracing.
 
@@ -331,8 +260,8 @@ class MaskRCNNWrapper(torch.nn.Module):
     masks. This avoids TorchScript tracing issues with torchvision's dynamic
     mask pasting operations.
 
-    Use paste_masks_on_image() to convert raw masks to full image size after
-    inference.
+    Clients must apply a sigmoid to the raw masks, resize each one to its box and
+    paste it onto the image (see model_metadata.json).
     """
 
     def __init__(self, model: torch.nn.Module):
@@ -355,7 +284,7 @@ class MaskRCNNWrapper(torch.nn.Module):
             - labels: [N] class labels
             - scores: [N] confidence scores
             - masks: [N, 1, 28, 28] raw mask logits for the predicted class
-              Use paste_masks_on_image() to convert to full image size.
+              Sigmoid, resize to the box and paste to get a full-size mask.
         """
         # Use the model's standard forward to get boxes, labels, scores
         # This properly handles all the NMS and filtering
@@ -394,60 +323,6 @@ class MaskRCNNWrapper(torch.nn.Module):
         masks = mask_logits[indices, labels].unsqueeze(1)  # [N, 1, 28, 28]
 
         return boxes, labels, scores, masks
-
-
-def paste_masks_on_image(
-    masks: torch.Tensor,
-    boxes: torch.Tensor,
-    image_size: tuple[int, int],
-) -> torch.Tensor:
-    """Paste raw 28x28 mask logits onto the full image.
-
-    This function should be called after inference to convert raw masks
-    from the TorchScript model to full image size.
-
-    Args:
-        masks: Raw mask logits of shape [N, 1, 28, 28] from the model
-        boxes: Bounding boxes of shape [N, 4] in (x1, y1, x2, y2) format
-        image_size: (height, width) of the target image
-
-    Returns:
-        Pasted masks of shape [N, 1, H, W] with values in [0, 1]
-    """
-    if len(masks) == 0:
-        return torch.zeros((0, 1, image_size[0], image_size[1]), device=masks.device)
-
-    n = masks.shape[0]
-    h, w = image_size
-    result = torch.zeros((n, 1, h, w), device=masks.device)
-
-    for i, (mask, box) in enumerate(zip(masks, boxes)):
-        x1, y1, x2, y2 = box.int().tolist()
-        x1 = max(0, x1)
-        y1 = max(0, y1)
-        x2 = min(w, x2)
-        y2 = min(h, y2)
-
-        box_h = y2 - y1
-        box_w = x2 - x1
-        if box_h <= 0 or box_w <= 0:
-            continue
-
-        # Resize mask to box size [1, 28, 28] -> [box_h, box_w]
-        mask_resized = torch.nn.functional.interpolate(
-            mask.unsqueeze(0),  # [1, 1, 28, 28]
-            size=(box_h, box_w),
-            mode="bilinear",
-            align_corners=False,
-        )[0, 0]  # [box_h, box_w]
-
-        # Apply sigmoid to convert logits to probabilities
-        mask_resized = torch.sigmoid(mask_resized)
-
-        # Paste into result
-        result[i, 0, y1:y2, x1:x2] = mask_resized
-
-    return result
 
 
 def _patch_paste_masks_for_device(device: torch.device):
@@ -526,7 +401,7 @@ def export_to_torchscript(
 
     Mask R-CNN has dynamic components (anchor generation, RPN) that make tracing
     difficult. This function uses tracing with check_trace=False to avoid
-    strict validation errors.
+    strict validation errors; ``validate_torchscript`` then checks the result.
 
     Args:
         model: Trained Mask R-CNN model.
@@ -549,162 +424,111 @@ def export_to_torchscript(
 
     example_input = torch.rand(3, image_size, image_size).to(device)
 
-    print(f"  - Tracing model with TorchScript (image_size={image_size})...")
-    print(f"  - Device: {device}")
-    with torch.no_grad():
-        # Use check_trace=False because Mask R-CNN has dynamic anchor generation
-        # that produces different tensor values across invocations
+    log.info(
+        "Tracing the model with TorchScript (image_size=%d, %s)", image_size, device
+    )
+    with torch.no_grad(), warnings.catch_warnings():
+        # Tracing Mask R-CNN emits dozens of TracerWarning/UserWarning lines
+        warnings.simplefilter("ignore")
+        # check_trace=False: dynamic anchor generation gives different values per call
         traced_model = torch.jit.trace(
             wrapped_model, example_input, strict=False, check_trace=False
         )
 
     traced_model.save(output_path)
-    print(f"  - TorchScript model saved to: {output_path}")
-
     return output_path
 
 
-def load_model_from_checkpoint(
-    checkpoint_path: str,
-    backbone: str = "resnet50",
-    device: str | torch.device | None = None,
-) -> tuple[torch.nn.Module, dict[int, str], int]:
-    """Load a trained Mask R-CNN model from a .pth checkpoint.
+def validate_torchscript(
+    torchscript_path: str,
+    model: torch.nn.Module,
+    sample_image: torch.Tensor,
+    device: torch.device,
+) -> dict[str, Any]:
+    """Compare the exported TorchScript with the eager model on one real image.
 
-    Args:
-        checkpoint_path: Path to the model.pth checkpoint file.
-        backbone: Backbone architecture ("resnet50" or "resnet50_v2").
-        device: Device to load the model on. If None, uses CUDA if available.
-
-    Returns:
-        Tuple of (model, id2label, num_classes)
+    Tracing bakes in the shapes seen at export time, so a model traced on a
+    square noise image can behave differently on a real, non-square image. This
+    never raises: it returns a report with ``status`` in ``ok`` / ``mismatch`` /
+    ``inconclusive`` (no detection on the sample).
     """
-    if device is None:
-        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    elif isinstance(device, str):
-        device = torch.device(device)
+    eager = MaskRCNNWrapper(model).eval().to(device)
+    traced = torch.jit.load(torchscript_path, map_location=device).eval()
+    image = sample_image.to(device)
+    with torch.no_grad(), warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        e_boxes, e_labels, e_scores, _ = eager(image)
+        t_boxes, t_labels, t_scores, _ = traced(image)
 
-    print(f"Loading checkpoint from: {checkpoint_path}")
-    checkpoint = torch.load(checkpoint_path, map_location="cpu")
+    report: dict[str, Any] = {
+        "detections_eager": int(len(e_boxes)),
+        "detections_torchscript": int(len(t_boxes)),
+        "image_shape": list(image.shape),
+    }
+    if len(e_boxes) == 0 and len(t_boxes) == 0:
+        report["status"] = "inconclusive"
+        return report
+    if len(e_boxes) != len(t_boxes):
+        report["status"] = "mismatch"
+        return report
 
-    num_classes = checkpoint["num_classes"]
-    id2label = checkpoint["id2label"]
-
-    print(f"  - Number of classes: {num_classes}")
-    print(f"  - Labels: {list(id2label.values())}")
-    print(f"  - Backbone: {backbone}")
-
-    model = get_maskrcnn_model(
-        num_classes=num_classes,
-        backbone=backbone,
-        pretrained=False,
+    box_diff = float((e_boxes - t_boxes).abs().max())
+    score_diff = float((e_scores - t_scores).abs().max())
+    labels_equal = bool((e_labels == t_labels).all())
+    report.update(max_box_diff_px=box_diff, max_score_diff=score_diff)
+    report["status"] = (
+        "ok" if labels_equal and box_diff <= 1.0 and score_diff <= 1e-3 else "mismatch"
     )
-    model.load_state_dict(checkpoint["model_state_dict"])
-    model.to(device)
-    model.eval()
-
-    print(f"  - Model loaded on device: {device}")
-
-    return model, id2label, num_classes
+    return report
 
 
-def convert_checkpoint_to_torchscript(
-    checkpoint_path: str,
-    output_path: str | None = None,
-    backbone: str = "resnet50",
-    device: str | torch.device | None = None,
-    image_size: int | None = None,
-) -> str:
-    """Load a .pth checkpoint and export it to TorchScript format.
-
-    Args:
-        checkpoint_path: Path to the model.pth checkpoint file.
-        output_path: Path to save the TorchScript model. If None, saves next to checkpoint.
-        backbone: Backbone architecture ("resnet50" or "resnet50_v2").
-        device: Device to use for tracing. If None, uses CUDA if available.
-        image_size: Image size for tracing. If None, reads from checkpoint or defaults to 800.
-
-    Returns:
-        Path to the saved TorchScript model.
-
-    Example:
-        >>> # Convert a trained checkpoint to TorchScript
-        >>> torchscript_path = convert_checkpoint_to_torchscript(
-        ...     checkpoint_path="model.pth",
-        ...     output_path="model.torchscript",
-        ...     backbone="resnet50",
-        ... )
-        >>>
-        >>> # Load and use the TorchScript model
-        >>> model = torch.jit.load(torchscript_path)
-        >>> image = torch.rand(3, 800, 800).cuda()
-        >>> boxes, labels, scores, masks = model(image)
-    """
-    if device is None:
-        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    elif isinstance(device, str):
-        device = torch.device(device)
-
-    if output_path is None:
-        base_dir = os.path.dirname(checkpoint_path)
-        output_path = os.path.join(base_dir, "model.torchscript")
-
-    print("=" * 60)
-    print("CONVERTING CHECKPOINT TO TORCHSCRIPT")
-    print("=" * 60)
-
-    checkpoint = torch.load(checkpoint_path, map_location="cpu")
-    if image_size is None:
-        image_size = checkpoint.get("image_size", 800)
-        print(f"  - Using image_size from checkpoint: {image_size}")
-
-    model, id2label, num_classes = load_model_from_checkpoint(
-        checkpoint_path=checkpoint_path,
-        backbone=backbone,
-        device=device,
-    )
-
-    print(f"\nExporting to TorchScript...")
-    print(f"  - Output path: {output_path}")
-    print(f"  - Trace image size: {image_size}")
-
-    # Patch torchvision's paste_masks functions to use correct device
-    # This fixes "Expected all tensors to be on the same device" errors
-    _patch_paste_masks_for_device(device)
-
-    wrapped_model = MaskRCNNWrapper(model)
-    wrapped_model.eval()
-    wrapped_model.to(device)
-
-    # Create example input - use a pattern that's more likely to generate detections
-    # A structured pattern works better than pure random noise for tracing
-    example_input = torch.rand(3, image_size, image_size).to(device)
-    # Add some structure to increase chance of detections during tracing
-    example_input[:, ::4, ::4] = 1.0  # Grid pattern
-    example_input[:, 1::4, 1::4] = 0.0
-
-    print("  - Tracing model...")
-    print(f"  - Device: {device}")
-
-    # First, test that the wrapper works correctly before tracing
-    with torch.no_grad():
-        test_boxes, test_labels, test_scores, test_masks = wrapped_model(example_input)
-        print(
-            f"  - Test inference: {len(test_boxes)} detections, masks shape: {test_masks.shape}"
-        )
-
-    with torch.no_grad():
-        # Use check_trace=False because Mask R-CNN has dynamic anchor generation
-        traced_model = torch.jit.trace(
-            wrapped_model, example_input, strict=False, check_trace=False
-        )
-
-    traced_model.save(output_path)
-
-    print(f"\nTorchScript model saved to: {output_path}")
-    print("=" * 60)
-
-    return output_path
+def build_model_metadata(
+    id2label: dict[int, str],
+    image_size: int,
+    backbone: str,
+    score_threshold: float,
+    mask_threshold: float,
+) -> dict[str, Any]:
+    """Describe the exported model so that it can be used without this repository."""
+    labels = [id2label[i] for i in sorted(id2label)]
+    return {
+        "framework": "pytorch",
+        "model_type": "maskrcnn",
+        "task": "instance segmentation (MASK)",
+        "backbone": backbone,
+        "labels": labels,
+        # 0-based here; the model predicts index + 1 because 0 is the background
+        "id2label": {str(i): id2label[i] for i in sorted(id2label)},
+        "label_offset": 1,
+        "num_classes": len(labels),
+        "num_classes_with_background": len(labels) + 1,
+        "image_size": image_size,
+        "min_size": int(image_size),
+        "max_size": int(round(image_size * 1333 / 800)),
+        "input": (
+            "RGB float32 tensor [3, H, W] with values in [0, 1]; resizing and "
+            "normalization are done inside the model"
+        ),
+        "default_thresholds": {
+            "score": score_threshold,
+            "mask": mask_threshold,
+        },
+        "torchscript_output": {
+            "format": "tuple (boxes, labels, scores, masks)",
+            "boxes": "[N, 4] xyxy in pixels of the input image",
+            "labels": "[N] int64, 1-based (0 is the background)",
+            "scores": "[N] float",
+            "masks": (
+                "[N, 1, 28, 28] raw logits of the predicted class: apply a "
+                "sigmoid, resize to the box, paste onto the image, then "
+                "threshold at the mask threshold"
+            ),
+        },
+        "versions": {
+            "torch": torch.__version__,
+            "torchvision": torchvision.__version__,
+        },
+    }
 
 
 def save_and_upload_artifacts(
@@ -714,24 +538,21 @@ def save_and_upload_artifacts(
     id2label: dict[int, str],
     image_size: int = 800,
     backbone: str = "resnet50",
+    sample_images: list[torch.Tensor] | None = None,
+    score_threshold: float = 0.5,
+    mask_threshold: float = 0.5,
 ) -> None:
-    """Save model weights (PyTorch and TorchScript) and upload to the experiment.
+    """Save the model and upload it to the experiment, safest artifact first.
 
-    Args:
-        picsellia_model: Picsellia model object.
-        experiment: Picsellia experiment object.
-        model: Trained Mask R-CNN model.
-        id2label: Mapping from class ID to class name.
-        image_size: Image size used for training.
-        backbone: Backbone architecture used for training.
+    Order matters: the PyTorch checkpoint and the metadata are uploaded *before*
+    the fragile TorchScript export, so a tracing failure cannot lose the training.
+    The export is then validated against the eager model on ``sample_images``
+    (the first image that gets a detection decides).
     """
-    import json
-
     out_dir = os.path.join(picsellia_model.results_dir, picsellia_model.name)
     final_dir = os.path.join(out_dir, "final")
     Path(final_dir).mkdir(parents=True, exist_ok=True)
 
-    print("  - Saving PyTorch checkpoint...")
     model_path = os.path.join(final_dir, "model.pth")
     torch.save(
         {
@@ -743,55 +564,103 @@ def save_and_upload_artifacts(
         },
         model_path,
     )
-    print(f"  - PyTorch checkpoint saved to: {model_path}")
-
-    print("  - Exporting to TorchScript...")
-    device = next(model.parameters()).device
-    torchscript_path = os.path.join(final_dir, "model.torchscript")
-    export_to_torchscript(model, torchscript_path, device, image_size)
-    print(f"  - TorchScript model saved to: {torchscript_path}")
-
-    print("  - Saving model metadata...")
-    metadata = {
-        "num_classes": len(id2label),
-        "id2label": id2label,
-        "label2id": {v: k for k, v in id2label.items()},
-        "framework": "pytorch",
-        "model_type": "maskrcnn",
-        "image_size": image_size,
-    }
-    metadata_path = os.path.join(final_dir, "model_metadata.json")
-    with open(metadata_path, "w") as f:
-        json.dump(metadata, f, indent=2)
-    print(f"  - Metadata saved to: {metadata_path}")
-
-    print("  - Uploading to Picsellia...")
     picsellia_model.save_artifact_to_experiment(
         experiment=experiment,
         artifact_name="checkpoint-latest",
         artifact_path=model_path,
     )
+    log.info("Uploaded artifact checkpoint-latest (%s)", model_path)
+
+    metadata_path = os.path.join(final_dir, "model_metadata.json")
+    with open(metadata_path, "w") as f:
+        json.dump(
+            build_model_metadata(
+                id2label, image_size, backbone, score_threshold, mask_threshold
+            ),
+            f,
+            indent=2,
+        )
+    experiment.store("model-metadata", metadata_path)
+    log.info("Uploaded artifact model-metadata (%s)", metadata_path)
+
+    device = next(model.parameters()).device
+    torchscript_path = os.path.join(final_dir, "model.torchscript")
+    export_to_torchscript(model, torchscript_path, device, image_size)
     picsellia_model.save_artifact_to_experiment(
         experiment=experiment,
         artifact_name="model-latest",
         artifact_path=torchscript_path,
     )
+    log.info("Uploaded artifact model-latest (%s)", torchscript_path)
+
+    if not sample_images:
+        log.warning("No sample image: the TorchScript export is not validated")
+        return
+    report: dict[str, Any] = {}
+    for sample_image in sample_images:
+        report = validate_torchscript(torchscript_path, model, sample_image, device)
+        if report["status"] != "inconclusive":
+            break
+    if report["status"] == "ok":
+        log.info("TorchScript check OK: %s", report)
+        experiment.log("export/torchscript_matches_eager", 1.0, LogType.VALUE)
+    elif report["status"] == "mismatch":
+        log.warning(
+            "TorchScript output DIFFERS from the PyTorch model on a real image: %s",
+            report,
+        )
+        experiment.log("export/torchscript_matches_eager", 0.0, LogType.VALUE)
+    else:
+        log.warning(
+            "TorchScript check inconclusive (no detection on %d image(s)): %s",
+            len(sample_images),
+            report,
+        )
 
 
-def encode_mask_rle(binary_mask: np.ndarray) -> dict[str, Any]:
-    """Encode a binary (H, W) mask as a compressed COCO RLE.
+def detections_from_outputs(
+    output: dict[str, torch.Tensor],
+    image_id: int,
+    label_to_cat_id: dict[int, int],
+    conf_thresh: float,
+    mask_thresh: float,
+) -> list[dict[str, Any]]:
+    """Turn one torchvision output dict into COCO-style RLE detections.
+
+    Filtering and mask thresholding happen on the device, so only the kept
+    detections are moved to the CPU (as uint8 masks).
 
     Args:
-        binary_mask: Array of shape (H, W) with values 0 or 1.
-
-    Returns:
-        JSON-serializable RLE: ``{"size": [h, w], "counts": str}``.
+        output: Model output for one image (boxes, labels, scores, masks).
+        image_id: COCO id of the image in the ground-truth file.
+        label_to_cat_id: Model label (1-based) -> COCO category id.
+        conf_thresh: Minimum score to keep a detection.
+        mask_thresh: Threshold for the binary mask.
     """
-    rle = mask_utils.encode(np.asfortranarray(binary_mask.astype(np.uint8)))
-    return {
-        "size": [int(s) for s in rle["size"]],
-        "counts": rle["counts"].decode("utf-8"),
-    }
+    keep = output["scores"] >= conf_thresh
+    if not bool(keep.any()):
+        return []
+    scores = output["scores"][keep].cpu().numpy()
+    labels = output["labels"][keep].cpu().numpy()
+    boxes = output["boxes"][keep].cpu().numpy()
+    masks = (output["masks"][keep][:, 0] > mask_thresh).to(torch.uint8).cpu().numpy()
+
+    detections: list[dict[str, Any]] = []
+    for score, label, box, mask in zip(scores, labels, boxes, masks, strict=True):
+        cat_id = label_to_cat_id.get(int(label))
+        if cat_id is None or not mask.any():
+            continue  # background / unknown label / empty mask
+        x1, y1, x2, y2 = (float(v) for v in box)
+        detections.append(
+            {
+                "image_id": int(image_id),
+                "category_id": int(cat_id),
+                "score": float(score),
+                "segmentation": encode_mask_rle(mask),
+                "box": [x1, y1, x2 - x1, y2 - y1],
+            }
+        )
+    return detections
 
 
 def run_inference_on_asset(
@@ -799,198 +668,65 @@ def run_inference_on_asset(
     asset,
     model: torch.nn.Module,
     device: torch.device,
-    id2label: dict[int, str],
+    label_to_cat_id: dict[int, int],
     image_id: int,
-    name2cat_id: dict[str, int],
-    conf_thresh: float = 0.5,
+    conf_thresh: float = 0.05,
     mask_thresh: float = 0.5,
-) -> list[dict[str, Any]]:
-    """Run inference on a single asset and return RLE mask detections.
-
-    Args:
-        ds: CocoDataset containing the asset.
-        asset: Asset to run inference on.
-        model: Trained Mask R-CNN model.
-        device: Device to run inference on.
-        id2label: Mapping from 0-indexed class ID to class name.
-        image_id: COCO id of the image in the ground-truth file.
-        name2cat_id: Mapping from class name to COCO category id.
-        conf_thresh: Confidence threshold for detections.
-        mask_thresh: Threshold for binary mask.
+) -> tuple[list[dict[str, Any]], float]:
+    """Run inference on a single asset.
 
     Returns:
-        Detections in COCO results format, one dict per instance:
-        ``{"image_id", "category_id", "score", "segmentation"}`` where
-        ``segmentation`` is a compressed RLE. Empty when nothing is detected.
+        ``(detections, forward_seconds)``: the RLE detections (see
+        ``detections_from_outputs``) and the time of the model forward alone,
+        excluding image loading and mask encoding.
     """
     img_path = os.path.join(ds.images_dir, asset.id_with_extension)
     image = Image.open(img_path).convert("RGB")
-    image_tensor = F.to_tensor(image).unsqueeze(0).to(device)
+    image_tensor = F.to_tensor(image).to(device)
 
     model.eval()
+    if device.type == "cuda":
+        torch.cuda.synchronize()
+    start = time.perf_counter()
     with torch.no_grad():
-        outputs = model(image_tensor)[0]
+        output = model([image_tensor])[0]
+    if device.type == "cuda":
+        torch.cuda.synchronize()
+    forward_seconds = time.perf_counter() - start
 
-    labels = outputs["labels"].cpu().numpy()
-    scores = outputs["scores"].cpu().numpy()
-    masks = outputs["masks"].cpu().numpy()
-
-    detections: list[dict[str, Any]] = []
-    for i in range(len(scores)):
-        if scores[i] < conf_thresh:
-            continue
-
-        # Model predicts 1-indexed labels (0 = background), id2label is 0-indexed
-        id2label_idx = int(labels[i]) - 1
-        if id2label_idx < 0 or id2label_idx not in id2label:
-            continue  # Skip background (label_id=0) or unknown labels
-
-        cat_id = name2cat_id.get(id2label[id2label_idx])
-        if cat_id is None:
-            continue  # Label absent from the ground-truth categories
-
-        binary_mask = (masks[i, 0] > mask_thresh).astype(np.uint8)
-        if not binary_mask.any():
-            continue
-
-        detections.append(
-            {
-                "image_id": image_id,
-                "category_id": cat_id,
-                "score": float(scores[i]),
-                "segmentation": encode_mask_rle(binary_mask),
-            }
-        )
-
-    return detections
+    detections = detections_from_outputs(
+        output, image_id, label_to_cat_id, conf_thresh, mask_thresh
+    )
+    return detections, forward_seconds
 
 
-def evaluate_mask_predictions(
+@torch.no_grad()
+def compute_val_map(
+    model: torch.nn.Module,
+    data_loader: torch.utils.data.DataLoader,
+    val_ds: CocoMaskDataset,
     gt_coco_path: str,
-    detections: list[dict[str, Any]],
-    image_ids: list[int],
-    output_dir: str,
+    device: torch.device,
+    conf_thresh: float = 0.05,
+    mask_thresh: float = 0.5,
 ) -> dict[str, float]:
-    """Compute COCO ``segm`` metrics for RLE mask detections against the ground truth.
-
-    Metrics are computed locally with pycocotools (including per-class AP) and
-    returned for logging, independently of the evaluations sent to the platform
-    by ``push_mask_evaluations``.
-
-    Args:
-        gt_coco_path: Path to the ground-truth COCO file of the evaluated split.
-        detections: Output of ``run_inference_on_asset``, concatenated over images.
-        image_ids: COCO ids of the images that were run through the model.
-        output_dir: Directory where ``mask_metrics.json`` and ``mask_predictions.json``
-            are written.
-
-    Returns:
-        Metric name -> value. Overall metrics are prefixed ``mask_``; per-class
-        AP is ``mask_AP50-95_<label>``.
-    """
-    from pycocotools.cocoeval import COCOeval
-
-    os.makedirs(output_dir, exist_ok=True)
-
-    with open(gt_coco_path) as f:
-        gt_data = json.load(f)
-
-    # RLE ground truth may be flagged iscrowd=1, which COCOeval treats as "ignore"
-    # regions and would silently discard every instance. Each mask is a real instance.
-    gt_data["annotations"] = [a for a in gt_data["annotations"] if a.get("segmentation")]
-    for ann in gt_data["annotations"]:
-        ann["iscrowd"] = 0
-
-    coco_gt = COCO()
-    coco_gt.dataset = gt_data
-    coco_gt.createIndex()
-    for ann in coco_gt.dataset["annotations"]:
-        if "area" not in ann:
-            ann["area"] = float(mask_utils.area(coco_gt.annToRLE(ann)))
-
-    with open(os.path.join(output_dir, "mask_predictions.json"), "w") as f:
-        json.dump(detections, f)
-
-    if not detections:
-        metrics = {
-            "mask_mAP50-95": 0.0,
-            "mask_mAP50": 0.0,
-            "mask_mAP75": 0.0,
-            "mask_mAR100": 0.0,
-        }
-    else:
-        # loadRes mutates its input (adds numpy bbox/area), so give it a copy
-        coco_dt = coco_gt.loadRes(copy.deepcopy(detections))
-        coco_eval = COCOeval(cocoGt=coco_gt, cocoDt=coco_dt, iouType="segm")
-        coco_eval.params.imgIds = list(image_ids)
-        coco_eval.evaluate()
-        coco_eval.accumulate()
-        coco_eval.summarize()
-
-        # COCOeval reports -1 when a metric is undefined (e.g. no GT); log 0 instead.
-        stats = [max(float(s), 0.0) for s in coco_eval.stats]
-        metrics = {
-            "mask_mAP50-95": stats[0],
-            "mask_mAP50": stats[1],
-            "mask_mAP75": stats[2],
-            "mask_mAR100": stats[8],
-        }
-
-        # precision has shape [iou_thrs, recall_thrs, classes, areas, max_dets]
-        precision = coco_eval.eval["precision"][:, :, :, 0, 2]
-        for k, cat_id in enumerate(coco_eval.params.catIds):
-            valid = precision[:, :, k][precision[:, :, k] > -1]
-            cat_name = coco_gt.cats[cat_id]["name"]
-            metrics[f"mask_AP50-95_{cat_name}"] = (
-                float(valid.mean()) if valid.size else 0.0
+    """COCO mask/box metrics on the validation split (model left in eval mode)."""
+    model.eval()
+    label_to_cat_id = {label: cat for cat, label in val_ds.coco_cat_to_label.items()}
+    detections: list[dict[str, Any]] = []
+    for images, targets in data_loader:
+        outputs = model([img.to(device) for img in images])
+        for output, target in zip(outputs, targets, strict=True):
+            detections.extend(
+                detections_from_outputs(
+                    output,
+                    int(target["image_id"]),
+                    label_to_cat_id,
+                    conf_thresh,
+                    mask_thresh,
+                )
             )
-
-    with open(os.path.join(output_dir, "mask_metrics.json"), "w") as f:
-        json.dump(metrics, f, indent=2)
-
-    return metrics
-
-
-def push_mask_evaluations(
-    experiment: Experiment,
-    ds: CocoDataset,
-    detections: list[dict[str, Any]],
-    image_id_to_asset: dict[int, Any],
-    cat_id_to_name: dict[int, str],
-) -> int:
-    """Send RLE mask detections to Picsellia as evaluations of the experiment.
-
-    One evaluation per asset is added with ``experiment.add_evaluation(masks=...)``
-    (the platform expects the compressed RLE ``counts`` string, as for MASK
-    annotations), then ``compute_evaluations_metrics(InferenceType.MASK)`` is run
-    and awaited so the evaluation view and its metrics are ready at the end.
-
-    Args:
-        experiment: Experiment that owns the evaluations.
-        ds: Evaluated dataset, used to resolve the labels.
-        detections: Output of ``run_inference_on_asset``, concatenated over images.
-        image_id_to_asset: COCO image id -> Picsellia asset.
-        cat_id_to_name: COCO category id -> label name.
-
-    Returns:
-        Number of assets that received an evaluation.
-    """
-    labels: dict[str, Any] = {}
-    masks_by_image: dict[int, list[tuple[str, Any, float]]] = {}
-    for det in detections:
-        name = cat_id_to_name[det["category_id"]]
-        if name not in labels:
-            labels[name] = ds.dataset_version.get_or_create_label(name)
-        masks_by_image.setdefault(det["image_id"], []).append(
-            (det["segmentation"]["counts"], labels[name], det["score"])
-        )
-
-    for image_id, masks in masks_by_image.items():
-        experiment.add_evaluation(image_id_to_asset[image_id], masks=masks)
-
-    job = experiment.compute_evaluations_metrics(inference_type=InferenceType.MASK)
-    job.wait_for_done(attempts=120)
-    return len(masks_by_image)
+    return evaluate_detections(gt_coco_path, detections, val_ds.img_ids)["values"]
 
 
 class PicselliaLogger:
@@ -999,16 +735,22 @@ class PicselliaLogger:
     def __init__(self, experiment: Experiment) -> None:
         self.experiment = experiment
 
-    def log_metrics(self, metrics: dict[str, float], step: int | None = None) -> None:
-        """Log metrics to Picsellia experiment.
+    def log_metrics(self, metrics: dict[str, float], prefix: str | None = None) -> None:
+        """Log scalar metrics as line charts, named ``<prefix>/<metric>``.
 
-        Args:
-            metrics: Dictionary of metric names to values.
-            step: Optional step/epoch number.
+        Non-finite values are skipped: they cannot be charted.
         """
         for name, value in metrics.items():
-            if isinstance(value, int | float):
-                self.experiment.log(name=name, data=float(value), type=LogType.LINE)
+            if isinstance(value, int | float) and math.isfinite(value):
+                log_name = f"{prefix}/{name}" if prefix else name
+                self.experiment.log(name=log_name, data=float(value), type=LogType.LINE)
+
+
+def gpu_memory_gb() -> float | None:
+    """Peak GPU memory allocated since the last reset, in GB (None without CUDA)."""
+    if not torch.cuda.is_available():
+        return None
+    return torch.cuda.max_memory_allocated() / 1e9
 
 
 def train_one_epoch(
@@ -1017,68 +759,71 @@ def train_one_epoch(
     data_loader: torch.utils.data.DataLoader,
     device: torch.device,
     epoch: int,
-    logger: PicselliaLogger | None = None,
+    epochs: int,
+    log_every: int = 0,
 ) -> dict[str, float]:
-    """Train the model for one epoch.
+    """Train the model for one epoch, logging progress with an ETA.
 
     Args:
-        model: Mask R-CNN model.
-        optimizer: Optimizer.
-        data_loader: Training data loader.
-        device: Device to train on.
-        epoch: Current epoch number.
-        logger: Optional Picsellia logger.
+        log_every: Log a progress line every N iterations (0 = about 10 per epoch).
 
     Returns:
-        Dictionary of average losses for the epoch.
+        Average of the total loss (``loss``) and of each loss component.
+
+    Raises:
+        ValueError: If the data loader is empty.
+        FloatingPointError: If the loss becomes NaN or infinite.
     """
     model.train()
-    total_loss = 0.0
-    loss_classifier_total = 0.0
-    loss_box_reg_total = 0.0
-    loss_mask_total = 0.0
-    loss_objectness_total = 0.0
-    loss_rpn_box_reg_total = 0.0
-    num_batches = 0
+    n_batches = len(data_loader)
+    if n_batches == 0:
+        raise ValueError("The training DataLoader is empty: no image to train on.")
+    if log_every <= 0:
+        log_every = max(1, n_batches // 10)
 
-    for images, targets in data_loader:
+    totals: dict[str, float] = {}
+    start = time.perf_counter()
+    for iteration, (images, targets) in enumerate(data_loader, start=1):
         images = [img.to(device) for img in images]
         targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
 
         loss_dict = model(images, targets)
         losses = sum(loss for loss in loss_dict.values())
 
+        loss_value = float(losses.item())
+        if not math.isfinite(loss_value):
+            components = {k: float(v.detach()) for k, v in loss_dict.items()}
+            raise FloatingPointError(
+                f"Loss is {loss_value} at epoch {epoch + 1}, iteration {iteration} "
+                f"({components}). Try a lower learning_rate."
+            )
+
         optimizer.zero_grad()
         losses.backward()
         optimizer.step()
 
-        total_loss += losses.item()
-        loss_classifier_total += loss_dict.get(
-            "loss_classifier", torch.tensor(0.0)
-        ).item()
-        loss_box_reg_total += loss_dict.get("loss_box_reg", torch.tensor(0.0)).item()
-        loss_mask_total += loss_dict.get("loss_mask", torch.tensor(0.0)).item()
-        loss_objectness_total += loss_dict.get(
-            "loss_objectness", torch.tensor(0.0)
-        ).item()
-        loss_rpn_box_reg_total += loss_dict.get(
-            "loss_rpn_box_reg", torch.tensor(0.0)
-        ).item()
-        num_batches += 1
+        totals["loss"] = totals.get("loss", 0.0) + loss_value
+        for name, value in loss_dict.items():
+            totals[name] = totals.get(name, 0.0) + float(value.detach())
 
-    avg_metrics = {
-        "loss": total_loss / num_batches,
-        "loss_classifier": loss_classifier_total / num_batches,
-        "loss_box_reg": loss_box_reg_total / num_batches,
-        "loss_mask": loss_mask_total / num_batches,
-        "loss_objectness": loss_objectness_total / num_batches,
-        "loss_rpn_box_reg": loss_rpn_box_reg_total / num_batches,
-    }
+        if iteration % log_every == 0 or iteration == n_batches:
+            elapsed = time.perf_counter() - start
+            rate = iteration / elapsed
+            memory = gpu_memory_gb()
+            log.info(
+                "epoch %d/%d | iter %d/%d | loss %.4f | lr %.2e | %.2f it/s | ETA %s%s",
+                epoch + 1,
+                epochs,
+                iteration,
+                n_batches,
+                totals["loss"] / iteration,
+                optimizer.param_groups[0]["lr"],
+                rate,
+                fmt_duration((n_batches - iteration) / rate),
+                f" | gpu {memory:.1f} GB" if memory is not None else "",
+            )
 
-    if logger:
-        logger.log_metrics(avg_metrics, step=epoch)
-
-    return avg_metrics
+    return {name: total / n_batches for name, total in totals.items()}
 
 
 @torch.no_grad()
@@ -1086,51 +831,28 @@ def evaluate_one_epoch(
     model: torch.nn.Module,
     data_loader: torch.utils.data.DataLoader,
     device: torch.device,
-    epoch: int,
-    logger: PicselliaLogger | None = None,
 ) -> dict[str, float]:
-    """Evaluate the model for one epoch.
-
-    Args:
-        model: Mask R-CNN model.
-        data_loader: Validation data loader.
-        device: Device to evaluate on.
-        epoch: Current epoch number.
-        logger: Optional Picsellia logger.
+    """Compute the validation losses (the model must be in train mode to return them).
 
     Returns:
-        Dictionary of average losses for the epoch.
+        Average of the total loss (``loss``) and of each loss component, or an
+        empty dict when the validation loader is empty.
     """
     model.train()
-    total_loss = 0.0
-    loss_classifier_total = 0.0
-    loss_box_reg_total = 0.0
-    loss_mask_total = 0.0
-    num_batches = 0
+    n_batches = len(data_loader)
+    if n_batches == 0:
+        return {}
 
+    totals: dict[str, float] = {}
     for images, targets in data_loader:
         images = [img.to(device) for img in images]
         targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
 
         loss_dict = model(images, targets)
-        losses = sum(loss for loss in loss_dict.values())
+        totals["loss"] = totals.get("loss", 0.0) + float(
+            sum(loss for loss in loss_dict.values())
+        )
+        for name, value in loss_dict.items():
+            totals[name] = totals.get(name, 0.0) + float(value)
 
-        total_loss += losses.item()
-        loss_classifier_total += loss_dict.get(
-            "loss_classifier", torch.tensor(0.0)
-        ).item()
-        loss_box_reg_total += loss_dict.get("loss_box_reg", torch.tensor(0.0)).item()
-        loss_mask_total += loss_dict.get("loss_mask", torch.tensor(0.0)).item()
-        num_batches += 1
-
-    avg_metrics = {
-        "eval_loss": total_loss / num_batches,
-        "eval_loss_classifier": loss_classifier_total / num_batches,
-        "eval_loss_box_reg": loss_box_reg_total / num_batches,
-        "eval_loss_mask": loss_mask_total / num_batches,
-    }
-
-    if logger:
-        logger.log_metrics(avg_metrics, step=epoch)
-
-    return avg_metrics
+    return {name: total / n_batches for name, total in totals.items()}

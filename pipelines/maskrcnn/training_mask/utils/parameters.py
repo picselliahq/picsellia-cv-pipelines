@@ -35,6 +35,29 @@ class TrainingHyperParameters(HyperParameters):
         self.transfer_learning = self.extract_parameter(
             ["transfer_learning"], expected_type=bool, default=False
         )
+        # Evaluation. Metrics (mAP) need low-score detections to be meaningful, while
+        # the evaluations shown in Picsellia are filtered with a higher threshold.
+        self.metrics_score_threshold = self.extract_parameter(
+            ["metrics_score_threshold"], expected_type=float, default=0.05
+        )
+        self.score_threshold = self.extract_parameter(
+            ["score_threshold", "confidence_threshold"],
+            expected_type=float,
+            default=0.5,
+        )
+        self.mask_threshold = self.extract_parameter(
+            ["mask_threshold"], expected_type=float, default=0.5
+        )
+        self.val_map_every = self.extract_parameter(
+            ["val_map_every"], expected_type=int, default=1
+        )
+        # Reporting
+        self.overlay_images = self.extract_parameter(
+            ["overlay_images"], expected_type=int, default=8
+        )
+        self.log_every = self.extract_parameter(
+            ["log_every"], expected_type=int, default=0
+        )
 
 
 class MaskRCNNExportParameters(ExportParameters):
