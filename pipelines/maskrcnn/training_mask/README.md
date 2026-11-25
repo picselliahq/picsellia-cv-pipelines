@@ -25,6 +25,24 @@ After running this pipeline, you'll have:
 
 > **Note:** sending mask evaluations needs `picsellia>=6.37.0` (`Experiment.add_evaluation(masks=...)`). The version is required in `pyproject.toml`. `opencv-python` stays a dependency because `picsellia-cv-engine` imports `cv2` without declaring it.
 
+## Dataset Configurations
+
+Attach `MASK` dataset versions to the experiment with the aliases below. The **number of attached datasets** decides how the `train`, `val` and `test` splits are made; the pipeline always works with the three of them.
+
+| Attached datasets | Aliases | How the splits are made |
+|-------------------|---------|-------------------------|
+| **1** | `train` | The dataset is split at random into train / val / test: with the default `train_set_split_ratio` of `0.8`, 80 % / 10 % / 10 % |
+| **2** | `train` and `test` | `train` is split into train / val (80 % / 20 % with the default ratio); `test` is used as it is |
+| **3** | `train`, `val` and `test` | Each dataset is used as it is, nothing is split |
+
+Good to know:
+
+- The alias `train` is always required. With two datasets, the second one must be called **`test`** (not `val`): a `train` + `val` pair stops with "a test dataset couldn't be found". Any other number of datasets (0, or 4 and more) is an error.
+- The random splits are reproducible: they use `seed`.
+- **The classes come from the `train` split.** A class that only exists in `val` or `test` is ignored while training and gets an AP of `0` in the test metrics, so make sure every class appears in `train`.
+- `val` picks the best epoch (`keep_best`) and gives the validation mAP: a very small `val` makes both noisy. With a single small dataset, the 10 % `val` and `test` splits hold only a few images and may miss a rare class; give separate `val` and `test` datasets when the classes matter.
+- Every split must come from a `MASK` dataset version (see above).
+
 ## Quick Start Guide
 
 ### Basic Training
