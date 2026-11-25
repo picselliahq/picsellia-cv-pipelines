@@ -39,6 +39,7 @@ from utils.training import (
     log_epoch_metrics,
     make_loaders,
     should_compute_val_map,
+    validate_dataset_types,
     validate_hyperparameters,
 )
 
@@ -104,6 +105,7 @@ def train(
     ctx = Pipeline.get_active_context()
     hp = ctx.hyperparameters
     validate_hyperparameters(hp, ctx.export_parameters.export_format)
+    validate_dataset_types(picsellia_datasets)
     seed_everything(hp.seed)
 
     log.info(

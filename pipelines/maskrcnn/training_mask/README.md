@@ -11,7 +11,7 @@ This is the `MASK` variant of [`maskrcnn/training`](../training/README.md). The 
 | Inference output | polygons (`cv2.findContours` + simplification) | lossless RLE masks |
 | Evaluation | Picsellia `ModelEvaluator` (polygons) | RLE masks sent with `add_evaluation(masks=...)` + COCO `segm` computed in the pipeline |
 
-To turn an existing polygon dataset into a `MASK` one, run the `polygons_to_RLE_mask` pipeline first.
+This pipeline only accepts `MASK` dataset versions, for the `train`, `val` and `test` splits alike: it stops at the start, with an explicit error, on any other type. For `SEGMENTATION` (polygon) datasets, use `maskrcnn/training`, or convert the dataset into a `MASK` one with the `polygons_to_RLE_mask` pipeline first.
 
 ## What You'll Get
 

@@ -8,7 +8,7 @@ import tempfile
 from typing import Any
 
 import torch
-from picsellia.types.enums import LogType
+from picsellia.types.enums import InferenceType, LogType
 from torch.utils.data import DataLoader
 from utils.log import get_logger
 from utils.steps_utils import (
@@ -44,6 +44,24 @@ def validate_hyperparameters(hp: Any, export_format: str) -> None:
         raise ValueError("hflip_prob must be between 0 and 1.")
     if not 0.0 <= hp.scale_jitter < 1.0:
         raise ValueError("scale_jitter must be in [0, 1).")
+
+
+def validate_dataset_types(datasets: Any) -> None:
+    """Fail at the start if a split does not come from a MASK dataset version.
+
+    This pipeline reads RLE masks. Polygon (SEGMENTATION) datasets are handled by
+    the ``maskrcnn/training`` pipeline, or can be converted with
+    ``polygons_to_RLE_mask``.
+    """
+    for split in ("train", "val", "test"):
+        version = datasets[split].dataset_version
+        if version.type != InferenceType.MASK:
+            raise ValueError(
+                f"The '{split}' dataset version '{version.version}' is of type "
+                f"{getattr(version.type, 'name', version.type)}, but this pipeline needs MASK dataset versions "
+                "(RLE masks). For SEGMENTATION (polygon) datasets, use the "
+                "maskrcnn/training pipeline, or convert them with polygons_to_RLE_mask."
+            )
 
 
 def log_device(device: torch.device) -> None:

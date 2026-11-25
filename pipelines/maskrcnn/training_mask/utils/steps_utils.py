@@ -110,14 +110,11 @@ class CocoMaskDataset(Dataset):
                 )  # +1 for background
 
     @staticmethod
-    def _decode_mask(seg: Any, info: dict[str, Any]) -> np.ndarray | None:
-        """Decode a COCO ``segmentation`` (RLE dict, or polygons as a fallback)."""
-        if not seg:
+    def _decode_mask(seg: Any) -> np.ndarray | None:
+        """Decode a COCO RLE ``segmentation`` (MASK datasets), None if there is none."""
+        if not isinstance(seg, dict):
             return None
-        if isinstance(seg, dict):
-            return mask_utils.decode(seg)
-        rles = mask_utils.frPyObjects(seg, info["height"], info["width"])
-        return mask_utils.decode(mask_utils.merge(rles))
+        return mask_utils.decode(seg)
 
     @staticmethod
     def _bbox_from_mask(mask: np.ndarray) -> list[float] | None:
@@ -156,7 +153,7 @@ class CocoMaskDataset(Dataset):
             if coco_cat_id not in self.coco_cat_to_label:
                 continue  # Skip unknown categories
 
-            mask = self._decode_mask(ann.get("segmentation"), info)
+            mask = self._decode_mask(ann.get("segmentation"))
             if mask is None:
                 continue  # A MASK dataset needs a mask for every instance
 
