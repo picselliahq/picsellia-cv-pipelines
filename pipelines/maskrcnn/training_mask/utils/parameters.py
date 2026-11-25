@@ -35,6 +35,9 @@ class TrainingHyperParameters(HyperParameters):
         self.transfer_learning = self.extract_parameter(
             ["transfer_learning"], expected_type=bool, default=False
         )
+        self.trainable_backbone_layers = self.extract_parameter(
+            ["trainable_backbone_layers"], expected_type=int, default=3
+        )
         # Evaluation. Metrics (mAP) need low-score detections to be meaningful, while
         # the evaluations shown in Picsellia are filtered with a higher threshold.
         self.metrics_score_threshold = self.extract_parameter(

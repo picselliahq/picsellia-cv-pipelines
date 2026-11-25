@@ -38,7 +38,11 @@ _MAX_PREDICTIONS_UPLOAD_BYTES = 50 * 1024 * 1024
 
 
 def _load_transfer_learning_checkpoint(
-    experiment, num_classes: int, backbone: str, image_size: int
+    experiment,
+    num_classes: int,
+    backbone: str,
+    image_size: int,
+    trainable_backbone_layers: int,
 ):
     """Load checkpoint from experiment for transfer learning.
 
@@ -47,6 +51,7 @@ def _load_transfer_learning_checkpoint(
         num_classes: Number of classes for the new model (with background).
         backbone: Backbone architecture.
         image_size: Shorter side images are resized to.
+        trainable_backbone_layers: Number of backbone stages that are trained.
 
     Returns:
         Loaded model with weights from checkpoint, or None if not available.
@@ -90,6 +95,7 @@ def _load_transfer_learning_checkpoint(
                 backbone=backbone,
                 pretrained=False,
                 image_size=image_size,
+                trainable_backbone_layers=trainable_backbone_layers,
             )
             model.load_state_dict(checkpoint["model_state_dict"])
 
@@ -123,7 +129,11 @@ def _init_model(ctx, hp, num_classes: int) -> torch.nn.Module:
     if hp.transfer_learning:
         log.info("Transfer learning requested: loading the experiment checkpoint")
         model = _load_transfer_learning_checkpoint(
-            ctx.experiment, num_classes, hp.backbone, hp.image_size
+            ctx.experiment,
+            num_classes,
+            hp.backbone,
+            hp.image_size,
+            hp.trainable_backbone_layers,
         )
         if model is None:
             log.warning("Falling back to the torchvision COCO pretrained weights")
@@ -140,6 +150,7 @@ def _init_model(ctx, hp, num_classes: int) -> torch.nn.Module:
         backbone=hp.backbone,
         pretrained=True,
         image_size=hp.image_size,
+        trainable_backbone_layers=hp.trainable_backbone_layers,
     )
 
 

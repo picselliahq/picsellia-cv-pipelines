@@ -26,6 +26,7 @@ from torchvision.models.detection import (
 )
 from torchvision.models.detection.faster_rcnn import FastRCNNPredictor
 from torchvision.models.detection.mask_rcnn import MaskRCNNPredictor
+from torchvision.ops.misc import FrozenBatchNorm2d
 from torchvision.transforms import functional as F
 from utils.evaluation import encode_mask_rle, evaluate_detections
 from utils.log import fmt_duration, get_logger
@@ -181,17 +182,60 @@ def build_label_maps(ds: CocoDataset) -> tuple[dict[int, str], dict[str, int]]:
     return id2label, label2id
 
 
+_RESNET_LAYERS = ["layer4", "layer3", "layer2", "layer1", "conv1"]
+
+
+def _freeze_batch_norm(module: torch.nn.Module) -> None:
+    """Replace every BatchNorm2d of ``module`` by a FrozenBatchNorm2d (in place)."""
+    for name, child in module.named_children():
+        if isinstance(child, torch.nn.BatchNorm2d):
+            frozen = FrozenBatchNorm2d(child.num_features, eps=child.eps)
+            frozen.weight.copy_(child.weight.detach())
+            frozen.bias.copy_(child.bias.detach())
+            frozen.running_mean.copy_(child.running_mean)
+            frozen.running_var.copy_(child.running_var)
+            setattr(module, name, frozen)
+        else:
+            _freeze_batch_norm(child)
+
+
+def _freeze_like_pretrained(
+    model: torch.nn.Module, backbone: str, trainable_backbone_layers: int
+) -> None:
+    """Give a model built without any weights the architecture torchvision builds with weights.
+
+    torchvision only uses FrozenBatchNorm2d and freezes the first backbone layers
+    when it is given weights (``is_trained``). A model built without weights, to
+    receive a checkpoint, would otherwise have trainable BatchNorm layers (bad
+    statistics with small batches) and 5 trainable backbone layers instead of
+    ``trainable_backbone_layers``, and would not match the checkpoint it loads.
+    The ``resnet50_v2`` backbone keeps its regular BatchNorm layers, as torchvision
+    builds it.
+    """
+    body = model.backbone.body
+    if backbone != "resnet50_v2":
+        _freeze_batch_norm(body)
+    layers_to_train = _RESNET_LAYERS[:trainable_backbone_layers]
+    if trainable_backbone_layers == 5:
+        layers_to_train.append("bn1")  # as torchvision does when everything is trained
+    for name, parameter in body.named_parameters():
+        if all(not name.startswith(layer) for layer in layers_to_train):
+            parameter.requires_grad_(False)
+
+
 def get_maskrcnn_model(
     num_classes: int,
     backbone: str = "resnet50",
     pretrained: bool = True,
     image_size: int = 800,
+    trainable_backbone_layers: int = 3,
 ) -> torch.nn.Module:
     """Create a Mask R-CNN model with custom number of classes.
 
     ``pretrained=True`` loads the torchvision COCO weights of the whole detector
     (backbone, RPN, heads); the box and mask predictors are then replaced for
-    ``num_classes``.
+    ``num_classes``. ``pretrained=False`` builds the same architecture without any
+    download, to load a checkpoint into it.
 
     Args:
         num_classes: Number of classes (including background).
@@ -199,24 +243,31 @@ def get_maskrcnn_model(
         pretrained: Whether to start from the torchvision COCO weights.
         image_size: Shorter side images are resized to (torchvision ``min_size``).
             ``max_size`` keeps torchvision's default 800:1333 ratio.
+        trainable_backbone_layers: Number of ResNet stages that are trained, from
+            the last one (0 to 5).
 
     Returns:
         Mask R-CNN model ready for training.
     """
-    size_kwargs = {
+    kwargs: dict[str, Any] = {
         "min_size": int(image_size),
         "max_size": int(round(image_size * 1333 / 800)),
     }
-    if not pretrained:
-        # Without COCO weights torchvision still downloads the ImageNet backbone
-        # (~100 MB); here the weights come from a checkpoint, so skip it.
-        size_kwargs["weights_backbone"] = None
+    if pretrained:
+        kwargs["trainable_backbone_layers"] = trainable_backbone_layers
+    else:
+        # torchvision would still download the ImageNet backbone (~100 MB) here
+        kwargs["weights_backbone"] = None
+
     if backbone == "resnet50_v2":
         weights = MaskRCNN_ResNet50_FPN_V2_Weights.DEFAULT if pretrained else None
-        model = maskrcnn_resnet50_fpn_v2(weights=weights, **size_kwargs)
+        model = maskrcnn_resnet50_fpn_v2(weights=weights, **kwargs)
     else:
         weights = MaskRCNN_ResNet50_FPN_Weights.DEFAULT if pretrained else None
-        model = maskrcnn_resnet50_fpn(weights=weights, **size_kwargs)
+        model = maskrcnn_resnet50_fpn(weights=weights, **kwargs)
+
+    if not pretrained:
+        _freeze_like_pretrained(model, backbone, trainable_backbone_layers)
 
     in_features = model.roi_heads.box_predictor.cls_score.in_features
     model.roi_heads.box_predictor = FastRCNNPredictor(in_features, num_classes)
