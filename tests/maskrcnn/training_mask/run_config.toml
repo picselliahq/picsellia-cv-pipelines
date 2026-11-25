@@ -11,7 +11,7 @@ env = "STAGING"
 id = "01a20e1a-2007-76f3-a0be-dadc9071960d"
 
 [input.model_version]
-id = "01a20e35-7d0f-7549-8f21-c89d85d76782"
+id = "01a20e58-a98d-77ae-936e-6497416e65d1"
 
 [output.experiment]
 name = "test-1"
