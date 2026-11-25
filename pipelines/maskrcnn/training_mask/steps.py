@@ -1,15 +1,15 @@
 from __future__ import annotations
 
 import os
-import tempfile
 import time
+from dataclasses import dataclass, field
+from typing import Any
 
 import torch
 from picsellia import Asset
 from picsellia.types.enums import InferenceType, LogType
 from picsellia_cv_engine import Pipeline, step
 from picsellia_cv_engine.core import CocoDataset, DatasetCollection, Model
-from torch.utils.data import DataLoader
 from utils.evaluation import (
     evaluate_detections,
     push_mask_evaluations,
@@ -21,14 +21,25 @@ from utils.steps_utils import (
     PicselliaLogger,
     build_datasets,
     build_label_maps,
-    collate_fn,
+    build_lr_scheduler,
     compute_val_map,
     evaluate_one_epoch,
     get_maskrcnn_model,
-    gpu_memory_gb,
-    run_inference_on_asset,
+    run_inference_on_assets,
     save_and_upload_artifacts,
+    seed_everything,
     train_one_epoch,
+)
+from utils.training import (
+    BestCheckpoint,
+    epoch_score,
+    init_model,
+    log_data_stats,
+    log_device,
+    log_epoch_metrics,
+    make_loaders,
+    should_compute_val_map,
+    validate_hyperparameters,
 )
 
 log = get_logger()
@@ -37,174 +48,52 @@ log = get_logger()
 _MAX_PREDICTIONS_UPLOAD_BYTES = 50 * 1024 * 1024
 
 
-def _load_transfer_learning_checkpoint(
-    experiment,
-    num_classes: int,
-    backbone: str,
-    image_size: int,
-    trainable_backbone_layers: int,
-):
-    """Load checkpoint from experiment for transfer learning.
-
-    Args:
-        experiment: Picsellia experiment object.
-        num_classes: Number of classes for the new model (with background).
-        backbone: Backbone architecture.
-        image_size: Shorter side images are resized to.
-        trainable_backbone_layers: Number of backbone stages that are trained.
-
-    Returns:
-        Loaded model with weights from checkpoint, or None if not available.
-    """
-    try:
-        checkpoint_artifact = next(
-            (a for a in experiment.list_artifacts() if a.name == "checkpoint-latest"),
-            None,
-        )
-        if checkpoint_artifact is None:
-            log.warning("No 'checkpoint-latest' artifact found in the experiment")
-            return None
-
-        with tempfile.TemporaryDirectory() as tmp_dir:
-            checkpoint_artifact.download(tmp_dir)
-            checkpoint_path = os.path.join(tmp_dir, checkpoint_artifact.filename)
-
-            checkpoint = torch.load(checkpoint_path, map_location="cpu")
-            checkpoint_num_classes = checkpoint.get("num_classes")
-            checkpoint_backbone = checkpoint.get("backbone", "resnet50")
-
-            log.info(
-                "Checkpoint: %s classes (with background), backbone %s | current: %s classes, backbone %s",
-                checkpoint_num_classes,
-                checkpoint_backbone,
-                num_classes,
-                backbone,
-            )
-
-            if checkpoint_backbone != backbone:
-                log.warning(
-                    "Backbone mismatch (%s vs %s): transfer learning is not possible",
-                    checkpoint_backbone,
-                    backbone,
-                )
-                return None
-
-            # Create model with checkpoint's num_classes first to load weights
-            model = get_maskrcnn_model(
-                num_classes=checkpoint_num_classes,
-                backbone=backbone,
-                pretrained=False,
-                image_size=image_size,
-                trainable_backbone_layers=trainable_backbone_layers,
-            )
-            model.load_state_dict(checkpoint["model_state_dict"])
-
-            # If num_classes differs, replace the head layers
-            if checkpoint_num_classes != num_classes:
-                log.info("Replacing the box and mask heads for %d classes", num_classes)
-                from torchvision.models.detection.faster_rcnn import FastRCNNPredictor
-                from torchvision.models.detection.mask_rcnn import MaskRCNNPredictor
-
-                in_features = model.roi_heads.box_predictor.cls_score.in_features
-                model.roi_heads.box_predictor = FastRCNNPredictor(
-                    in_features, num_classes
-                )
-
-                in_features_mask = model.roi_heads.mask_predictor.conv5_mask.in_channels
-                hidden_layer = 256
-                model.roi_heads.mask_predictor = MaskRCNNPredictor(
-                    in_features_mask, hidden_layer, num_classes
-                )
-
-            return model
-
-    except Exception:
-        log.warning("Could not load the transfer learning checkpoint", exc_info=True)
-        return None
-
-
-def _init_model(ctx, hp, num_classes: int) -> torch.nn.Module:
-    """Build the model to train: previous checkpoint if asked and possible, else COCO weights."""
-    model = None
-    if hp.transfer_learning:
-        log.info("Transfer learning requested: loading the experiment checkpoint")
-        model = _load_transfer_learning_checkpoint(
-            ctx.experiment,
-            num_classes,
-            hp.backbone,
-            hp.image_size,
-            hp.trainable_backbone_layers,
-        )
-        if model is None:
-            log.warning("Falling back to the torchvision COCO pretrained weights")
-
-    if model is not None:
-        log.info("Starting from the previous checkpoint (transfer learning)")
-        return model
-
-    log.info(
-        "Starting from the torchvision COCO pretrained weights (heads re-initialized)"
-    )
-    return get_maskrcnn_model(
-        num_classes=num_classes,
-        backbone=hp.backbone,
-        pretrained=True,
-        image_size=hp.image_size,
-        trainable_backbone_layers=hp.trainable_backbone_layers,
+def _compute_val_map(
+    hp: Any,
+    epoch: int,
+    model: torch.nn.Module,
+    val_loader: torch.utils.data.DataLoader,
+    val_ds: Any,
+    gt_coco_path: str,
+    device: torch.device,
+) -> dict[str, float]:
+    """Validation metrics of this epoch, or an empty dict when they are not due."""
+    if not should_compute_val_map(hp, epoch) or len(val_ds) == 0:
+        return {}
+    return compute_val_map(
+        model,
+        val_loader,
+        val_ds,
+        gt_coco_path,
+        device,
+        conf_thresh=hp.metrics_score_threshold,
+        mask_thresh=hp.mask_threshold,
     )
 
 
-def _log_data_stats(experiment, train_ds, val_ds) -> None:
-    """Log the size of the train/val splits, in the console and as experiment values."""
-    n_train_ann = len(train_ds.coco.getAnnIds(imgIds=train_ds.img_ids))
-    n_val_ann = len(val_ds.coco.getAnnIds(imgIds=val_ds.img_ids))
-    log.info(
-        "Data: %d train images (%d masks), %d val images (%d masks)",
-        len(train_ds),
-        n_train_ann,
-        len(val_ds),
-        n_val_ann,
-    )
-    for name, value in {
-        "dataset/train_images": len(train_ds),
-        "dataset/val_images": len(val_ds),
-        "dataset/train_masks": n_train_ann,
-        "dataset/val_masks": n_val_ann,
-    }.items():
-        experiment.log(name=name, data=value, type=LogType.VALUE)
-
-
-def _should_compute_val_map(hp, epoch: int) -> bool:
-    """Validation mAP runs every ``val_map_every`` epochs, and always on the last one."""
-    if hp.val_map_every <= 0:
-        return False
-    return (epoch + 1) % hp.val_map_every == 0 or epoch + 1 == hp.epochs
-
-
-def _log_epoch_metrics(
-    logger: PicselliaLogger,
-    train_metrics: dict[str, float],
-    val_metrics: dict[str, float],
-    val_map: dict[str, float],
-    learning_rate: float,
-    epoch_seconds: float,
+def _finalize_best(
+    experiment: Any, hp: Any, best: BestCheckpoint, model: torch.nn.Module
 ) -> None:
-    """Send the metrics of one epoch to Picsellia (train/*, val/*)."""
-    system_metrics = {"lr": learning_rate, "epoch_time_s": epoch_seconds}
-    memory = gpu_memory_gb()
-    if memory is not None:
-        system_metrics["gpu_memory_peak_gb"] = memory
-    logger.log_metrics(train_metrics, prefix="train")
-    logger.log_metrics(system_metrics, prefix="train")
-    logger.log_metrics(val_metrics, prefix="val")
-    logger.log_metrics(
-        {
-            name: val_map[name]
-            for name in ("mAP50-95(M)", "mAP50(M)", "mAP50-95(B)")
-            if name in val_map
-        },
-        prefix="val",
+    """Log the best epoch and, if asked, load its weights before the model is saved."""
+    if best.epoch < 0:
+        log.info("No validation score: the weights of the last epoch are kept")
+        return
+    experiment.log(name="train/best_epoch", data=best.epoch + 1, type=LogType.VALUE)
+    experiment.log(
+        name="train/best_score", data=round(best.score, 4), type=LogType.VALUE
     )
+    if hp.keep_best and best.restore(model):
+        log.info(
+            "Best epoch: %d (score %.4f), its weights are the ones saved",
+            best.epoch + 1,
+            best.score,
+        )
+    else:
+        log.info(
+            "Best epoch: %d (score %.4f), the weights of the last epoch are saved",
+            best.epoch + 1,
+            best.score,
+        )
 
 
 @step()
@@ -214,92 +103,67 @@ def train(
     """Train Mask R-CNN on COCO datasets and upload weights."""
     ctx = Pipeline.get_active_context()
     hp = ctx.hyperparameters
-
-    export_format = ctx.export_parameters.export_format
-    if export_format != "torchscript":
-        raise ValueError(
-            f"export_format '{export_format}' is not supported by this pipeline: "
-            "only 'torchscript' is exported."
-        )
+    validate_hyperparameters(hp, ctx.export_parameters.export_format)
+    seed_everything(hp.seed)
 
     log.info(
-        "Mask R-CNN training | backbone=%s image_size=%d epochs=%d batch_size=%d lr=%g",
+        "Mask R-CNN training | backbone=%s image_size=%d epochs=%d batch_size=%d lr=%g seed=%d",
         hp.backbone,
         hp.image_size,
         hp.epochs,
         hp.batch_size,
         hp.learning_rate,
+        hp.seed,
     )
 
     id2label, label2id = build_label_maps(ds=picsellia_datasets["train"])
     num_classes = len(id2label) + 1
     log.info("Classes (%d + background): %s", len(id2label), list(id2label.values()))
 
-    model = _init_model(ctx, hp, num_classes)
-
+    model = init_model(picsellia_model, ctx.experiment, hp, num_classes)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    if device.type == "cuda":
-        log.info(
-            "Device: cuda (%s, %.1f GB)",
-            torch.cuda.get_device_name(0),
-            torch.cuda.get_device_properties(0).total_memory / 1e9,
-        )
-    else:
-        log.warning("No GPU found: training on CPU will be very slow")
+    log_device(device)
     model.to(device)
 
-    train_ds, val_ds = build_datasets(picsellia_datasets, label2id)
+    train_ds, val_ds = build_datasets(
+        picsellia_datasets, label2id, hflip_prob=hp.hflip_prob
+    )
     if len(train_ds) == 0:
         raise ValueError("The training split has no usable image (check the dataset).")
-    _log_data_stats(ctx.experiment, train_ds, val_ds)
+    log_data_stats(ctx.experiment, train_ds, val_ds)
+    train_loader, val_loader = make_loaders(hp, train_ds, val_ds)
 
-    workers = int(os.getenv("WORKERS", "4"))
-    train_loader = DataLoader(
-        train_ds,
-        batch_size=hp.batch_size,
-        shuffle=True,
-        num_workers=workers,
-        collate_fn=collate_fn,
-        pin_memory=True,
-    )
-    val_loader = DataLoader(
-        val_ds,
-        batch_size=min(hp.batch_size, 4),
-        shuffle=False,
-        num_workers=workers,
-        collate_fn=collate_fn,
-        pin_memory=True,
-    )
-    log.info(
-        "DataLoaders: %d workers, %d train batches, %d val batches",
-        workers,
-        len(train_loader),
-        len(val_loader),
-    )
-
-    params = [p for p in model.parameters() if p.requires_grad]
     optimizer = torch.optim.SGD(
-        params,
+        [p for p in model.parameters() if p.requires_grad],
         lr=hp.learning_rate,
         momentum=hp.momentum,
         weight_decay=hp.weight_decay,
     )
-    lr_scheduler = torch.optim.lr_scheduler.StepLR(
+    lr_scheduler = build_lr_scheduler(
         optimizer,
-        step_size=hp.lr_scheduler_step_size,
-        gamma=hp.lr_scheduler_gamma,
+        hp.lr_scheduler,
+        hp.epochs,
+        hp.learning_rate,
+        hp.lr_scheduler_step_size,
+        hp.lr_scheduler_gamma,
     )
+    scaler = torch.amp.GradScaler("cuda", enabled=hp.amp and device.type == "cuda")
     log.info(
-        "Optimizer SGD (lr=%g momentum=%g weight_decay=%g) | StepLR (step=%d gamma=%g)",
+        "SGD (lr=%g momentum=%g weight_decay=%g) | %s schedule, %d warmup iterations | mixed precision %s | grad clip %g | hflip %g, scale jitter %g",
         hp.learning_rate,
         hp.momentum,
         hp.weight_decay,
-        hp.lr_scheduler_step_size,
-        hp.lr_scheduler_gamma,
+        hp.lr_scheduler,
+        hp.warmup_iters,
+        "on" if scaler.is_enabled() else "off",
+        hp.clip_grad_norm,
+        hp.hflip_prob,
+        hp.scale_jitter,
     )
 
     logger = PicselliaLogger(ctx.experiment)
     ctx.experiment.log_parameters(hp.to_dict())
+    best = BestCheckpoint(patience=hp.patience)
 
     training_start = time.perf_counter()
     for epoch in range(hp.epochs):
@@ -315,31 +179,31 @@ def train(
             epoch,
             hp.epochs,
             log_every=hp.log_every,
+            scaler=scaler,
+            clip_grad_norm=hp.clip_grad_norm,
+            warmup_iters=hp.warmup_iters,
         )
         val_metrics = evaluate_one_epoch(model, val_loader, device)
-
-        val_map: dict[str, float] = {}
-        if _should_compute_val_map(hp, epoch) and len(val_ds) > 0:
-            val_map = compute_val_map(
-                model,
-                val_loader,
-                val_ds,
-                picsellia_datasets["val"].coco_file_path,
-                device,
-                conf_thresh=hp.metrics_score_threshold,
-                mask_thresh=hp.mask_threshold,
-            )
+        val_map = _compute_val_map(
+            hp,
+            epoch,
+            model,
+            val_loader,
+            val_ds,
+            picsellia_datasets["val"].coco_file_path,
+            device,
+        )
+        best.update(epoch, epoch_score(hp, val_metrics, val_map), model)
 
         current_lr = optimizer.param_groups[0]["lr"]
         lr_scheduler.step()
-
         epoch_seconds = time.perf_counter() - epoch_start
-        _log_epoch_metrics(
+        log_epoch_metrics(
             logger, train_metrics, val_metrics, val_map, current_lr, epoch_seconds
         )
 
         log.info(
-            "epoch %d/%d done in %s | train loss %.4f%s%s | lr %.2e",
+            "epoch %d/%d done in %s | train loss %.4f%s%s | lr %.2e%s",
             epoch + 1,
             hp.epochs,
             fmt_duration(epoch_seconds),
@@ -347,13 +211,20 @@ def train(
             f" | val loss {val_metrics['loss']:.4f}" if val_metrics else "",
             f" | val mAP50-95(M) {val_map['mAP50-95(M)']:.4f}" if val_map else "",
             current_lr,
+            " | best so far" if best.epoch == epoch else "",
         )
+        if best.should_stop:
+            log.info(
+                "Early stopping: no improvement for %d evaluated epochs", hp.patience
+            )
+            break
 
     total_seconds = time.perf_counter() - training_start
     ctx.experiment.log(
         name="train/total_time_s", data=total_seconds, type=LogType.VALUE
     )
-    log.info("Training finished in %s, saving the model", fmt_duration(total_seconds))
+    log.info("Training finished in %s", fmt_duration(total_seconds))
+    _finalize_best(ctx.experiment, hp, best, model)
 
     sample_source = val_ds if len(val_ds) > 0 else train_ds
     sample_images = [sample_source[i][0] for i in range(min(5, len(sample_source)))]
@@ -369,6 +240,77 @@ def train(
         mask_threshold=hp.mask_threshold,
     )
     log.info("Training step completed")
+
+
+@dataclass
+class _InferenceResult:
+    """What the test-set inference produced."""
+
+    detections: list[dict] = field(default_factory=list)
+    image_ids: list[int] = field(default_factory=list)
+    assets: dict[int, Asset] = field(default_factory=dict)
+    paths: dict[int, str] = field(default_factory=dict)
+    forward_ms: float = 0.0
+    total_ms: float = 0.0
+
+
+def _run_test_inference(
+    ds: Any,
+    model: torch.nn.Module,
+    device: torch.device,
+    label_to_cat_id: dict[int, int],
+    file_name_to_image_id: dict[str, int],
+    hp: Any,
+) -> _InferenceResult:
+    """Run the model on the test split by batches, logging progress with an ETA."""
+    result = _InferenceResult()
+    items: list[tuple[Asset, int]] = []
+    for asset in ds.assets:
+        image_id = file_name_to_image_id.get(asset.id_with_extension)
+        if image_id is None:
+            log.warning("%s is not in the COCO file, skipping", asset.id_with_extension)
+            continue
+        items.append((asset, image_id))
+
+    total = len(items)
+    log_every = hp.log_every if hp.log_every > 0 else max(1, total // 10)
+    forward_batches: list[tuple[float, int]] = []
+    done = 0
+    start = time.perf_counter()
+    for batch_results, forward_seconds in run_inference_on_assets(
+        ds,
+        items,
+        model,
+        device,
+        label_to_cat_id,
+        conf_thresh=hp.metrics_score_threshold,
+        mask_thresh=hp.mask_threshold,
+        batch_size=hp.eval_batch_size,
+    ):
+        for asset, image_id, detections in batch_results:
+            result.detections.extend(detections)
+            result.image_ids.append(image_id)
+            result.assets[image_id] = asset
+            result.paths[image_id] = os.path.join(
+                ds.images_dir, asset.id_with_extension
+            )
+        previous, done = done, done + len(batch_results)
+        forward_batches.append((forward_seconds, len(batch_results)))
+        if done // log_every > previous // log_every or done == total:
+            log.info(
+                "inference %d/%d images | %d masks | ETA %s",
+                done,
+                total,
+                len(result.detections),
+                fmt_duration((total - done) * (time.perf_counter() - start) / done),
+            )
+
+    # The first batch pays the CUDA warm-up: leave it out of the mean.
+    steady = forward_batches[1:] or forward_batches
+    n_steady = sum(n for _, n in steady)
+    result.forward_ms = 1000 * sum(t for t, _ in steady) / n_steady if n_steady else 0.0
+    result.total_ms = 1000 * (time.perf_counter() - start) / done if done else 0.0
+    return result
 
 
 @step()
@@ -406,13 +348,13 @@ def evaluate(
     model.eval()
 
     ds = picsellia_datasets["test"]
-    total_assets = len(ds.assets)
     log.info(
-        "Test set: %d images | metrics at score >= %g, Picsellia evaluations at score >= %g, mask threshold %g",
-        total_assets,
+        "Test set: %d images | metrics at score >= %g, Picsellia evaluations at score >= %g, mask threshold %g, batch size %d",
+        len(ds.assets),
         hp.metrics_score_threshold,
         hp.score_threshold,
         hp.mask_threshold,
+        hp.eval_batch_size,
     )
 
     # Ground-truth ids: assets are matched to COCO images by file name, and labels
@@ -429,71 +371,24 @@ def evaluate(
         if name in name2cat_id
     }
 
-    detections: list[dict] = []
-    evaluated_image_ids: list[int] = []
-    image_id_to_asset: dict[int, Asset] = {}
-    image_id_to_path: dict[int, str] = {}
-    forward_times: list[float] = []
-    total_times: list[float] = []
-    log_every = hp.log_every if hp.log_every > 0 else max(1, total_assets // 10)
-    inference_start = time.perf_counter()
-
-    for i, asset in enumerate(ds.assets, start=1):
-        image_id = file_name_to_image_id.get(asset.id_with_extension)
-        if image_id is None:
-            log.warning("%s is not in the COCO file, skipping", asset.id_with_extension)
-            continue
-
-        asset_start = time.perf_counter()
-        asset_detections, forward_seconds = run_inference_on_asset(
-            ds,
-            asset,
-            model,
-            device,
-            label_to_cat_id,
-            image_id=image_id,
-            conf_thresh=hp.metrics_score_threshold,
-            mask_thresh=hp.mask_threshold,
-        )
-        total_times.append(time.perf_counter() - asset_start)
-        forward_times.append(forward_seconds)
-
-        evaluated_image_ids.append(image_id)
-        image_id_to_asset[image_id] = asset
-        image_id_to_path[image_id] = os.path.join(
-            ds.images_dir, asset.id_with_extension
-        )
-        detections.extend(asset_detections)
-
-        if i % log_every == 0 or i == total_assets:
-            elapsed = time.perf_counter() - inference_start
-            log.info(
-                "inference %d/%d images | %d masks | ETA %s",
-                i,
-                total_assets,
-                len(detections),
-                fmt_duration((total_assets - i) * elapsed / i),
-            )
-
-    # The first forward pays the CUDA warm-up: leave it out of the mean.
-    steady = forward_times[1:] or forward_times
-    forward_ms = 1000 * sum(steady) / len(steady) if steady else 0.0
-    total_ms = 1000 * sum(total_times) / len(total_times) if total_times else 0.0
-    images_with_masks = len({d["image_id"] for d in detections})
+    inference = _run_test_inference(
+        ds, model, device, label_to_cat_id, file_name_to_image_id, hp
+    )
+    detections = inference.detections
     log.info(
-        "Inference done: %d masks on %d/%d images | forward %.1f ms, %.1f ms per image with loading and encoding",
+        "Inference done: %d masks on %d/%d images | forward %.1f ms per image, %.1f ms per image with loading and encoding",
         len(detections),
-        images_with_masks,
-        len(evaluated_image_ids),
-        forward_ms,
-        total_ms,
+        len({d["image_id"] for d in detections}),
+        len(inference.image_ids),
+        inference.forward_ms,
+        inference.total_ms,
     )
 
     # 1. COCO metrics on every detection above the low metrics threshold.
     result = evaluate_detections(
         gt_coco_path=ds.coco_file_path,
         detections=detections,
-        image_ids=evaluated_image_ids,
+        image_ids=inference.image_ids,
     )
     output_dir = os.path.join(ctx.working_dir, "evaluation")
     files = write_evaluation_files(output_dir, detections, result)
@@ -503,9 +398,9 @@ def evaluate(
         experiment.log(name=f"test/{name}", data=round(value, 4), type=LogType.VALUE)
     experiment.log(name="test/metrics", data=result["table"], type=LogType.TABLE)
     for name, value in {
-        "test/inference_time_ms": forward_ms,
-        "test/time_per_image_ms": total_ms,
-        "test/images_evaluated": len(evaluated_image_ids),
+        "test/inference_time_ms": inference.forward_ms,
+        "test/time_per_image_ms": inference.total_ms,
+        "test/images_evaluated": len(inference.image_ids),
         "test/masks_detected": len(detections),
     }.items():
         experiment.log(name=name, data=round(value, 2), type=LogType.VALUE)
@@ -531,7 +426,7 @@ def evaluate(
             experiment=experiment,
             ds=ds,
             detections=shown,
-            image_id_to_asset=image_id_to_asset,
+            image_id_to_asset=inference.assets,
             cat_id_to_name=cat_id_to_name,
             inference_type=InferenceType.MASK,
         )
@@ -546,7 +441,7 @@ def evaluate(
 
     # 3. A few predictions drawn on the images, then the evaluation files.
     overlays = save_prediction_overlays(
-        image_id_to_path,
+        inference.paths,
         shown,
         cat_id_to_name,
         os.path.join(output_dir, "overlays"),

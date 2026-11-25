@@ -38,6 +38,31 @@ class TrainingHyperParameters(HyperParameters):
         self.trainable_backbone_layers = self.extract_parameter(
             ["trainable_backbone_layers"], expected_type=int, default=3
         )
+        # Optimisation
+        self.lr_scheduler = self.extract_parameter(
+            ["lr_scheduler"], expected_type=str, default="cosine"
+        )
+        self.warmup_iters = self.extract_parameter(
+            ["warmup_iters"], expected_type=int, default=100
+        )
+        self.clip_grad_norm = self.extract_parameter(
+            ["clip_grad_norm"], expected_type=float, default=10.0
+        )
+        self.amp = self.extract_parameter(["amp"], expected_type=bool, default=True)
+        # Augmentation (train split only)
+        self.hflip_prob = self.extract_parameter(
+            ["hflip_prob"], expected_type=float, default=0.5
+        )
+        self.scale_jitter = self.extract_parameter(
+            ["scale_jitter"], expected_type=float, default=0.0
+        )
+        # Model selection
+        self.keep_best = self.extract_parameter(
+            ["keep_best"], expected_type=bool, default=True
+        )
+        self.patience = self.extract_parameter(
+            ["patience"], expected_type=int, default=0
+        )
         # Evaluation. Metrics (mAP) need low-score detections to be meaningful, while
         # the evaluations shown in Picsellia are filtered with a higher threshold.
         self.metrics_score_threshold = self.extract_parameter(
@@ -55,6 +80,9 @@ class TrainingHyperParameters(HyperParameters):
             ["val_map_every"], expected_type=int, default=1
         )
         # Reporting
+        self.eval_batch_size = self.extract_parameter(
+            ["eval_batch_size"], expected_type=int, default=4
+        )
         self.overlay_images = self.extract_parameter(
             ["overlay_images"], expected_type=int, default=8
         )

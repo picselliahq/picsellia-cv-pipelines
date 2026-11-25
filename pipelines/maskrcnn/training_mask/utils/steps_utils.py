@@ -3,8 +3,10 @@ from __future__ import annotations
 import json
 import math
 import os
+import random
 import time
 import warnings
+from collections.abc import Iterator
 from pathlib import Path
 from typing import Any
 
@@ -32,6 +34,42 @@ from utils.evaluation import encode_mask_rle, evaluate_detections
 from utils.log import fmt_duration, get_logger
 
 log = get_logger()
+
+
+def seed_everything(seed: int) -> None:
+    """Seed python, numpy and torch (CPU and CUDA)."""
+    random.seed(seed)
+    np.random.seed(seed % 2**32)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+
+
+def seed_worker(worker_id: int) -> None:  # noqa: ARG001 - DataLoader signature
+    """Seed python and numpy in a DataLoader worker from torch's per-worker seed."""
+    worker_seed = torch.initial_seed() % 2**32
+    random.seed(worker_seed)
+    np.random.seed(worker_seed)
+
+
+class RandomHorizontalFlip:
+    """Flip the image, its masks and its boxes horizontally with probability ``p``."""
+
+    def __init__(self, p: float = 0.5) -> None:
+        self.p = p
+
+    def __call__(
+        self, image: torch.Tensor, target: dict[str, Any]
+    ) -> tuple[torch.Tensor, dict[str, Any]]:
+        if self.p <= 0 or torch.rand(1).item() >= self.p:
+            return image, target
+        width = image.shape[-1]
+        target = dict(target)
+        target["masks"] = target["masks"].flip(-1)
+        if len(target["boxes"]) > 0:
+            boxes = target["boxes"].clone()
+            boxes[:, [0, 2]] = width - boxes[:, [2, 0]]
+            target["boxes"] = boxes
+        return image.flip(-1), target
 
 
 class CocoMaskDataset(Dataset):
@@ -223,12 +261,25 @@ def _freeze_like_pretrained(
             parameter.requires_grad_(False)
 
 
+def replace_predictors(model: torch.nn.Module, num_classes: int) -> None:
+    """Replace the box and mask predictors (in place) for ``num_classes`` classes."""
+    in_features = model.roi_heads.box_predictor.cls_score.in_features
+    model.roi_heads.box_predictor = FastRCNNPredictor(in_features, num_classes)
+
+    in_features_mask = model.roi_heads.mask_predictor.conv5_mask.in_channels
+    hidden_layer = 256
+    model.roi_heads.mask_predictor = MaskRCNNPredictor(
+        in_features_mask, hidden_layer, num_classes
+    )
+
+
 def get_maskrcnn_model(
     num_classes: int,
     backbone: str = "resnet50",
     pretrained: bool = True,
     image_size: int = 800,
     trainable_backbone_layers: int = 3,
+    scale_jitter: float = 0.0,
 ) -> torch.nn.Module:
     """Create a Mask R-CNN model with custom number of classes.
 
@@ -245,12 +296,21 @@ def get_maskrcnn_model(
             ``max_size`` keeps torchvision's default 800:1333 ratio.
         trainable_backbone_layers: Number of ResNet stages that are trained, from
             the last one (0 to 5).
+        scale_jitter: Multi-scale training. When > 0, training images are resized to
+            a random shorter side among 4 sizes from ``image_size * (1 - scale_jitter)``
+            to ``image_size``; inference always uses ``image_size``.
 
     Returns:
         Mask R-CNN model ready for training.
     """
+    min_size: int | tuple[int, ...] = int(image_size)
+    if scale_jitter > 0:
+        # torchvision picks one size at random in training, and the last one in eval
+        min_size = tuple(
+            int(round(image_size * (1 - scale_jitter * (3 - k) / 3))) for k in range(4)
+        )
     kwargs: dict[str, Any] = {
-        "min_size": int(image_size),
+        "min_size": min_size,
         "max_size": int(round(image_size * 1333 / 800)),
     }
     if pretrained:
@@ -269,32 +329,27 @@ def get_maskrcnn_model(
     if not pretrained:
         _freeze_like_pretrained(model, backbone, trainable_backbone_layers)
 
-    in_features = model.roi_heads.box_predictor.cls_score.in_features
-    model.roi_heads.box_predictor = FastRCNNPredictor(in_features, num_classes)
-
-    in_features_mask = model.roi_heads.mask_predictor.conv5_mask.in_channels
-    hidden_layer = 256
-    model.roi_heads.mask_predictor = MaskRCNNPredictor(
-        in_features_mask, hidden_layer, num_classes
-    )
-
+    replace_predictors(model, num_classes)
     return model
 
 
 def build_datasets(
     datasets: DatasetCollection[CocoDataset],
     label2id: dict[str, int],
+    hflip_prob: float = 0.0,
 ) -> tuple[CocoMaskDataset, CocoMaskDataset]:
     """Create train and validation datasets from a DatasetCollection.
 
     Args:
         datasets: DatasetCollection containing train and val datasets.
         label2id: Mapping from label name to 0-indexed class ID.
+        hflip_prob: Probability of a horizontal flip (train split only).
     """
     train_ds = CocoMaskDataset(
         images_dir=datasets["train"].images_dir,
         ann_json=datasets["train"].coco_file_path,
         label2id=label2id,
+        transforms=RandomHorizontalFlip(hflip_prob) if hflip_prob > 0 else None,
     )
     val_ds = CocoMaskDataset(
         images_dir=datasets["val"].images_dir,
@@ -714,41 +769,59 @@ def detections_from_outputs(
     return detections
 
 
-def run_inference_on_asset(
+def run_inference_on_assets(
     ds: CocoDataset,
-    asset,
+    items: list[tuple[Any, int]],
     model: torch.nn.Module,
     device: torch.device,
     label_to_cat_id: dict[int, int],
-    image_id: int,
     conf_thresh: float = 0.05,
     mask_thresh: float = 0.5,
-) -> tuple[list[dict[str, Any]], float]:
-    """Run inference on a single asset.
+    batch_size: int = 4,
+) -> Iterator[tuple[list[tuple[Any, int, list[dict[str, Any]]]], float]]:
+    """Run inference on assets by batches.
 
-    Returns:
-        ``(detections, forward_seconds)``: the RLE detections (see
-        ``detections_from_outputs``) and the time of the model forward alone,
-        excluding image loading and mask encoding.
+    Args:
+        ds: Dataset that holds the images.
+        items: ``(asset, coco_image_id)`` pairs to run the model on.
+        batch_size: Images per forward pass.
+
+    Yields:
+        One tuple per batch: the ``(asset, image_id, detections)`` of each image
+        (see ``detections_from_outputs``) and the time of the model forward alone,
+        excluding image loading and mask encoding, for the whole batch.
     """
-    img_path = os.path.join(ds.images_dir, asset.id_with_extension)
-    image = Image.open(img_path).convert("RGB")
-    image_tensor = F.to_tensor(image).to(device)
-
     model.eval()
-    if device.type == "cuda":
-        torch.cuda.synchronize()
-    start = time.perf_counter()
-    with torch.no_grad():
-        output = model([image_tensor])[0]
-    if device.type == "cuda":
-        torch.cuda.synchronize()
-    forward_seconds = time.perf_counter() - start
+    for start in range(0, len(items), max(1, batch_size)):
+        batch = items[start : start + max(1, batch_size)]
+        tensors = [
+            F.to_tensor(
+                Image.open(
+                    os.path.join(ds.images_dir, asset.id_with_extension)
+                ).convert("RGB")
+            ).to(device)
+            for asset, _ in batch
+        ]
+        if device.type == "cuda":
+            torch.cuda.synchronize()
+        forward_start = time.perf_counter()
+        with torch.no_grad():
+            outputs = model(tensors)
+        if device.type == "cuda":
+            torch.cuda.synchronize()
+        forward_seconds = time.perf_counter() - forward_start
 
-    detections = detections_from_outputs(
-        output, image_id, label_to_cat_id, conf_thresh, mask_thresh
-    )
-    return detections, forward_seconds
+        results = [
+            (
+                asset,
+                image_id,
+                detections_from_outputs(
+                    output, image_id, label_to_cat_id, conf_thresh, mask_thresh
+                ),
+            )
+            for (asset, image_id), output in zip(batch, outputs, strict=True)
+        ]
+        yield results, forward_seconds
 
 
 @torch.no_grad()
@@ -804,6 +877,56 @@ def gpu_memory_gb() -> float | None:
     return torch.cuda.max_memory_allocated() / 1e9
 
 
+def build_lr_scheduler(
+    optimizer: torch.optim.Optimizer,
+    name: str,
+    epochs: int,
+    learning_rate: float,
+    step_size: int,
+    gamma: float,
+):
+    """Epoch-level learning rate scheduler: ``cosine`` (down to 1% of the lr) or ``step``."""
+    if name == "cosine":
+        return torch.optim.lr_scheduler.CosineAnnealingLR(
+            optimizer, T_max=max(1, epochs), eta_min=learning_rate * 0.01
+        )
+    if name == "step":
+        return torch.optim.lr_scheduler.StepLR(
+            optimizer, step_size=step_size, gamma=gamma
+        )
+    raise ValueError(f"Unknown lr_scheduler '{name}': use 'cosine' or 'step'.")
+
+
+def snapshot_state(model: torch.nn.Module) -> dict[str, torch.Tensor]:
+    """Copy of the model weights on the CPU."""
+    return {k: v.detach().cpu().clone() for k, v in model.state_dict().items()}
+
+
+def _backward_and_step(
+    model: torch.nn.Module,
+    optimizer: torch.optim.Optimizer,
+    losses: torch.Tensor,
+    scaler: torch.amp.GradScaler | None,
+    clip_grad_norm: float,
+) -> None:
+    """Backward pass and optimizer step, with mixed precision and gradient clipping."""
+    use_amp = scaler is not None and scaler.is_enabled()
+    optimizer.zero_grad(set_to_none=True)
+    if use_amp:
+        scaler.scale(losses).backward()
+        if clip_grad_norm > 0:
+            scaler.unscale_(optimizer)  # clip the real gradients, not the scaled ones
+    else:
+        losses.backward()
+    if clip_grad_norm > 0:
+        torch.nn.utils.clip_grad_norm_(model.parameters(), clip_grad_norm)
+    if use_amp:
+        scaler.step(optimizer)
+        scaler.update()
+    else:
+        optimizer.step()
+
+
 def train_one_epoch(
     model: torch.nn.Module,
     optimizer: torch.optim.Optimizer,
@@ -812,11 +935,18 @@ def train_one_epoch(
     epoch: int,
     epochs: int,
     log_every: int = 0,
+    scaler: torch.amp.GradScaler | None = None,
+    clip_grad_norm: float = 0.0,
+    warmup_iters: int = 0,
 ) -> dict[str, float]:
     """Train the model for one epoch, logging progress with an ETA.
 
     Args:
         log_every: Log a progress line every N iterations (0 = about 10 per epoch).
+        scaler: Enabled GradScaler to train with mixed precision (CUDA), else None.
+        clip_grad_norm: Max gradient norm (0 disables clipping).
+        warmup_iters: Linear learning rate warmup over the first iterations of the
+            first epoch (from 0.1% of the learning rate).
 
     Returns:
         Average of the total loss (``loss``) and of each loss component.
@@ -832,14 +962,24 @@ def train_one_epoch(
     if log_every <= 0:
         log_every = max(1, n_batches // 10)
 
+    use_amp = scaler is not None and scaler.is_enabled()
+    warmup = None
+    if epoch == 0 and warmup_iters > 0 and n_batches > 1:
+        warmup = torch.optim.lr_scheduler.LinearLR(
+            optimizer,
+            start_factor=1e-3,
+            total_iters=min(warmup_iters, n_batches - 1),
+        )
+
     totals: dict[str, float] = {}
     start = time.perf_counter()
     for iteration, (images, targets) in enumerate(data_loader, start=1):
         images = [img.to(device) for img in images]
         targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
 
-        loss_dict = model(images, targets)
-        losses = sum(loss for loss in loss_dict.values())
+        with torch.autocast(device_type=device.type, enabled=use_amp):
+            loss_dict = model(images, targets)
+            losses = sum(loss for loss in loss_dict.values())
 
         loss_value = float(losses.item())
         if not math.isfinite(loss_value):
@@ -849,9 +989,9 @@ def train_one_epoch(
                 f"({components}). Try a lower learning_rate."
             )
 
-        optimizer.zero_grad()
-        losses.backward()
-        optimizer.step()
+        _backward_and_step(model, optimizer, losses, scaler, clip_grad_norm)
+        if warmup is not None:
+            warmup.step()
 
         totals["loss"] = totals.get("loss", 0.0) + loss_value
         for name, value in loss_dict.items():

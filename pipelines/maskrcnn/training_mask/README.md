@@ -198,7 +198,7 @@ momentum = 0.9
 ---
 
 #### `lr_scheduler_step_size`
-**What it does**: Number of epochs between learning rate reductions.
+**What it does**: Number of epochs between learning rate reductions. Only used with `lr_scheduler = "step"`.
 
 **Type**: Integer
 **Default**: `5`
@@ -215,7 +215,7 @@ lr_scheduler_step_size = 10
 ---
 
 #### `lr_scheduler_gamma`
-**What it does**: Factor by which learning rate is reduced at each step.
+**What it does**: Factor by which learning rate is reduced at each step. Only used with `lr_scheduler = "step"`.
 
 **Type**: Float
 **Default**: `0.1`
@@ -254,6 +254,24 @@ transfer_learning = true
 ```
 
 ---
+
+### Training Quality Parameters
+
+| Parameter | Default | What it does |
+|-----------|---------|--------------|
+| `lr_scheduler` | `cosine` | `cosine` decreases the learning rate smoothly to 1% of its value over the epochs; `step` divides it by `lr_scheduler_gamma` every `lr_scheduler_step_size` epochs |
+| `warmup_iters` | `100` | Linear learning rate warmup over the first iterations of the first epoch (from 0.1% of the learning rate); `0` disables it |
+| `clip_grad_norm` | `10.0` | Maximum gradient norm, protects against loss spikes; `0` disables it |
+| `amp` | `true` | Mixed precision (fp16) on GPU: faster and lighter in memory. No effect on CPU. Turn it off if the loss becomes NaN |
+| `hflip_prob` | `0.5` | Probability of a horizontal flip of a training image (images, masks and boxes together) |
+| `scale_jitter` | `0.0` | Multi-scale training: when `> 0`, training images are resized to a random shorter side between `image_size * (1 - scale_jitter)` and `image_size` (4 sizes). Inference always uses `image_size`. Try `0.25` |
+| `trainable_backbone_layers` | `3` | Number of ResNet stages that are trained, from the last one (0 to 5). Lower is faster and overfits less, higher adapts more to unusual images |
+| `keep_best` | `true` | Save the weights of the best epoch instead of the last one. The best epoch is the one with the highest validation mask mAP50-95 (or the lowest validation loss when `val_map_every = 0`) |
+| `patience` | `0` | Stop when the best score did not improve for this many evaluated epochs; `0` never stops early |
+| `eval_batch_size` | `4` | Images per forward pass on the test split. Larger is faster on a GPU with memory to spare |
+| `seed` | `0` | Seeds python, numpy and torch, the data loader shuffling and the augmentations |
+
+The best epoch is logged as `train/best_epoch` and `train/best_score`. With `patience`, set a `val_map_every` that evaluates often enough: only evaluated epochs count.
 
 ### Export Parameters
 
@@ -424,7 +442,7 @@ learning_rate = 5e-4
 After training completes, check Picsellia for:
 
 - **Model weights**: `checkpoint-latest` is uploaded first, then `model-metadata`, then the TorchScript `model-latest`, so a failing export never loses the training
-- **Training curves**: `train/loss*`, `train/lr`, `train/epoch_time_s`, `train/gpu_memory_peak_gb`
+- **Training curves**: `train/loss*`, `train/lr`, `train/epoch_time_s`, `train/gpu_memory_peak_gb`; `train/best_epoch` and `train/best_score` once training is over
 - **Validation curves**: `val/loss*` and, every `val_map_every` epochs, `val/mAP50-95(M)`, `val/mAP50(M)`, `val/mAP50-95(B)`
 - **Dataset sizes**: `dataset/train_images`, `dataset/val_images`, `dataset/train_masks`, `dataset/val_masks`
 - **TorchScript check**: `export/torchscript_matches_eager` is `1` when the exported model gives the same detections as the PyTorch model on a real image, `0` when it does not (a warning is then in the step log)
