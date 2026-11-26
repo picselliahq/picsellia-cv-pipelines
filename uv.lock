@@ -484,7 +484,7 @@ dev = [{ name = "pre-commit", specifier = ">=4.2.0" }]
 
 [[package]]
 name = "picsellia-pipelines-cli"
-version = "0.7.6"
+version = "0.7.7"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "dotenv" },
@@ -493,9 +493,9 @@ dependencies = [
     { name = "toml" },
     { name = "typer" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/72/e8/0c1c930990710641cc52092b51b8903f8de86606d1b5be94baaa0dda0264/picsellia_pipelines_cli-0.7.6.tar.gz", hash = "sha256:228d460a548ae5f39abc0d7b616ecfe76fb7a12c24d8d06c20ac393181fa9d91", size = 72684, upload-time = "2026-09-14T10:12:39.138Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/88/e4/c575d3f68aac80c2ad8b35b0a7d83e91ca221ac2b843392a9af6db3e4184/picsellia_pipelines_cli-0.7.7.tar.gz", hash = "sha256:743a93812ed6bd87b192b8fa63aeafbdc06ef7f748ebaff8348479424ca4046f", size = 75264, upload-time = "2026-11-25T15:30:25.011Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/10/b7/76bf1306a4a693b943a64f179656067c9a8408a49c6fafe2833c07582b16/picsellia_pipelines_cli-0.7.6-py3-none-any.whl", hash = "sha256:9e52eb2d3d4577121697863b9a316136fc0a6f0f0a556e110a07f5233430c205", size = 97693, upload-time = "2026-09-14T10:12:38.215Z" },
+    { url = "https://files.pythonhosted.org/packages/af/1a/25fc41d8941d01a531034506737506214575e1ea5f0dba671e3c8256a61b/picsellia_pipelines_cli-0.7.7-py3-none-any.whl", hash = "sha256:ad07a8aea0050b90af20809c1ecf90d17ebaca45e9ba6a3cadda9fbae0fec22d", size = 100686, upload-time = "2026-11-25T15:30:23.7Z" },
 ]
 
 [[package]]

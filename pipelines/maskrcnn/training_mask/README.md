@@ -9,20 +9,39 @@ This is the `MASK` variant of [`maskrcnn/training`](../training/README.md). The 
 | Dataset version type | `SEGMENTATION` (polygons) | `MASK` (RLE) |
 | Model version `inference_type` | `SEGMENTATION` | `MASK` |
 | Inference output | polygons (`cv2.findContours` + simplification) | lossless RLE masks |
-| Evaluation | Picsellia `ModelEvaluator` | COCO `segm` computed in the pipeline |
+| Evaluation | Picsellia `ModelEvaluator` (polygons) | RLE masks sent with `add_evaluation(masks=...)` + COCO `segm` computed in the pipeline |
 
-To turn an existing polygon dataset into a `MASK` one, run the `polygons_to_RLE_mask` pipeline first.
+This pipeline only accepts `MASK` dataset versions, for the `train`, `val` and `test` splits alike: it stops at the start, with an explicit error, on any other type. For `SEGMENTATION` (polygon) datasets, use `maskrcnn/training`, or convert the dataset into a `MASK` one with the `polygons_to_RLE_mask` pipeline first.
 
 ## What You'll Get
 
 After running this pipeline, you'll have:
 - A fully trained Mask R-CNN model fine-tuned on your data
-- Model weights saved as experiment artifacts
-- COCO `segm` metrics on your test set, logged as experiment values (`mask_mAP50-95`, `mask_mAP50`, `mask_mAP75`, `mask_mAR100`, plus `mask_AP50-95_<label>` per class)
-- `mask_predictions.json` (RLE detections) and `mask_metrics.json` in the working directory under `evaluation/`
-- Training curves in Picsellia
+- Experiment artifacts: `checkpoint-latest` (PyTorch), `model-latest` (TorchScript, checked against the PyTorch model after export), `model-metadata` (labels, backbone, thresholds and the output format of the TorchScript model), `mask-metrics` and `mask-predictions` (JSON)
+- The test-set predictions as Picsellia **evaluations** of the experiment (one per image, masks sent as RLE), with the metrics computed by the platform
+- COCO metrics computed in the pipeline: mask and box mAP/mAR as values (`test/mAP50-95(M)`, ...) and a per-class table (`test/metrics`)
+- A few test images with the predicted masks drawn on them (`test/prediction_NN`)
+- Training curves (`train/*`, `val/*`), including the validation mask mAP per epoch
 
-> **Note:** the Picsellia SDK cannot attach `MASK` evaluations to an experiment, so test-set predictions are not visualised in the Picsellia evaluation view. Metrics are logged as values instead.
+> **Note:** sending mask evaluations needs `picsellia>=6.37.0` (`Experiment.add_evaluation(masks=...)`). The version is required in `pyproject.toml`. `opencv-python` stays a dependency because `picsellia-cv-engine` imports `cv2` without declaring it.
+
+## Dataset Configurations
+
+Attach `MASK` dataset versions to the experiment with the aliases below. The **number of attached datasets** decides how the `train`, `val` and `test` splits are made; the pipeline always works with the three of them.
+
+| Attached datasets | Aliases | How the splits are made |
+|-------------------|---------|-------------------------|
+| **1** | `train` | The dataset is split at random into train / val / test: with the default `train_set_split_ratio` of `0.8`, 80 % / 10 % / 10 % |
+| **2** | `train` and `test` | `train` is split into train / val (80 % / 20 % with the default ratio); `test` is used as it is |
+| **3** | `train`, `val` and `test` | Each dataset is used as it is, nothing is split |
+
+Good to know:
+
+- The alias `train` is always required. With two datasets, the second one must be called **`test`** (not `val`): a `train` + `val` pair stops with "a test dataset couldn't be found". Any other number of datasets (0, or 4 and more) is an error.
+- The random splits are reproducible: they use `seed`.
+- **The classes come from the `train` split.** A class that only exists in `val` or `test` is ignored while training and gets an AP of `0` in the test metrics, so make sure every class appears in `train`.
+- `val` picks the best epoch (`keep_best`) and gives the validation mAP: a very small `val` makes both noisy. With a single small dataset, the 10 % `val` and `test` splits hold only a few images and may miss a rare class; give separate `val` and `test` datasets when the classes matter.
+- Every split must come from a `MASK` dataset version (see above).
 
 ## Quick Start Guide
 
@@ -105,7 +124,7 @@ batch_size = 4
 ---
 
 #### `image_size`
-**What it does**: Minimum size to which images are resized during training.
+**What it does**: Shorter side images are resized to, in training and in inference (torchvision `min_size`; the longer side is capped at `image_size * 1333 / 800`). It is stored in the checkpoint and in `model-metadata`.
 
 **Type**: Integer
 **Default**: `800`
@@ -197,7 +216,7 @@ momentum = 0.9
 ---
 
 #### `lr_scheduler_step_size`
-**What it does**: Number of epochs between learning rate reductions.
+**What it does**: Number of epochs between learning rate reductions. Only used with `lr_scheduler = "step"`.
 
 **Type**: Integer
 **Default**: `5`
@@ -214,7 +233,7 @@ lr_scheduler_step_size = 10
 ---
 
 #### `lr_scheduler_gamma`
-**What it does**: Factor by which learning rate is reduced at each step.
+**What it does**: Factor by which learning rate is reduced at each step. Only used with `lr_scheduler = "step"`.
 
 **Type**: Float
 **Default**: `0.1`
@@ -254,6 +273,24 @@ transfer_learning = true
 
 ---
 
+### Training Quality Parameters
+
+| Parameter | Default | What it does |
+|-----------|---------|--------------|
+| `lr_scheduler` | `cosine` | `cosine` decreases the learning rate smoothly to 1% of its value over the epochs; `step` divides it by `lr_scheduler_gamma` every `lr_scheduler_step_size` epochs |
+| `warmup_iters` | `100` | Linear learning rate warmup over the first iterations of the first epoch (from 0.1% of the learning rate); `0` disables it |
+| `clip_grad_norm` | `10.0` | Maximum gradient norm, protects against loss spikes; `0` disables it |
+| `amp` | `true` | Mixed precision (fp16) on GPU: faster and lighter in memory. No effect on CPU. Turn it off if the loss becomes NaN |
+| `hflip_prob` | `0.5` | Probability of a horizontal flip of a training image (images, masks and boxes together) |
+| `scale_jitter` | `0.0` | Multi-scale training: when `> 0`, training images are resized to a random shorter side between `image_size * (1 - scale_jitter)` and `image_size` (4 sizes). Inference always uses `image_size`. Try `0.25` |
+| `trainable_backbone_layers` | `3` | Number of ResNet stages that are trained, from the last one (0 to 5). Lower is faster and overfits less, higher adapts more to unusual images |
+| `keep_best` | `true` | Save the weights of the best epoch instead of the last one. The best epoch is the one with the highest validation mask mAP50-95 (or the lowest validation loss when `val_map_every = 0`) |
+| `patience` | `0` | Stop when the best score did not improve for this many evaluated epochs; `0` never stops early |
+| `eval_batch_size` | `4` | Images per forward pass on the test split. Larger is faster on a GPU with memory to spare |
+| `seed` | `0` | Seeds python, numpy and torch, the data loader shuffling and the augmentations |
+
+The best epoch is logged as `train/best_epoch` and `train/best_score`. With `patience`, set a `val_map_every` that evaluates often enough: only evaluated epochs count.
+
 ### Export Parameters
 
 #### `export_format`
@@ -264,20 +301,28 @@ transfer_learning = true
 
 **Available Options**:
 
-| Format | Description | Best For |
-|--------|-------------|----------|
-| `torchscript` | PyTorch TorchScript format | Production deployment, cross-platform |
-| `onnx` | Open Neural Network Exchange | Interoperability, various runtimes |
+Only `torchscript` is supported: any other value stops the training at the start with an explicit error.
+
+| Format | Description |
+|--------|-------------|
+| `torchscript` | TorchScript model (`model-latest`). It returns `(boxes, labels, scores, masks)` where `masks` are raw 28x28 logits to resize, paste and threshold on the client side (described in `model-metadata`) |
 
 **Example**:
 ```toml
 [export_parameters]
-# TorchScript (default)
 export_format = "torchscript"
-
-# ONNX
-export_format = "onnx"
 ```
+
+### Evaluation and Reporting Parameters
+
+| Parameter | Default | What it does |
+|-----------|---------|--------------|
+| `metrics_score_threshold` | `0.05` | Minimum score of the detections used for the COCO metrics. Keep it low: mAP is computed over the whole precision/recall curve |
+| `score_threshold` | `0.5` | Minimum score of the masks sent to Picsellia as evaluations, drawn in the overlays, and the default threshold written in `model-metadata` |
+| `mask_threshold` | `0.5` | Threshold that binarizes the predicted mask probabilities |
+| `val_map_every` | `1` | Compute the validation mask mAP every N epochs (and on the last one); `0` disables it. It costs one inference pass over the validation split |
+| `overlay_images` | `8` | Number of test images logged with the predicted masks drawn on them; `0` disables it |
+| `log_every` | `0` | Progress line every N iterations (`0` = about 10 per epoch) |
 
 ---
 
@@ -414,9 +459,11 @@ learning_rate = 5e-4
 
 After training completes, check Picsellia for:
 
-- **Model weights**: Final checkpoint saved automatically
-- **Training curves**: Loss components over epochs
-- **Validation metrics**: Losses on validation set
+- **Model weights**: `checkpoint-latest` is uploaded first, then `model-metadata`, then the TorchScript `model-latest`, so a failing export never loses the training
+- **Training curves**: `train/loss*`, `train/lr`, `train/epoch_time_s`, `train/gpu_memory_peak_gb`; `train/best_epoch` and `train/best_score` once training is over
+- **Validation curves**: `val/loss*` and, every `val_map_every` epochs, `val/mAP50-95(M)`, `val/mAP50(M)`, `val/mAP50-95(B)`
+- **Dataset sizes**: `dataset/train_images`, `dataset/val_images`, `dataset/train_masks`, `dataset/val_masks`
+- **TorchScript check**: `export/torchscript_matches_eager` is `1` when the exported model gives the same detections as the PyTorch model on a real image, `0` when it does not (a warning is then in the step log)
 
 ### Loss Components
 
@@ -433,12 +480,19 @@ Mask R-CNN reports multiple loss components:
 
 ### Performance Metrics
 
-Masks are evaluated with COCO `segm` on the test split (mask IoU, not box IoU):
-- `mask_mAP50-95`: mean Average Precision over IoU 0.50:0.95
-- `mask_mAP50`: AP at IoU threshold 0.5
-- `mask_mAP75`: AP at IoU threshold 0.75
-- `mask_mAR100`: mean Average Recall with up to 100 detections per image
-- `mask_AP50-95_<label>`: per-class AP
+Metrics are computed on the test split with pycocotools, on every detection above `metrics_score_threshold`. `(M)` is the mask IoU, `(B)` the box IoU, as in the other Picsellia pipelines:
+
+| Log | Meaning |
+|-----|---------|
+| `test/mAP50-95(M)`, `test/mAP50(M)`, `test/mAP75(M)` | Mask mean Average Precision (IoU 0.50:0.95, 0.5, 0.75) |
+| `test/mAP-small(M)`, `test/mAP-medium(M)`, `test/mAP-large(M)` | Mask mAP by object area |
+| `test/mAR100(M)` | Mask mean Average Recall, up to 100 detections per image |
+| `test/mAP50-95(B)`, `test/mAP50(B)`, `test/mAP75(B)`, `test/mAR100(B)` | Same metrics on the boxes |
+| `test/metrics` (table) | One row per class plus `all`: images, instances, mask mAP50-95/mAP50/mAP75/mAR100 and box mAP50-95/mAP50 |
+| `test/inference_time_ms` | Model forward time per image (first image excluded, GPU synchronized) |
+| `test/time_per_image_ms` | Per image, including loading and mask encoding |
+
+The evaluations in Picsellia only contain the masks with a score above `score_threshold`, so the metrics computed by the platform are not the same numbers as the `test/*` values above. The `test/*` values are the reference.
 
 A metric COCO cannot define (for example a class with no ground truth) is logged as `0`.
 
