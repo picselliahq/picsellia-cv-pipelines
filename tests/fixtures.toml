@@ -1,0 +1,258 @@
+# DRAFT - CI fixtures for the Picsellia_CI staging org. Reviewed by hand before any --apply.
+# Source = prod org Demo-Account (read only). Targets are created in Picsellia_CI.
+
+[org]
+name = "Picsellia_CI"
+host = "https://staging.picsellia.com"
+datalake = "default"
+source_org = "Demo-Account"
+source_host = "https://app.picsellia.com"
+base_models_source_org = "test-account"  # base weights were uploaded by hand there
+max_images = 15  # videos are copied whole
+dataset_version_name = "fixture-v1"
+
+[fixtures."yolov8/pre_annotation"]
+dataset = "ci-yolov8-pre_annotation"
+kind = "detection"
+output_name = "ci-out-yolov8-pre_annotation"
+source_dataset = "Safety - PPE Detection"
+source_version_id = "01a1c693-4ca6-7418-9b9d-e55477c7716c"
+source_size = 150
+model = "ci-yolov8-objectdetection"
+model_version = "YoloV8-m"
+model_source_version_id = "0196a0ec-e802-775f-818a-4d3482f31d31"
+
+[fixtures."yolov8/training"]
+dataset = "ci-yolov8-training"
+kind = "detection"
+output_name = "ci-out-yolov8-training"
+source_dataset = "Safety - PPE Detection"
+source_version_id = "01a1c693-a543-740b-9b18-7f1f59c037cc"
+source_size = 150
+model = "ci-yolov8"
+model_version = "v1"
+model_source_version_id = "019ba344-faad-70ba-8700-a541bf48ae19"
+
+[fixtures."yoloX/training"]
+dataset = "ci-yoloX-training"
+kind = "detection"
+output_name = "ci-out-yoloX-training"
+source_dataset = "Smart City - Urban Traffic"
+source_version_id = "01a1ca14-a24b-7584-a244-89bb1c9c6070"
+source_size = 150
+model = "ci-yolox"
+model_version = "YoloX-x"
+model_source_version_id = "0196a0f3-37f5-7b20-9f22-c3445452aeba"
+
+[fixtures."rt_detr/training"]
+dataset = "ci-rt_detr-training"
+kind = "detection"
+output_name = "ci-out-rt_detr-training"
+source_dataset = "Maritime - Ship Recognition"
+source_version_id = "01a1c681-7349-76c7-a4ef-3050f2016aa2"
+source_size = 150
+model = "ci-rt-detr"
+model_version = "v1"
+model_source_version_id = "0199de21-e8a5-7cd7-91dc-1f2d6bde3528"
+
+[fixtures."grounding_dino"]
+dataset = "ci-grounding_dino"
+kind = "detection"
+output_name = "ci-out-grounding_dino"
+source_dataset = "Maritime - Ship Recognition"
+source_version_id = "01a1c681-cd1a-77a4-b48a-aa59f6c5fe81"
+source_size = 150
+model = "ci-groundingdino"
+model_version = "GroundingDINO_SwinT_OGC"
+model_source_version_id = "01976345-2213-746c-9799-0db012ba2330"
+
+[fixtures."SAM3_Bbox"]
+dataset = "ci-SAM3_Bbox"
+kind = "detection"
+output_name = "ci-out-SAM3_Bbox"
+source_dataset = "Smart City - Urban Traffic"
+source_version_id = "01a1ca15-017a-70a3-8ddc-b1282ae5bee4"
+source_size = 150
+
+[fixtures."SAM3_polygons_from_box"]
+dataset = "ci-SAM3_polygons_from_box"
+kind = "detection"
+output_name = "ci-out-SAM3_polygons_from_box"
+source_dataset = "Maritime - Ship Recognition"
+source_version_id = "01a1c681-18c4-775a-a778-558600be5aad"
+source_size = 700
+
+[fixtures."albumentations_processing"]
+dataset = "ci-albumentations_processing"
+kind = "detection"
+output_name = "ci-out-albumentations_processing"
+source_dataset = "Manufacturing - PCB Components"
+source_version_id = "01a1c68f-329a-7472-a7e7-ca3760672548"
+source_size = 150
+
+[fixtures."split_train_test_val"]
+dataset = "ci-split_train_test_val"
+kind = "detection"
+output_name = "ci-out-split_train_test_val"
+source_dataset = "Safety - PPE Detection"
+source_version_id = "01a1c692-f4a2-7179-8ac9-f125a6e820e9"
+source_size = 700
+
+[fixtures."dataset_tiler"]
+dataset = "ci-dataset_tiler"
+kind = "detection"
+output_name = "ci-out-dataset_tiler"
+source_dataset = "Aerial - DOTA Tiles"
+source_version_id = "01a1c5e9-bbfb-76ba-b27f-02283c4bac2e"
+source_size = 8
+
+[fixtures."maskrcnn/training"]
+dataset = "ci-maskrcnn-training"
+kind = "segmentation"
+output_name = "ci-out-maskrcnn-training"
+source_dataset = "Agriculture - Strawberry Harvest"
+source_version_id = "01a1c674-e830-7049-a842-686bbf2f6dac"
+source_size = 30
+model = "ci-mask-rcnn"
+model_version = "pre-trained"
+model_source_version_id = "019c04b7-dbc4-76ed-b46e-e39144a1029a"
+
+# MASK variant of maskrcnn/training: the source must be a MASK (RLE) dataset version.
+# Land Cover is the only MASK source in Demo-Account; the provisioning keeps the source
+# version type. The base weights are the same as maskrcnn/training (only used as
+# checkpoint-latest, the head is replaced when the number of classes differs).
+[fixtures."maskrcnn/training_mask"]
+dataset = "ci-maskrcnn-training_mask"
+kind = "segmentation"
+output_name = "ci-out-maskrcnn-training_mask"
+source_dataset = "Environment - Land Cover Segmentation"
+source_version_id = "01a1cf80-5375-77c6-aae3-9fb9836e67f1"
+source_size = 150
+model = "ci-mask-rcnn"
+model_version = "pre-trained"
+model_source_version_id = "019c04b7-dbc4-76ed-b46e-e39144a1029a"
+
+[fixtures."yolov7_segmentation"]
+dataset = "ci-yolov7_segmentation"
+kind = "segmentation"
+output_name = "ci-out-yolov7_segmentation"
+source_dataset = "Infrastructure - Crack Detection"
+source_version_id = "01a1c67d-6093-7194-8781-c436c52cbb1b"
+source_size = 61
+model = "ci-yolov7"
+model_version = "yolov7-segmentation"
+model_source_version_id = "01936972-fe78-706a-8b15-967a78737a11"
+
+[fixtures."sam_2"]
+dataset = "ci-sam_2"
+kind = "segmentation"
+output_name = "ci-out-sam_2"
+source_dataset = "Forestry - Wood Log Segmentation"
+source_version_id = "01a1c657-279c-7066-86cf-df220a87fcfe"
+source_size = 27
+model = "ci-sam2"
+model_version = "v1"
+model_source_version_id = "01993342-52b8-77d5-a77d-118bcb960d6c"
+
+[fixtures."mask_to_obb"]
+dataset = "ci-mask_to_obb"
+kind = "segmentation"
+output_name = "ci-out-mask_to_obb"
+source_dataset = "Forestry - Wood Log Segmentation"
+source_version_id = "01a1c657-8043-7040-b969-f8991907124a"
+source_size = 27
+
+[fixtures."polygons_to_RLE_mask"]
+dataset = "ci-polygons_to_RLE_mask"
+kind = "segmentation"
+output_name = "ci-out-polygons_to_RLE_mask"
+source_dataset = "Infrastructure - Crack Detection"
+source_version_id = "01a1c67d-09c6-7399-8c05-d3e7e5560808"
+source_size = 62
+
+[fixtures."shapes-cropper"]
+dataset = "ci-shapes-cropper"
+kind = "segmentation"
+output_name = "ci-out-shapes-cropper"
+source_dataset = "Agriculture - Strawberry Harvest"
+source_version_id = "01a1c675-3f1c-7596-b465-e7cded35d2b6"
+source_size = 30
+
+[fixtures."SAM3_polygons"]
+dataset = "ci-SAM3_polygons"
+kind = "segmentation"
+output_name = "ci-out-SAM3_polygons"
+source_dataset = "Forestry - Wood Log Segmentation"
+source_version_id = "01a1c656-6b8c-7063-9668-5f4dce06bb44"
+source_size = 126
+
+[fixtures."clip/training"]
+dataset = "ci-clip-training"
+kind = "classification"
+output_name = "ci-out-clip-training"
+source_dataset = "Automotive - Tyre Quality"
+source_version_id = "01a1c68a-71ed-747a-a4c4-3e26d7c8a7fc"
+source_size = 150
+model = "ci-clip"
+model_version = "v1"
+model_source_version_id = "01991517-f20e-7667-a4f7-4216dfcc076a"
+
+[fixtures."dinov2/training"]
+dataset = "ci-dinov2-training"
+kind = "classification"
+output_name = "ci-out-dinov2-training"
+source_dataset = "Healthcare - Brain MRI Scans"
+source_version_id = "01a1c678-fe97-7700-8a1e-345a66408e4c"
+source_size = 38
+model = "ci-dinov2"
+model_version = "v1"
+model_source_version_id = "0199c8a5-fc0f-70f7-96b9-146f7f661adb"
+
+[fixtures."convert_videos_to_frames"]
+dataset = "ci-convert_videos_to_frames"
+kind = "video"
+output_name = "ci-out-convert_videos_to_frames"
+source_dataset = "Logistics - Port Spreader"
+source_version_id = "01a1c647-9445-7111-ad54-68bbf5f7699d"
+source_size = 2
+
+[fixtures."split_video"]
+dataset = "ci-split_video"
+kind = "video"
+output_name = "ci-out-split_video"
+source_dataset = "Logistics - Port Spreader"
+source_version_id = "01a1c647-ece1-73dc-93f9-5ef7e071be9e"
+source_size = 2
+
+[fixtures."YOLOv8_OBB/training"]
+dataset = "ci-YOLOv8_OBB-training"
+kind = "obb"
+output_name = "ci-out-YOLOv8_OBB-training"
+source_dataset = "Aerial - DOTA Tiles"
+source_version_id = "01a1c630-799e-72a0-8d07-e75b46878f23"
+source_size = 8
+model = "ci-yolov8-obb"
+model_version = "v1"
+model_source_version_id = "019e6375-9c01-73dd-ab79-260217706785"
+todo = "check that DOTA versions hold oriented boxes (or polygons); otherwise pick another source"
+
+[fixtures."dataset_diversified_subset"]
+dataset = "ci-dataset_diversified_subset"
+kind = "detection"
+output_name = "ci-out-dataset_diversified_subset"
+source_dataset = "Safety - PPE Detection"
+source_version_id = "01a1d084-7eda-7484-8bd1-8cf63e682c9a"
+source_size = 708
+todo = "needs image embeddings already computed on the platform; SDK can check but not trigger it"
+
+[fixtures."diversified_dataset_extractor"]
+dataset = "ci-diversified_dataset_extractor"
+kind = "detection"
+output_name = "ci-out-diversified_dataset_extractor"
+source_dataset = "Smart City - Urban Traffic"
+source_version_id = "01a1ca13-a629-7601-94d9-ada9ffa1fead"
+source_size = 700
+todo = "needs image embeddings already computed on the platform; SDK can check but not trigger it"
+
+[skipped."paddle_ocr"]
+reason = "no OCR dataset available yet (on hold)"

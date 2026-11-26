@@ -66,6 +66,11 @@ while IFS= read -r line; do
     # -------------------------
     if [[ "$file" == tests/* ]]; then
       rel="${file#tests/}"         # ex: "yolov8/pre_annotation/run_config.toml" ou "rt_detr/run_config.toml"
+
+      # Files directly under tests/ (fixtures.toml, fixtures.lock.toml, ...) are
+      # shared CI fixtures, not a pipeline.
+      [[ "$rel" != */* ]] && continue
+
       IFS='/' read -r p1 p2 _ <<< "$rel"
 
       pipeline=""

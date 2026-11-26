@@ -6,7 +6,9 @@ on:
       - main
 
 env:
-  ORGANIZATION: test-account
+  # Tests run against the dedicated CI org (fixtures provisioned by
+  # scripts/provision_ci_org.py). The deploy jobs below still target test-account.
+  ORGANIZATION: Picsellia_CI
   ENVIRONMENT: STAGING
 
 jobs:

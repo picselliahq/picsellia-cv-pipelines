@@ -8,16 +8,20 @@ set -euo pipefail
 #
 # Examples:
 #   scripts/test_pipelines.sh --pipeline all \
-#       --organization test-account --env STAGING --token "$PXL_API_TOKEN"
+#       --organization Picsellia_CI --env STAGING --token "$PXL_API_TOKEN"
 #
 #   scripts/test_pipelines.sh --pipeline yolov8/pre_annotation \
-#       --organization test-account --env STAGING --token "$PXL_API_TOKEN" --report
+#       --organization Picsellia_CI --env STAGING --token "$PXL_API_TOKEN" --report
+#
+# The run_configs under tests/ hold @placeholders (dataset / model / datalake)
+# that are resolved to the ids of the Picsellia_CI fixtures just before each
+# test, see scripts/render_run_config.py and tests/fixtures.lock.toml.
 # ---------------------------------------------------------------------------
 
 command -v pxl-pipeline >/dev/null || { echo "❌ 'pxl-pipeline' not found in PATH"; exit 1; }
 
 PIPE="all"                           # all | <top> | <top/sub>
-ORGANIZATION="${ORGANIZATION:-test-account}"
+ORGANIZATION="${ORGANIZATION:-Picsellia_CI}"
 ENVIRONMENT="${ENVIRONMENT:-STAGING}"
 TOKEN="${PXL_API_TOKEN:-}"           # can also be provided via --token
 WRITE_REPORT=false
@@ -97,6 +101,30 @@ run_pipeline_test() {
   echo "─────────────────────────────────────────────"
   echo
 
+  # Resolve the @placeholders of the run_config to the Picsellia_CI fixture ids.
+  # exit 3 = fixture intentionally not tested (on hold / not provisioned yet).
+  local RENDERED_DIR RENDERED_CONFIG render_status render_msg
+  RENDERED_DIR="$(mktemp -d)"
+  RENDERED_CONFIG="$RENDERED_DIR/run_config.toml"
+  set +e
+  render_msg="$(python3 "$BASE_DIR/scripts/render_run_config.py" \
+    --fixture "$DISPLAY_NAME" --config "$RUN_CONFIG" --out "$RENDERED_CONFIG")"
+  render_status=$?
+  set -e
+  if [[ $render_status -eq 3 ]]; then
+    echo "⏭️  $DISPLAY_NAME: $render_msg"
+    RESULTS+=("⏭️ $DISPLAY_NAME ($render_msg)")
+    rm -rf "$RENDERED_DIR"
+    return
+  elif [[ $render_status -ne 0 ]]; then
+    echo "❌ Could not render the run_config of $DISPLAY_NAME"
+    RESULTS+=("❌ $DISPLAY_NAME (render run_config)")
+    ANY_FAILURE=true
+    rm -rf "$RENDERED_DIR"
+    return
+  fi
+  RUN_CONFIG="$RENDERED_CONFIG"
+
   pushd "$PIPELINE_DIR" >/dev/null || {
     echo "⚠️  Failed to cd into $PIPELINE_DIR, skipping $DISPLAY_NAME"
     RESULTS+=("❌ $DISPLAY_NAME (cd failed)")
@@ -160,6 +188,7 @@ run_pipeline_test() {
     ANY_FAILURE=true
   fi
 
+  rm -rf "$RENDERED_DIR"
   popd >/dev/null
 }
 

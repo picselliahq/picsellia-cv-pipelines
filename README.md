@@ -224,7 +224,7 @@ uv sync
 pre-commit install
 
 # Authenticate
-pxl-pipeline login --organization test-account --env STAGING --token $TOKEN
+pxl-pipeline login --organization Picsellia_CI --env STAGING --token $TOKEN
 ```
 
 ### Create a Custom Pipeline
