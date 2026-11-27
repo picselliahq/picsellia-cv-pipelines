@@ -1,3 +1,4 @@
 SAM3_Bbox
 SAM3_polygons
 SAM3_polygons_from_box
+mask2former/training
