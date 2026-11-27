@@ -727,3 +727,5 @@ After the pipeline completes, check your Picsellia dataset:
 **Pipeline Version**: 1.0.0
 **Type**: Pre-annotation
 **Last Updated**: 2025-12-31
+
+<!-- CI probe: checks that HF_TOKEN works on the runner; do not merge. -->
