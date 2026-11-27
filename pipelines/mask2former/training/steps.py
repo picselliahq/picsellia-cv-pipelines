@@ -21,6 +21,8 @@ from utils.evaluation import (
 from utils.inference import run_inference_on_assets
 from utils.log import fmt_duration, get_logger
 from utils.model import (
+    DEFAULT_HF_MODEL,
+    PRETRAINED_WEIGHTS_NAME,
     InstancePredictor,
     build_label_maps,
     build_model_metadata,
@@ -28,6 +30,7 @@ from utils.model import (
     checkpoint_dict,
     load_model_from_checkpoint,
     load_pretrained,
+    resolve_pretrained_source,
 )
 from utils.training import (
     BestCheckpoint,
@@ -141,6 +144,7 @@ def _save_and_upload_artifacts(
     hp: Any,
     image_mean: tuple[float, ...],
     image_std: tuple[float, ...],
+    pretrained_source: str,
 ) -> None:
     """Write the checkpoint and its metadata, then upload them to the experiment."""
     final_dir = os.path.join(picsellia_model.results_dir, picsellia_model.name, "final")
@@ -149,7 +153,7 @@ def _save_and_upload_artifacts(
     checkpoint_path = os.path.join(final_dir, "model.pth")
     torch.save(
         checkpoint_dict(
-            model, id2label, hp.image_size, image_mean, image_std, hp.pretrained_model
+            model, id2label, hp.image_size, image_mean, image_std, pretrained_source
         ),
         checkpoint_path,
     )
@@ -168,7 +172,7 @@ def _save_and_upload_artifacts(
                 hp.image_size,
                 image_mean,
                 image_std,
-                hp.pretrained_model,
+                pretrained_source,
                 hp.score_threshold,
                 hp.mask_threshold,
             ),
@@ -190,9 +194,21 @@ def train(
     validate_dataset_types(picsellia_datasets)
     seed_everything(hp.seed)
 
+    pretrained_source = resolve_pretrained_source(
+        picsellia_model,
+        ctx.experiment,
+        hp.pretrained_model,
+        os.path.join(ctx.working_dir, "models"),
+    )
+    # What the checkpoint records: never a temporary download path.
+    pretrained_label = (
+        pretrained_source
+        if hp.pretrained_model or pretrained_source == DEFAULT_HF_MODEL
+        else f"model version file {PRETRAINED_WEIGHTS_NAME}"
+    )
     log.info(
         "Mask2Former training | model=%s image_size=%d epochs=%d batch_size=%d lr=%g seed=%d",
-        hp.pretrained_model,
+        pretrained_label,
         hp.image_size,
         hp.epochs,
         hp.batch_size,
@@ -202,7 +218,7 @@ def train(
     id2label, label2id = build_label_maps(picsellia_datasets["train"].labelmap)
     log.info("Classes (%d): %s", len(id2label), list(id2label.values()))
 
-    model, image_mean, image_std = load_pretrained(hp.pretrained_model, id2label)
+    model, image_mean, image_std = load_pretrained(pretrained_source, id2label)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     log_device(device)
     model.to(device)
@@ -306,7 +322,14 @@ def train(
     log.info("Training finished in %s", fmt_duration(total_seconds))
     _finalize_best(ctx.experiment, hp, best, model)
     _save_and_upload_artifacts(
-        picsellia_model, ctx.experiment, model, id2label, hp, image_mean, image_std
+        picsellia_model,
+        ctx.experiment,
+        model,
+        id2label,
+        hp,
+        image_mean,
+        image_std,
+        pretrained_label,
     )
     log.info("Training step completed")
 

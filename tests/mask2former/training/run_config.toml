@@ -21,6 +21,5 @@ project_name = "test-mask2former"
 epochs = 2
 batch_size = 2
 image_size = 512
-pretrained_model = "facebook/mask2former-swin-tiny-coco-instance"
 learning_rate = 1e-4
 weight_decay = 0.05

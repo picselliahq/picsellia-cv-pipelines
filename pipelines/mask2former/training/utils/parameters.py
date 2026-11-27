@@ -9,10 +9,11 @@ class TrainingHyperParameters(HyperParameters):
     def __init__(self, log_data: LogDataType):
         super().__init__(log_data=log_data)
         # Data and model
+        # Empty: use the `pretrained-weights` file of the model version (no Hugging Face
+        # access needed), else the default hub checkpoint. A hub identifier or a local
+        # directory overrides it.
         self.pretrained_model = self.extract_parameter(
-            ["pretrained_model"],
-            expected_type=str,
-            default="facebook/mask2former-swin-tiny-coco-instance",
+            ["pretrained_model"], expected_type=str, default=""
         )
         self.epochs = self.extract_parameter(["epochs"], expected_type=int, default=30)
         self.batch_size = self.extract_parameter(

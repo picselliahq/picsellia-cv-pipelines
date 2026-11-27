@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 from typing import Any
 
 import numpy as np
@@ -24,11 +25,81 @@ log = get_logger()
 # Name fragment of the Swin backbone parameters: they train with a smaller learning rate.
 _BACKBONE_MARKER = "pixel_level_module.encoder"
 
+# Model version file holding the pretrained Hugging Face checkpoint (zip of config.json,
+# model.safetensors and preprocessor_config.json), and the hub checkpoint used otherwise.
+PRETRAINED_WEIGHTS_NAME = "pretrained-weights"
+DEFAULT_HF_MODEL = "facebook/mask2former-swin-tiny-coco-instance"
+
 
 def build_label_maps(labelmap: dict[str, Any]) -> tuple[dict[int, str], dict[str, int]]:
     """``id2label`` (0-based, no background: Mask2Former adds its own no-object class)."""
     id2label = dict(enumerate(labelmap.keys()))
     return id2label, {name: index for index, name in id2label.items()}
+
+
+def find_checkpoint_dir(*roots: str | None) -> str | None:
+    """First directory under ``roots`` holding a Hugging Face checkpoint (config + weights)."""
+    for root in roots:
+        if not root or not os.path.isdir(root):
+            continue
+        for current, _dirs, files in os.walk(root):
+            if "config.json" in files and (
+                "model.safetensors" in files or "pytorch_model.bin" in files
+            ):
+                return current
+    return None
+
+
+def resolve_pretrained_source(
+    picsellia_model: Any, experiment: Any, pretrained_model: str, work_dir: str
+) -> str:
+    """Where to load the pretrained weights from: a local directory or a hub identifier.
+
+    - ``pretrained_model`` set: used as it is (hub identifier or local directory).
+    - else the ``pretrained-weights`` file of the model version (no Hugging Face access
+      needed), taken from what ``build_model`` downloaded or, failing that, downloaded here.
+    - else the default hub checkpoint.
+    """
+    if pretrained_model:
+        return pretrained_model
+    found = find_checkpoint_dir(
+        getattr(picsellia_model, "pretrained_weights_path", None),
+        getattr(picsellia_model, "pretrained_weights_dir", None),
+    )
+    if found is None:
+        try:
+            from picsellia_cv_engine.core.models.model_downloader import (
+                ModelDownloader,
+            )
+
+            version = experiment.get_base_model_version()
+            weights_file = next(
+                (f for f in version.list_files() if f.name == PRETRAINED_WEIGHTS_NAME),
+                None,
+            )
+            if weights_file is not None:
+                destination = os.path.join(work_dir, "pretrained_weights")
+                path = ModelDownloader().download_and_process(weights_file, destination)
+                found = find_checkpoint_dir(path, destination)
+        except Exception as e:  # not fatal: the hub checkpoint is the fallback
+            log.warning(
+                "Could not get %s from the model version: %s",
+                PRETRAINED_WEIGHTS_NAME,
+                e,
+            )
+    if found is not None:
+        log.info(
+            "Pretrained weights: file %s of the model version (%s)",
+            PRETRAINED_WEIGHTS_NAME,
+            found,
+        )
+        return found
+    log.warning(
+        "No %s file in the model version: downloading %s from the Hugging Face hub",
+        PRETRAINED_WEIGHTS_NAME,
+        DEFAULT_HF_MODEL,
+    )
+    return DEFAULT_HF_MODEL
 
 
 def load_pretrained(

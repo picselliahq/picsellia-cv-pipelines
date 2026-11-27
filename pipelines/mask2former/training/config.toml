@@ -15,7 +15,7 @@ For SEGMENTATION (polygon) datasets, convert the dataset with `polygons_to_RLE_m
 - Dataset versions of type **MASK**, for the train, val and test splits alike. Any other type stops the training at the start with an explicit error.
 - A GPU is strongly recommended (CPU works but is very slow). Mixed precision (`amp`, bfloat16) only applies on GPU.
 - `picsellia>=6.37.0` (mask evaluations), already required by the pipeline.
-- Network access to the Hugging Face Hub when the training starts (`pretrained_model`).
+- The pretrained weights: the `pretrained-weights` file of the model version, or network access to the Hugging Face Hub (default checkpoint, or the `pretrained_model` you set).
 
 ## Dataset configurations
 
@@ -40,7 +40,7 @@ All of them have a default; set only what you want to change.
 
 | Parameter | Default | Meaning |
 |-----------|---------|---------|
-| `pretrained_model` | `facebook/mask2former-swin-tiny-coco-instance` | Hugging Face checkpoint to start from. Any Mask2Former instance-segmentation checkpoint works (`swin-small`, `swin-base`, ... are more accurate and heavier). The class head is always re-initialized for your classes |
+| `pretrained_model` | *(empty)* | Where the pretrained weights come from. Empty: the `pretrained-weights` file of the model version (a zip of a Hugging Face checkpoint: `config.json`, `model.safetensors`, `preprocessor_config.json`, so no Hugging Face access is needed), else `facebook/mask2former-swin-tiny-coco-instance` from the hub. A hub identifier (`facebook/mask2former-swin-small-coco-instance`, ...) or a local directory overrides it. The class head is always re-initialized for your classes |
 | `epochs` | `30` | Number of passes over the training split. Mask2Former converges slowly: use more on large datasets |
 | `batch_size` | `2` | Images per iteration. Lower it first if the GPU runs out of memory |
 | `image_size` | `512` | Images are stretched to a `image_size` x `image_size` square, in training and in inference, then the masks are resized back to the original size. Saved in the checkpoint |
@@ -96,7 +96,7 @@ All of them have a default; set only what you want to change.
 ## What the pipeline does
 
 1. Loads the datasets (1, 2 or 3 configuration) and checks that they are MASK.
-2. Loads the Hugging Face checkpoint and re-creates the class head for your classes.
+2. Loads the pretrained checkpoint (model version file, else Hugging Face hub) and re-creates the class head for your classes.
 3. Trains with AdamW (smaller learning rate on the backbone), warmup, the chosen schedule, optional bfloat16, gradient clipping and horizontal flip. After every epoch, computes the validation loss and, every `val_map_every` epochs, the validation mask mAP.
 4. Keeps the best epoch (`keep_best`) and can stop early (`patience`).
 5. Uploads `checkpoint-latest` and `model-metadata`.
@@ -109,7 +109,7 @@ All of them have a default; set only what you want to change.
 
 | Artifact | Content |
 |----------|---------|
-| `checkpoint-latest` | PyTorch checkpoint (best epoch if `keep_best`): `model_state_dict`, `config` (Mask2Former config, so the model is rebuilt without network access), `id2label`, `image_size`, `image_mean`, `image_std`, `pretrained_model` |
+| `checkpoint-latest` | PyTorch checkpoint (best epoch if `keep_best`): `model_state_dict`, `config` (Mask2Former config, so the model is rebuilt without network access), `id2label`, `image_size`, `image_mean`, `image_std`, `pretrained_model` (where the starting weights came from) |
 | `model-metadata` | Labels, image size and normalisation, default thresholds, output format and how to load the checkpoint |
 | `mask-metrics` | Test metrics (JSON) |
 | `mask-predictions` | Test instances as RLE masks (JSON), uploaded when below 50 MB |

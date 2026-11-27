@@ -24,7 +24,7 @@ This pipeline only accepts `MASK` dataset versions, for the `train`, `val` and `
 - A few test images with the predicted masks drawn on them (`test/prediction_NN`)
 - Training curves (`train/*`, `val/*`), including the validation mask mAP per epoch
 
-> **Note:** sending mask evaluations needs `picsellia>=6.37.0`. The pipeline needs network access to the Hugging Face Hub when it starts (`pretrained_model`).
+> **Note:** sending mask evaluations needs `picsellia>=6.37.0`. The pretrained weights are the `pretrained-weights` file of the model version (a zip of `config.json`, `model.safetensors` and `preprocessor_config.json` of a Hugging Face checkpoint): with it, no Hugging Face access is needed. Without it, the pipeline downloads the default checkpoint from the hub.
 
 ## Dataset Configurations
 
@@ -45,10 +45,9 @@ With two datasets, the second one must be called `test` (not `val`). The classes
 epochs = 50
 batch_size = 2
 image_size = 512
-pretrained_model = "facebook/mask2former-swin-tiny-coco-instance"
 ```
 
-Mask2Former converges slowly: with few images or few epochs, the model may predict no instance at all (the pipeline then logs zero metrics and a warning instead of failing). For more accuracy, try a larger checkpoint (`facebook/mask2former-swin-small-coco-instance`, `...-swin-base-coco-instance`) and a larger `image_size`, at the price of more GPU memory.
+Mask2Former converges slowly: with few images or few epochs, the model may predict no instance at all (the pipeline then logs zero metrics and a warning instead of failing). For more accuracy, try a larger checkpoint by setting `pretrained_model = "facebook/mask2former-swin-small-coco-instance"` (or `...-swin-base-coco-instance`, which comes from the Hugging Face hub) and a larger `image_size`, at the price of more GPU memory.
 
 ## Parameters
 
@@ -56,7 +55,7 @@ The exhaustive list (defaults, meaning, outputs and logs) is the markdown descri
 
 | Parameter | Default | Meaning |
 |-----------|---------|---------|
-| `pretrained_model` | `facebook/mask2former-swin-tiny-coco-instance` | Hugging Face checkpoint to start from |
+| `pretrained_model` | *(empty)* | Empty: `pretrained-weights` file of the model version, else the default hub checkpoint (`facebook/mask2former-swin-tiny-coco-instance`). A hub identifier or a local directory overrides it |
 | `epochs` | `30` | Passes over the training split |
 | `batch_size` | `2` | Images per iteration (lower it first on out-of-memory) |
 | `image_size` | `512` | Square side the images are stretched to |

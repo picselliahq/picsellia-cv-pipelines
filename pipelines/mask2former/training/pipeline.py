@@ -27,9 +27,10 @@ context = create_training_context_from_config(
 @pipeline(context=context, log_folder_path="logs/", remove_logs_on_completion=False)
 def training_pipeline():
     picsellia_datasets = load_coco_datasets()
-    # The weights come from the Hugging Face hub (hyperparameter `pretrained_model`),
-    # not from the model version: no weights file is requested here.
-    picsellia_model = build_model()
+    # The pretrained checkpoint is the `pretrained-weights` file of the model version when
+    # it has one; `train` falls back to the Hugging Face hub otherwise (or when the
+    # hyperparameter `pretrained_model` is set).
+    picsellia_model = build_model(pretrained_weights_name="pretrained-weights")
     train(picsellia_model=picsellia_model, picsellia_datasets=picsellia_datasets)
     evaluate(picsellia_model=picsellia_model, picsellia_datasets=picsellia_datasets)
 
