@@ -1,0 +1,26 @@
+override_outputs = true
+
+[job]
+type = "TRAINING"
+
+[auth]
+organization_name = "test-account"
+env = "STAGING"
+
+[input.train_dataset_version]
+id = "01a20e1a-2007-76f3-a0be-dadc9071960d"
+
+[input.model_version]
+id = "01a21d2d-11dc-715a-9749-7845829030eb"
+
+[output.experiment]
+name = "test-1"
+project_name = "test-mask2former"
+
+[hyperparameters]
+epochs = 2
+batch_size = 2
+image_size = 512
+pretrained_model = "facebook/mask2former-swin-tiny-coco-instance"
+learning_rate = 1e-4
+weight_decay = 0.05
