@@ -1,0 +1,189 @@
+[metadata]
+name = "mask2former-training"
+version = "1.0.0"
+description = '''
+# Mask2Former training for MASK datasets
+
+Trains a **Mask2Former** (Hugging Face `transformers`, Swin-Tiny backbone by default) on Picsellia **MASK** dataset versions (one RLE mask per object) and produces a **MASK** model: one mask, one label and one score for every detected object. It starts from a COCO instance-segmentation checkpoint, re-creates the class head for the classes of your dataset, trains, keeps the best epoch, then evaluates on the test split and reports everything to Picsellia.
+
+Mask2Former is a query-based transformer: it predicts a fixed set of masks and classes and matches them to the ground truth with a Hungarian assignment, so it needs no anchors, no NMS and no box head. It generally gives better masks than Mask R-CNN, at the price of a longer training (plan for dozens of epochs).
+
+For SEGMENTATION (polygon) datasets, convert the dataset with `polygons_to_RLE_mask` first, or use a polygon pipeline such as `maskrcnn/training`.
+
+## Requirements
+
+- Dataset versions of type **MASK**, for the train, val and test splits alike. Any other type stops the training at the start with an explicit error.
+- A GPU is strongly recommended (CPU works but is very slow). Mixed precision (`amp`, bfloat16) only applies on GPU.
+- `picsellia>=6.37.0` (mask evaluations), already required by the pipeline.
+- Network access to the Hugging Face Hub when the training starts (`pretrained_model`).
+
+## Dataset configurations
+
+The number of datasets attached to the experiment decides how the `train`, `val` and `test` splits are made. The pipeline always works with the three of them.
+
+| Attached datasets | Aliases | How the splits are made |
+|-------------------|---------|-------------------------|
+| 1 | `train` | Random split into train / val / test: 80 % / 10 % / 10 % with the default `train_set_split_ratio` (0.8) |
+| 2 | `train` and `test` | `train` is split into train / val (80 % / 20 % with the default ratio); `test` is used as it is |
+| 3 | `train`, `val` and `test` | Each dataset is used as it is, nothing is split |
+
+- The alias `train` is always required. With two datasets, the second one must be called `test` (not `val`). Any other number of datasets (0, or 4 and more) is an error.
+- The random splits are reproducible: they use `seed`.
+- **The classes come from the `train` split.** A class that only exists in `val` or `test` is ignored while training and gets an AP of 0 in the test metrics.
+- `val` picks the best epoch and gives the validation mAP: a very small `val` makes both noisy.
+
+## Parameters
+
+All of them have a default; set only what you want to change.
+
+### Data and model
+
+| Parameter | Default | Meaning |
+|-----------|---------|---------|
+| `pretrained_model` | `facebook/mask2former-swin-tiny-coco-instance` | Hugging Face checkpoint to start from. Any Mask2Former instance-segmentation checkpoint works (`swin-small`, `swin-base`, ... are more accurate and heavier). The class head is always re-initialized for your classes |
+| `epochs` | `30` | Number of passes over the training split. Mask2Former converges slowly: use more on large datasets |
+| `batch_size` | `2` | Images per iteration. Lower it first if the GPU runs out of memory |
+| `image_size` | `512` | Images are stretched to a `image_size` x `image_size` square, in training and in inference, then the masks are resized back to the original size. Saved in the checkpoint |
+| `train_set_split_ratio` | `0.8` | Share of the data used for training when splits are made by the pipeline (1 or 2 datasets) |
+| `seed` | `0` | Seeds python, numpy and torch, the splits, the data shuffling and the augmentations |
+
+### Optimisation
+
+| Parameter | Default | Meaning |
+|-----------|---------|---------|
+| `learning_rate` | `0.0001` | Starting learning rate (AdamW) |
+| `backbone_lr_multiplier` | `0.1` | The Swin backbone trains with `learning_rate` times this value |
+| `weight_decay` | `0.05` | Weight decay (not applied to biases and norm layers) |
+| `lr_scheduler` | `cosine` | `cosine` decreases the learning rate smoothly down to 1 % of its value; `step` divides it by `lr_scheduler_gamma` every `lr_scheduler_step_size` epochs |
+| `lr_scheduler_step_size` | `10` | Epochs between two reductions. Only used with `step` |
+| `lr_scheduler_gamma` | `0.1` | Reduction factor. Only used with `step` |
+| `warmup_iters` | `100` | Linear warmup over the first iterations of the first epoch. `0` disables it |
+| `clip_grad_norm` | `0.01` | Maximum gradient norm (the value of the official recipe). `0` disables it |
+| `amp` | `true` | bfloat16 mixed precision on GPU: faster, less memory. Turn it off if the loss becomes NaN |
+
+### Augmentation (training split only)
+
+| Parameter | Default | Meaning |
+|-----------|---------|---------|
+| `hflip_prob` | `0.5` | Probability of a horizontal flip (image and masks together) |
+
+### Model selection
+
+| Parameter | Default | Meaning |
+|-----------|---------|---------|
+| `keep_best` | `true` | Save the weights of the best epoch instead of the last one. Best = highest validation mask mAP50-95 (lowest validation loss if `val_map_every` is 0) |
+| `patience` | `0` | Stop when the best score did not improve for this many evaluated epochs. `0` never stops early |
+| `val_map_every` | `1` | Compute the validation mask mAP every N epochs (and on the last one). `0` disables it |
+
+### Evaluation and reporting
+
+| Parameter | Default | Meaning |
+|-----------|---------|---------|
+| `metrics_score_threshold` | `0.05` | Minimum score of the instances used for the COCO metrics. Keep it low: mAP needs the whole precision/recall curve |
+| `score_threshold` | `0.5` | Minimum score of the masks sent to Picsellia as evaluations, drawn in the overlays and written in `model-metadata` |
+| `mask_threshold` | `0.5` | Threshold that turns the predicted mask probabilities into a binary mask |
+| `overlap_mask_area_threshold` | `0.8` | Minimum share of a mask that must remain visible once overlaps with higher-scoring masks are removed; below it the instance is dropped |
+| `eval_batch_size` | `4` | Images per forward pass on the test split |
+| `overlay_images` | `8` | Test images logged with the predicted masks drawn on them. `0` disables it |
+| `log_every` | `0` | A progress line every N iterations. `0` means about 10 per epoch |
+
+### Export
+
+| Parameter | Default | Meaning |
+|-----------|---------|---------|
+| `export_format` | `pytorch` | The only format supported (the checkpoint itself). Any other value stops the training at the start |
+
+## What the pipeline does
+
+1. Loads the datasets (1, 2 or 3 configuration) and checks that they are MASK.
+2. Loads the Hugging Face checkpoint and re-creates the class head for your classes.
+3. Trains with AdamW (smaller learning rate on the backbone), warmup, the chosen schedule, optional bfloat16, gradient clipping and horizontal flip. After every epoch, computes the validation loss and, every `val_map_every` epochs, the validation mask mAP.
+4. Keeps the best epoch (`keep_best`) and can stop early (`patience`).
+5. Uploads `checkpoint-latest` and `model-metadata`.
+6. Runs the model on the test split and computes the COCO mask and box metrics.
+7. Sends the test masks to Picsellia as evaluations, logs prediction overlays and uploads the metrics.
+
+## Outputs
+
+**Artifacts of the experiment**
+
+| Artifact | Content |
+|----------|---------|
+| `checkpoint-latest` | PyTorch checkpoint (best epoch if `keep_best`): `model_state_dict`, `config` (Mask2Former config, so the model is rebuilt without network access), `id2label`, `image_size`, `image_mean`, `image_std`, `pretrained_model` |
+| `model-metadata` | Labels, image size and normalisation, default thresholds, output format and how to load the checkpoint |
+| `mask-metrics` | Test metrics (JSON) |
+| `mask-predictions` | Test instances as RLE masks (JSON), uploaded when below 50 MB |
+
+There is no TorchScript or ONNX export: Mask2Former's dynamic post-processing does not trace reliably. Load the checkpoint with `transformers` as described in `model-metadata`.
+
+**Logs**
+
+| Log | Content |
+|-----|---------|
+| `train/*` | `loss` (the total Mask2Former loss: mask, dice and class terms of every decoder layer), `lr`, `epoch_time_s`, `gpu_memory_peak_gb`, `total_time_s`, `best_epoch`, `best_score` |
+| `val/*` | Validation `loss`, `mAP50-95(M)`, `mAP50(M)`, `mAP50-95(B)` |
+| `dataset/*` | Images and masks per split |
+| `test/mAP50-95(M)`, `test/mAP50(M)`, `test/mAP75(M)`, `test/mAR100(M)` | Mask metrics on the test split, computed with pycocotools |
+| `test/mAP-small(M)`, `test/mAP-medium(M)`, `test/mAP-large(M)` | Mask mAP by object area |
+| `test/mAP50-95(B)`, `test/mAP50(B)`, `test/mAP75(B)`, `test/mAR100(B)` | The same metrics on the boxes (tight boxes of the masks) |
+| `test/metrics` | Table with one row per class plus `all`: images, instances, mask and box metrics |
+| `test/inference_time_ms`, `test/time_per_image_ms` | Model forward time per image, and per image with loading and mask encoding |
+| `test/images_evaluated`, `test/masks_detected` | Number of test images and of instances above `metrics_score_threshold` |
+| `test/prediction_NN` | Test images with the predicted masks drawn on them |
+
+The evaluations in Picsellia only contain the masks with a score above `score_threshold`, so the metrics computed by the platform are not the same numbers as the `test/*` values, which are the reference.
+
+## Good to know
+
+- Mask2Former needs more epochs than Mask R-CNN to converge: with few images and few epochs the model may output no instance at all (all queries "no object"). The pipeline then logs zero metrics and a warning instead of failing.
+- A class with no ground truth in the test split gets a metric of 0.
+- With `patience`, only evaluated epochs count: set a `val_map_every` that evaluates often enough.
+- Images are stretched to a square: very elongated images lose their aspect ratio. Masks are resized back to the original size for the metrics and evaluations.
+- The Hugging Face checkpoints are published under their own license: check it for your use case.
+'''
+type = "TRAINING"
+
+[execution]
+pipeline_script = "pipeline.py"
+requirements_file = "pyproject.toml"
+parameters_class = "utils/parameters.py:TrainingHyperParameters"
+
+[docker]
+image_name = "picsellia/training-mask2former"
+image_tag = "1.0.0"
+
+[model_version]
+name = "v1"
+origin_name = "Mask2Former"
+framework = "PYTORCH"
+inference_type = "MASK"
+
+[dataset_constraints]
+required = true
+
+[[dataset_constraints.groups]]
+name = "1 dataset"
+description = '''
+One MASK dataset version, attached with the alias `train`.
+
+The pipeline splits it at random into **train / val / test**: 80 % / 10 % / 10 % with the default `train_set_split_ratio` (reproducible with `seed`).'''
+aliases = ["train"]
+alias_descriptions = { train = "MASK dataset version, split into train / val / test" }
+
+[[dataset_constraints.groups]]
+name = "2 datasets"
+description = '''
+Two MASK dataset versions, attached with the aliases `train` and `test`.
+
+`train` is split into **train / val** (80 % / 20 % with the default `train_set_split_ratio`); `test` is used as it is. The second alias must be `test`, not `val`.'''
+aliases = ["train", "test"]
+alias_descriptions = { train = "MASK dataset version, split into train / val", test = "MASK dataset version, used as it is" }
+
+[[dataset_constraints.groups]]
+name = "3 datasets"
+description = '''
+Three MASK dataset versions, attached with the aliases `train`, `val` and `test`.
+
+Each dataset is used as it is, nothing is split.'''
+aliases = ["train", "val", "test"]
+alias_descriptions = { train = "MASK training split", val = "MASK validation split", test = "MASK test split" }
