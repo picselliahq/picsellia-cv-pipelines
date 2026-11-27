@@ -1,0 +1,37 @@
+[project]
+name = "training-mask2former"
+version = "0.1.0"
+description = "Mask2Former training pipeline for MASK datasets"
+requires-python = ">=3.14,<3.15"
+
+dependencies = [
+    # Experiment.add_evaluation(masks=...), needed to push mask evaluations, and the MASK
+    # dataset version type are only available in picsellia>=6.37.0.
+    "picsellia>=6.37.0",
+    "picsellia-pipelines-cli",
+    "picsellia-cv-engine",
+    # Pinned on a CUDA 12.8 build (as for yolov8/training and the Docker image's CUDA 12.x):
+    # the default Linux wheels of torch >= 2.11 are CUDA 13 and need a very recent driver.
+    "torch==2.10.0",
+    "transformers>=5.0.0",
+    # Mask2FormerLoss matches queries and targets with scipy's Hungarian algorithm.
+    "scipy",
+    "pycocotools",
+    "pillow",
+    # Not used by this pipeline, but picsellia-cv-engine imports cv2 (core/services/
+    # utils/annotations.py) without declaring opencv-python: keep it installed.
+    "opencv-python>=4.11.0.86",
+]
+
+# picsellia-cv-engine pins numpy<2, which has no cp314 wheel and would be built from
+# source in the Docker image (as for yolov8/training).
+[tool.uv]
+override-dependencies = ["numpy>=2.1"]
+
+[tool.uv.sources]
+torch = { index = "pytorch-cu128", marker = "sys_platform == 'linux'" }
+
+[[tool.uv.index]]
+name = "pytorch-cu128"
+url = "https://download.pytorch.org/whl/cu128"
+explicit = true
