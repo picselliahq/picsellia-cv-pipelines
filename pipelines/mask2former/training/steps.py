@@ -157,11 +157,9 @@ def _save_and_upload_artifacts(
         ),
         checkpoint_path,
     )
-    picsellia_model.save_artifact_to_experiment(
-        experiment=experiment,
-        artifact_name="checkpoint-latest",
-        artifact_path=checkpoint_path,
-    )
+    # Stored through the experiment: `Model.save_artifact_to_experiment` has a different
+    # signature depending on the engine version.
+    experiment.store("checkpoint-latest", checkpoint_path)
     log.info("Uploaded artifact checkpoint-latest (%s)", checkpoint_path)
 
     metadata_path = os.path.join(final_dir, "model_metadata.json")
